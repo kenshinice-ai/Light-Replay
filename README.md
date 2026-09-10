@@ -33,6 +33,7 @@
 | 13 | [docs/12-roadmap.md](docs/12-roadmap.md) | Spike → V1 → V1.5 → V2 → 系列 |
 | 14 | [docs/13-glossary.md](docs/13-glossary.md) | 名词表：把新概念一次说清 |
 | — | [docs/decisions/](docs/decisions/README.md) | ADR：每个决定的来龙去脉 |
+| — | [docs/reviews/](docs/reviews/2026-09-10-blueprint-v1-review.md) | 评审记录与复算脚本；改法落地后在此留痕 |
 | — | 策略稿存档 | v3–v6 策略稿与评审稿保存在本机 `../light_replay_history/`，不入库、不公开；观点已被蓝图吸收或否决 |
 
 ## 目录
