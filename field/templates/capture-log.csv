@@ -1,0 +1,1 @@
+scene_id,date,local_time,timezone,site_code,indoor,glass,target_label,target_height_m,device_model,lidar,capture_seconds,abandoned,drift_max_cm,corridor_coverage_pct,unknown_pct,north_sources_present,north_resolved_sigma_deg,north_conflict,quality_level,false_valid_guard,holdout,rescue_minutes,operator,notes
