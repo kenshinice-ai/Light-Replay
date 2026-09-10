@@ -10,7 +10,7 @@ field/
 │   ├── timelapse-log.csv      每个延时事件一行（阳光进入/离开目标）
 │   └── consent-checklist.md   采集授权清单
 └── data/                      本机数据（gitignored）
-    └── <scene_id>/            SceneRecord.json、hero.heic、masks/、depth/、timelapse/
+    └── <scene_id>/            scene.json（见 docs/03 第 9 节）、hero.heic、masks/、depth/、visibility/、analysis/、timelapse/
 ```
 
 规则：

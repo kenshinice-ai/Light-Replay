@@ -46,7 +46,7 @@
 | `hero_frame` | object | `frame_id`、`image_ref`、`timestamp`、`intrinsics`、`camera_transform`（16 个数，列主序）、`exposure` |
 | `frames[]` | array | 每帧：`frame_id`、`t`、`camera_transform`、`intrinsics`、`tracking_state`（`normal` / `limited:<reason>` / `not_available`）、`lens_offset_m`（与锚点距离）、`depth_ref`、`depth_confidence_ref`、`mask_ref`、`exposure_offset`、`used_for_visibility` |
 | `viewpoint_lock` | object | `anchor_world`、`tolerance_m`、`max_drift_m`、`frames_within`、`frames_beyond`、`handling`（`depth_recentered` / `tolerated` / `rejected`）|
-| `guidance` | object | `question`（`winter_breakfast` / `full_year` / `custom`）、`corridor_ref` |
+| `guidance` | object | `question`（`winter_breakfast` / `full_year` / `west_afternoon` / `custom`）、`corridor_ref` |
 
 帧记录频率：姿态每帧；掩膜与深度按分割频率（5–10 fps）；其余帧 `mask_ref: null`。
 
@@ -55,7 +55,7 @@
 ```json
 {
   "candidates": [
-    { "source": "magnetometer", "group": "magnetic", "yaw_deg": 8.0, "sigma_deg": 8.0, "valid": true,
+    { "source": "magnetometer", "group": "magnetic", "yaw_deg": 8.0, "sigma_deg": 12.0, "valid": true,
       "raw": { "true_heading": 8.2, "magnetic_heading": 19.9, "heading_accuracy": 12.0, "sampled_at": "..." } },
     { "source": "wall_footprint", "group": "map", "yaw_deg": 2.0, "sigma_deg": 4.0, "valid": true,
       "plane_anchor_id": "…", "footprint": { "dataset": "overture", "feature_id": "…", "edge_bearing_deg": 12.5, "user_selected_edge": true } },
@@ -63,13 +63,13 @@
     { "source": "sun_disk", "group": "solar", "yaw_deg": null, "sigma_deg": null, "valid": false, "reason": "sun not visible" },
     { "source": "geo_tracking", "group": "vps", "yaw_deg": null, "sigma_deg": null, "valid": false, "reason": "unavailable" }
   ],
-  "resolved": { "yaw_deg": 0.6, "sigma_deg": 2.4, "method": "robust_circular_v0", "groups_used": ["map","solar"],
-                "conflict": false, "conflict_detail": null, "resolved_at": "…" },
-  "ar_to_true_north_yaw_deg": 0.6
+  "resolved": { "yaw_deg": 359.8, "sigma_deg": 1.8, "method": "robust_circular_v0",
+                "groups_used": ["magnetic", "map", "solar"], "groups_rejected": [],
+                "conflict": false, "conflict_detail": null, "resolved_at": "…" }
 }
 ```
 
-`yaw_deg` 定义：AR 世界 +Z 轴（或约定的参考轴）到真北的顺时针角，见 `05-north-resolver.md`。
+`yaw_deg` 即 `Δ`：AR 世界 −Z 轴的真方位角（俯视顺时针），`az_true = (az_ar + Δ) mod 360`，见 `05-north-resolver.md` 第 4 节。示例中 solar 取 359°，刻意跨 0°/360°：实现必须用圆周运算，否则会误判冲突。三组两两一致，全部参与加权圆周均值（磁罗盘 σ 取 `heading_accuracy` 12.0，结果 359.78° / σ 1.77，四舍五入见上）。
 
 ## 5. visibility
 
@@ -79,7 +79,7 @@
 | `states_ref` | 二进制或 PNG，360 × 100 个单元，值：0 未知、1 天空、2 遮挡、3 玻璃不确定 |
 | `confidence_ref` | 同尺寸，0–255 |
 | `votes` | 每态投票数摘要 |
-| `coverage` | `corridor_cells`、`covered_cells`、`unknown_cells`、`glass_cells`、`coverage_pct` |
+| `coverage` | `corridor_cells`（走廊单元数，走廊定义见 `06-sun-engine.md` 第 5 节）、`unknown_cells`（状态 0）、`glass_cells`（状态 3）、`covered_cells = corridor_cells − unknown_cells`、`coverage_pct = covered_cells / corridor_cells`。玻璃不确定计入覆盖，另由分割灯约束（`04-capture-protocol.md` 第 6 节） |
 | `segmentation` | `model`、`glass_detected`、`reflection_flags[]`、`manual_edits` |
 | `near_field` | `d_near_m`、`recentered_cells`、`source: "lidar"` |
 

@@ -10,11 +10,11 @@ ARKit 给的是重力对齐但 yaw 任意的世界坐标。要判断太阳是否
 
 | 来源 | 独立组 | 条件 | 典型 σ（估） | 备注 |
 |---|---|---|---|---|
-| 磁罗盘（CoreLocation `trueHeading`） | magnetic | 始终 | 5–15°，室内更差 | `headingAccuracy` 负值即无效；`gravityAndHeading` 的 yaw 同源，不另算一份 |
+| 磁罗盘（CoreLocation `trueHeading`） | magnetic | 始终 | 5–15°，室内更差 | `headingAccuracy` 负值即无效；σ 取 `max(headingAccuracy, 组内分散, 先验)`，`headingAccuracy` 按 1σ 处理（候选，spike 用日晷真值校准）；`gravityAndHeading` 的 yaw 同源，不另算一份 |
 | 墙面对齐 | map | 检测到竖直平面 + 有建筑轮廓 + 用户指认哪面墙 | 2–5° | 轮廓是 footprint 还是 roofprint 不影响边的方向；风险是非矩形平面与选错边 |
 | 窗光斑校准 | solar | 晴天，地面有光斑，窗几何已知（LiDAR/RoomPlan 或点四角） | 1–3° | 光斑边与窗边一一对应，太阳方向唯一可解 |
 | 太阳圆面校准 | solar | 太阳在画面内 | 1–2° | 短曝光帧；不要求用户直视太阳 |
-| VPS / 地理追踪 | vps | 户外、有覆盖 | 供应商未公开；spike 实测 | 墨尔本覆盖用 `CheckVpsAvailability` 逐点验证 |
+| VPS / 地理追踪 | vps | 户外、有覆盖 | 供应商未公开；spike 实测 | Spike 只用 ARKit 地理追踪，逐点用 `ARGeoTrackingConfiguration.checkAvailability(at:)` 验证覆盖（Apple 只写"澳洲多个大都市区"，未点名墨尔本【验】）；ARCore Geospatial 为候选，引入前按 `11-compliance-boundaries.md` 第 5 节登记 |
 | 日晷真值（仅 spike） | truth | 竖直杆影子；AR 点两点 | < 1° | 不进产品，只做基准 |
 
 同一独立组内的多个读数先在组内合并，再进入融合。
@@ -23,13 +23,15 @@ ARKit 给的是重力对齐但 yaw 任意的世界坐标。要判断太阳是否
 
 1. 组内合并：同组多次读数取鲁棒中位（圆周），σ 取组内分散与先验的较大者。
 2. 组间融合：加权圆周均值，权重 `1/σ²`。
-3. 一致性：任两组之差 `|Δ_i − Δ_j| > 3·sqrt(σ_i² + σ_j²)` 判为冲突。
+3. 一致性：任两组的圆周差 `δ_ij = min(d, 360° − d)`，其中 `d = |Δ_i − Δ_j| mod 360`；`δ_ij > 3·sqrt(σ_i² + σ_j²)` 判为冲突。
 4. 冲突时不平均：按可信顺序 `solar > vps > map > magnetic` 保留最可信组，其余标"被否决"；若最可信组只有一个来源且 σ > 6°，要求一次最小确认（用户指认墙面或地图拖拽）。
 5. 输出 `Δ`、`σ_Δ`、参与组、冲突详情。
 
 ## 4. 定义
 
-- `Δ`：AR 世界参考轴到真北的顺时针角；`az_true = (az_ar + Δ) mod 360`。
+- `Δ`：AR 世界 −Z 轴的真方位角（从真北俯视顺时针量到 −Z 轴）。`gravity` 对齐下 −Z 是会话开始时相机朝向的水平投影，所以 Δ 就是开始扫描时相机朝向的真方位角。
+- `az_true = (az_ar + Δ) mod 360`；`az_ar` 的定义见 `02-architecture.md` 第 3 节。
+- `gravityAndHeading` 对齐下 −Z 即罗盘给出的真北，Δ 应接近 0，差值就是罗盘误差，可作对照。
 - 磁偏角由 CoreLocation 处理（`trueHeading`），本模块只处理真北。
 
 ## 5. 不确定性传播

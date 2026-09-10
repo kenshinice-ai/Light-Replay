@@ -38,11 +38,15 @@ ARSession ──帧──► CaptureCore ──► SceneRecord.capture_session�
 | AR 世界 | 重力对齐，yaw 任意，原点为会话起点 | 可见域存储；目标锚点；平面法线 |
 | 真北 ENU | East-North-Up | 太阳向量 |
 
-关键约定：**可见域以 AR 世界方位角存储**。真北是一个绕重力轴的旋转 `yaw_true = yaw_ar + Δ`，`Δ` 由 NorthResolver 给出并带 σ。北向修正只改 `Δ`，不改采集。
+关键约定：**可见域以 AR 世界方位角存储**。`az_ar` 从 AR 世界 −Z 轴起算，俯视顺时针；真北方位角 `az_true = (az_ar + Δ) mod 360`，`Δ` 是 −Z 轴的真方位角，由 NorthResolver 给出并带 σ（定义见 `05-north-resolver.md` 第 4 节）。北向修正只改 `Δ`，不改采集。
 
-像素到方向：`d_cam = K⁻¹ [u v 1]ᵀ`，`d_world = R_cam · d_cam`，方位角 `atan2(d_x, d_z)`（按 ARKit 轴向约定校正），高度角 `asin(d_y)`。
+像素到方向：
 
-深度重投影（LiDAR）：若像素深度 `z < D_near`（候选 4 m），遮挡点 `p = c_cam + z·d_world`；改用 `d' = normalize(p − p_target)` 落网格。远于 `D_near` 或无深度：直接用 `d_world`，并记录漂移 `|c_cam − p_target|`。
+- `r_cam = F · K⁻¹ [u v 1]ᵀ`，`F = diag(1, −1, −1)`：把针孔约定（y 向下、z 朝前）换成 ARKit 相机约定（y 向上、看向 −z）。`(u, v)` 是 `capturedImage` 原生方向（横向）的像素坐标；分割若在旋转后的图像上运行，先把掩膜坐标转回。
+- `r = R_cam · r_cam`（`R_cam` 为 camera transform 的旋转部分）。`r` 不归一化：它沿光轴的分量为 1，供深度重投影使用。
+- `d̂ = r / |r|`；方位角 `az_ar = atan2(d̂_x, −d̂_z)`，高度角 `alt = asin(d̂_y)`。
+
+深度重投影（LiDAR）：`sceneDepth` 的 `z` 是沿光轴的深度。若 `z < D_near`（候选 4 m），遮挡点 `p = c_cam + z · r`，改用 `d' = normalize(p − p_target)` 落网格。远于 `D_near` 或无深度：直接用 `d̂`，并记录漂移 `|c_cam − p_target|`。
 
 ## 4. 端侧与服务端
 
@@ -61,7 +65,8 @@ ARSession ──帧──► CaptureCore ──► SceneRecord.capture_session�
 |---|---|---|
 | SunEngine | 与 pvlib / NOAA 表对照；时区与夏令时边界；南北半球 | 模拟器 / CI |
 | VisibilityCore 累积 | 合成掩膜与已知姿态；深度重投影的几何单元测试 | 模拟器 |
-| NorthResolver | 合成候选：一致、轻度分歧、冲突、只有一个来源 | 模拟器 |
+| NorthResolver | 合成候选：一致、轻度分歧、冲突、只有一个来源、跨 0°/360° | 模拟器 |
+| 坐标约定 | 物理对照夹具：按 `gravityAndHeading` 构造的合成场景 Δ = 0；−Z 朝东的合成场景中，朝西的窗得到下午直射；水平相机画面上沿像素的高度角等于半个垂直视场角。期望值来自物理事实，不来自规范 | 模拟器 / CI |
 | CaptureCore | 真机：帧同步、追踪丢失、漂移记录 | 真机 |
 | 端到端 | 现场延时对照（`08-ground-truth-protocol.md`） | 现场 |
 

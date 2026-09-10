@@ -41,6 +41,7 @@
 | 维州 1 m DEM / LiDAR | Licensed；DEM 不含地物【引】 | 首发不依赖 |
 | Google Solar API | §20.1 限定能源系统用途【引】 | 不用 |
 | Google 3D Tiles | 派生使用条款未审 | 不用 |
+| ARCore Geospatial（Google VPS） | 需启用 Google ARCore API；条款未审 | 候选；不进 spike，引入前登记 |
 | 天气 / 再分析 | 商用条款各异 | V2 前核实 |
 | 第三方 Swift / Python 包 | 逐个登记 | 见各 README |
 
