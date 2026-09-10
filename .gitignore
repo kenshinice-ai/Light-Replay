@@ -1,0 +1,34 @@
+# Field data (photos, depth, timelapse) never enters the repo
+field/data/
+field/**/*.heic
+field/**/*.jpg
+field/**/*.mov
+field/**/*.mp4
+field/**/*.bin
+field/**/*.json
+
+# macOS
+.DS_Store
+
+# Xcode / Swift
+ios/**/xcuserdata/
+ios/**/DerivedData/
+ios/**/*.xcuserstate
+ios/**/.build/
+ios/**/*.ipa
+ios/**/*.dSYM.zip
+
+# Python
+engine/.venv/
+engine/**/__pycache__/
+engine/**/*.pyc
+engine/.pytest_cache/
+
+# Node
+report/node_modules/
+report/.next/
+report/out/
+
+# Secrets
+.env
+.env.*
