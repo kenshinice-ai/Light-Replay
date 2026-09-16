@@ -1,6 +1,6 @@
 # ios/
 
-iOS App 与 Swift 包。**目前为空**；本文件描述计划中的结构，供 Week 1 建工程时照做。
+iOS App 与 Swift 包。本文件描述计划中的结构，供 Week 1 建工程时照做；`Packages/SceneRecord` 由另一条工作线在建，提交后更新本文。
 
 ## 目标结构
 
@@ -24,7 +24,7 @@ ios/
 ## 设备与系统
 
 - 开发与 spike 设备：带 LiDAR 的 iPhone（12 Pro 及之后）。R1 不依赖 LiDAR；R2 依赖。
-- 部署目标：待定（ADR 待写）。倾向 iOS 18+ 以覆盖测试机；iOS 26 的交互式分割等能力按运行时可用性检测，不作硬依赖。
+- 部署目标：iOS 27.0（ADR-0011）。Apple Intelligence 相关能力仍按运行时可用性检测，不可用时按 ADR-0010 降级。
 - ARKit 只能真机运行。模拟器用于 SceneRecord、SunEngine、NorthResolver 的单元测试。
 
 ## Week 1 最小目标
@@ -34,5 +34,5 @@ ios/
 ## 依赖策略
 
 - 太阳位置：自写 NOAA/SPA 实现（约 200 行）并与 `engine/` 的 pvlib 交叉核对；不引入大依赖。
-- 天空分割：先用 Core ML 通用分割模型（候选：DeepLab/SegFormer 的 sky 类）；WWDC26 交互式分割作为可选修正路径，运行时检测。
+- 天空分割：首选 Vision `GenerateIterativeSegmentationRequest` + 几何种子（W1 评估）；不达线改 CoreAI 自训模型。教练句与文案用 Foundation Models，经 `LLMProvider` 抽象，数字只来自 Tool（ADR-0010）。
 - 第三方包尽量少；引入前记录许可到 `docs/11-compliance-boundaries.md` 的许可表。

@@ -4,8 +4,8 @@
 
 | 阶段 | 产品 | 核心交付 | 进入条件 | 明确不做 |
 |---|---|---|---|---|
-| **Spike**（3 周） | 内部验证器 | Point Core、Viewpoint Lock、NorthResolver、玻璃失败识别、真值对照 | 现在 | UI、付费、地图、预览 |
-| **V1** | 光境 / Light Replay | OneTake、R1 结果页、比较、分享、参考模式 | Spike GO 或 CONDITIONAL | R2 光斑、户型、气候、价格 |
+| **Spike**（3 周） | 内部验证器 | Point Core、Viewpoint Lock、NorthResolver、玻璃失败识别、分割路径评估、真值对照 | 现在；iOS 27 | UI、付费、地图、预览 |
+| **V1** | 光境 / Light Replay | OneTake、R1 结果页、比较、分享、参考模式、教练句与文案（ADR-0010） | Spike GO 或 CONDITIONAL；iOS 27 | R2 光斑、户型、气候、价格 |
 | **V1.5** | Light Passport | PP 采集流程、挂牌分享页、买家复扫并排、地址级粗估作为"看房前预估" | V1 用户能在预算内独立完成；3–5 家中介试点 | 门户 API、全国预计算 |
 | **V2** | Surface Light | R2 潜力光斑（RoomPlan）、深度视差与轮廓模型给外部遮挡距离、气候概率、效果预览（水印） | 光斑增加决策价值而非只增加 wow | 全屋自动配准 |
 | **V2+** | 空间与情景 | 户型轻配准、多点、情景比较、悉尼 | V2 稳定 | 第三个综合 App |

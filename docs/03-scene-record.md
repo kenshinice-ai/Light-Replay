@@ -80,7 +80,7 @@
 | `confidence_ref` | 同尺寸，0–255 |
 | `votes` | 每态投票数摘要 |
 | `coverage` | `corridor_cells`（走廊单元数，走廊定义见 `06-sun-engine.md` 第 5 节）、`unknown_cells`（状态 0）、`glass_cells`（状态 3）、`covered_cells = corridor_cells − unknown_cells`、`coverage_pct = covered_cells / corridor_cells`。玻璃不确定计入覆盖，另由分割灯约束（`04-capture-protocol.md` 第 6 节） |
-| `segmentation` | `model`、`glass_detected`、`reflection_flags[]`、`manual_edits` |
+| `segmentation` | `model`（`vision-iterative` / `coreai-custom` / `manual`）、`assets_state`、`seed_strategy`、`glass_detected`、`reflection_flags[]`（来源 `heuristic` / `fm-keyframe`）、`manual_edits` |
 | `near_field` | `d_near_m`、`recentered_cells`、`source: "lidar"` |
 
 ## 6. geometry（V2）
@@ -103,10 +103,11 @@
 
 ```json
 { "level": "R1", "gates": { "level": "pass", "coverage": "pass", "north": "pass", "segmentation": "warn" },
-  "flags": ["glass_present", "drift_recentered"], "false_valid_guard": "passed", "blocked_reason": null }
+  "flags": ["glass_present", "drift_recentered"], "false_valid_guard": "passed", "blocked_reason": null,
+  "assist": { "coach": "fm-ondevice", "copy": "fm-ondevice", "glass_flag": "fm-keyframe", "pcc_used": false, "degraded": [] } }
 ```
 
-`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。
+`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。`gates` 含五盏灯：`level`、`coverage`、`north`、`segmentation`、`lens`。`assist.degraded` 记录每次降级（如 `fm_unavailable`、`seg_assets_missing`、`pcc_quota`），见 ADR-0010。
 
 ## 9. 文件布局
 

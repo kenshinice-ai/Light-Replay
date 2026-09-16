@@ -44,6 +44,10 @@
 | ARCore Geospatial（Google VPS） | 需启用 Google ARCore API；条款未审 | 候选；不进 spike，引入前登记 |
 | 天气 / 再分析 | 商用条款各异 | V2 前核实 |
 | 第三方 Swift / Python 包 | 逐个登记 | 见各 README |
+| Apple Foundation Models（端侧） | Apple 平台条款；无额外费用；需 Apple Intelligence 机型与开启 | 仅辅助层（ADR-0010） |
+| Private Cloud Compute | Small Business Program + 首次下载少于 200 万 + entitlement【验】；无云端 API 费用；超限 6 个月迁移期 | 仅 V1.5 低频报告文本；entitlement 由项目主账号申请，状态待定；留 provider 抽象 |
+| Vision 交互式分割模型资源 | 系统按需下载 | 首选分割路径；未下载时手工涂抹 |
+| pvlib 0.15.2（仅本地算法测试） | BSD-3-Clause【验：2026-09-12，PyPI 元数据与官方 LICENSE】 | Python 独立 SPA 对照；不复制其实现到 Swift，不随 App 打包；分发时保留许可与版权。来源：https://pypi.org/project/pvlib/0.15.2/ 、https://github.com/pvlib/pvlib-python/blob/main/LICENSE |
 
 ## 6. 卖方付费的报告
 

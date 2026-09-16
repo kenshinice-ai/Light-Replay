@@ -54,6 +54,11 @@
 | **ARKit 世界追踪** | 视觉惯性里程计；给相对姿态，短程厘米级；没有真北 |
 | **LiDAR / sceneDepth** | iPhone Pro 的深度传感；约 256×192，约 5 m 内 |
 | **RoomPlan** | Apple 的房间参数化扫描；能输出墙、窗、门对象 |
+| **交互式分割** | Vision 的 `GenerateIterativeSegmentationRequest`：给点、框或涂抹作种子，返回掩膜，可迭代加减；首次需下载模型资源 |
+| **Foundation Models** | Apple 端侧语言模型框架，iOS 27 起带图像输入与工具调用；只用于辅助层（ADR-0010） |
+| **PCC** | Private Cloud Compute：Apple 服务端的大模型，同一 session API，按用户每日额度；只用于低频报告文本 |
+| **教练句** | 由规则判断资格、由模型措辞的一句补拍提示；不含任何数字生成 |
+| **帧级标记** | 对关键帧整体做的判断（有反射、窗帘未拉开、过曝），与逐像素分割区分 |
 | **内参 K** | 相机焦距与主点，把像素变成射线 |
 | **追踪状态** | normal / limited / not available；limited 时帧降权 |
 
