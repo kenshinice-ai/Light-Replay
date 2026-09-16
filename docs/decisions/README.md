@@ -12,7 +12,9 @@
 | [ADR-0006](ADR-0006-viewpoint-drift-handling.md) | 镜头漂移用深度重投影处理，不拒帧 | Accepted |
 | [ADR-0007](ADR-0007-north-resolver.md) | 真北是多来源一致性问题；不确定性以时段表达 | Accepted |
 | [ADR-0008](ADR-0008-r1-first.md) | V1 只交付 R1；R2 光斑标"潜力投影" | Accepted |
-| [ADR-0009](ADR-0009-north-conflict-handling.md) | NorthResolver 冲突取最大一致组合；磁罗盘单独偏离不阻断；solar 残差检查 | Proposed |
+| [ADR-0009](ADR-0009-north-conflict-handling.md) | NorthResolver 冲突取最大一致组合；磁罗盘单独偏离不阻断；solar 残差检查 | Accepted |
+| [ADR-0010](ADR-0010-apple-ai-boundaries.md) | Apple 端侧 AI 与 PCC 只用于辅助层；允许 / 禁止 / 降级 / 回归 | Accepted |
+| [ADR-0011](ADR-0011-ios-27-minimum.md) | Spike 与 V1 只支持 iOS 27 | Accepted |
 | [ADR-0000](ADR-0000-template.md) | 模板 | — |
 
-待写：iOS 部署目标版本；天空分割模型选型；D_near 与漂移阈值（spike 后）。
+待写：天空分割路径的最终选型（W1 评估后）；D_near 与漂移阈值（spike 后）。

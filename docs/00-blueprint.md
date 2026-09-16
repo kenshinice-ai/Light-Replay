@@ -22,14 +22,18 @@
 | 4 | 首发不依赖商业地图与授权高程数据 | R1 只需要现场采集；单人谈数据许可是时间黑洞 | [ADR-0004](decisions/ADR-0004-no-licensed-data-at-launch.md) |
 | 5 | V1 不做法律文件、风水功能、合规评分线、地址级评分、价格 | 法律与误导风险；Sunscore 已把建筑级评分商品化；价格等 spike 后 | [ADR-0005](decisions/ADR-0005-v1-exclusions.md) |
 | 6 | 镜头漂移用深度重投影处理，不拒帧 | 真人手持漂移 10–60 cm；近场遮挡有深度可修正，远场与漂移无关 | [ADR-0006](decisions/ADR-0006-viewpoint-drift-handling.md) |
-| 7 | 真北是多来源一致性问题；不确定性以时段表达 | 没有单一可靠传感器；用户要的是几点到几点，不是正负几度 | [ADR-0007](decisions/ADR-0007-north-resolver.md) |
+| 7 | 真北是多来源一致性问题；不确定性以时段表达；冲突取最大一致组合 | 没有单一可靠传感器；用户要的是几点到几点，不是正负几度 | [ADR-0007](decisions/ADR-0007-north-resolver.md)、[ADR-0009](decisions/ADR-0009-north-conflict-handling.md) |
 | 8 | V1 只交付 R1；R2 光斑标"潜力投影" | R1 已是完整任务；精确 R2 需要外部遮挡距离 | [ADR-0008](decisions/ADR-0008-r1-first.md) |
 | 9 | 三周 spike 设 holdout；false-valid 一票否决 | 不能用拟合数据证明自己；错误却确定的输出比没有输出更糟 | [07-spike-plan](07-spike-plan.md) |
+| 10 | Apple 端侧 AI 与 PCC 只用于辅助层 | 省掉自训分割与文案代码，但不许碰测量链 | [ADR-0010](decisions/ADR-0010-apple-ai-boundaries.md) |
+| 11 | Spike 与 V1 只支持 iOS 27 | 加速来源都是 iOS 27 API；不维护回退路径 | [ADR-0011](decisions/ADR-0011-ios-27-minimum.md) |
 
 ## 3. 首发范围（V1）
 
 **做：**
-- OneTake 采集：Hero frame + 原位扫天 + 方向候选并行记录 + 质量门槛。
+- 系统：iOS 27 及以上（ADR-0011）。
+- OneTake 采集：Hero frame + 原位扫天 + 方向候选并行记录 + 质量门槛（含镜头脏污灯）。
+- 辅助层：拍摄教练句、结果文案，数字只来自工具（ADR-0010）。
 - R1 结果：这个点的直射时段（稳定直射 / 方向敏感 / 遮挡 / 未知）、冬至与夏至快捷、全年热力图。
 - 照片上的 Target Pin、太阳方向、时间滑杆。
 - 两个点的并排比较；分享页（默认不含原片与门牌）。
