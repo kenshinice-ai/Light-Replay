@@ -34,6 +34,7 @@
 | 14 | [docs/13-glossary.md](docs/13-glossary.md) | 名词表：把新概念一次说清 |
 | — | [docs/decisions/](docs/decisions/README.md) | ADR：每个决定的来龙去脉 |
 | — | [docs/reviews/](docs/reviews/2026-09-10-blueprint-v1-review.md) | 评审记录与复算脚本；改法落地后在此留痕 |
+| — | [docs/proposals/](docs/proposals/2026-09-16-apple-ai-acceleration.md) | 待批准的方案；批准后转为 ADR 与规范 |
 | — | 策略稿存档 | v3–v6 策略稿与评审稿保存在本机 `../light_replay_history/`，不入库、不公开；观点已被蓝图吸收或否决 |
 
 ## 目录
