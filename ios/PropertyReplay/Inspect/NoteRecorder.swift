@@ -1,0 +1,152 @@
+@preconcurrency import AVFoundation
+import Foundation
+import Speech
+
+/// Push-to-talk transcription with the on-device SpeechAnalyzer (ADR-0015): audio is never written to disk,
+/// only the transcript survives. One recording at a time.
+@MainActor
+final class NoteRecorder: ObservableObject {
+    enum State: Equatable {
+        case idle
+        case preparing
+        case recording
+        case finishing
+        case unavailable(String)
+    }
+
+    @Published private(set) var state: State = .idle
+    @Published private(set) var transcript = ""
+    /// True between press and release. Preparation can outlive a short press; when it finishes we honour this.
+    private var pressActive = false
+
+    private var engine: AVAudioEngine?
+    private var analyzer: SpeechAnalyzer?
+    private var transcriber: SpeechTranscriber?
+    private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
+    private var resultsTask: Task<Void, Never>?
+
+    var isRecording: Bool { state == .recording || state == .preparing }
+
+    func start() async {
+        pressActive = true
+        switch state {
+        case .idle, .unavailable: break
+        default: return
+        }
+        state = .preparing
+        transcript = ""
+        guard await AVAudioApplication.requestRecordPermission() else {
+            state = .unavailable("Microphone access is off. Enable it in Settings to dictate notes.")
+            return
+        }
+        let locale = Locale.current
+        let supported = await SpeechTranscriber.supportedLocales
+        guard supported.contains(where: { $0.identifier(.bcp47).lowercased().hasPrefix(locale.language.languageCode?.identifier.lowercased() ?? "zz") }) else {
+            state = .unavailable("On-device transcription does not support \(locale.identifier) yet.")
+            return
+        }
+        let transcriber = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
+        do {
+            if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+                try await request.downloadAndInstall()
+            }
+        } catch {
+            state = .unavailable("Speech model is not installed: \(error.localizedDescription)")
+            return
+        }
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+            state = .unavailable("No compatible audio format for transcription.")
+            return
+        }
+        let (stream, continuation) = AsyncStream.makeStream(of: AnalyzerInput.self)
+        self.transcriber = transcriber
+        self.analyzer = analyzer
+        self.inputContinuation = continuation
+
+        resultsTask = Task { [weak self] in
+            do {
+                for try await result in transcriber.results {
+                    let text = String(result.text.characters)
+                    await MainActor.run { self?.transcript = text }
+                }
+            } catch {
+                await MainActor.run { self?.state = .unavailable("Transcription stopped: \(error.localizedDescription)") }
+            }
+        }
+
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.record, mode: .measurement, options: [.duckOthers])
+            try audioSession.setActive(true, options: [])
+            let engine = AVAudioEngine()
+            let input = engine.inputNode
+            let inputFormat = input.outputFormat(forBus: 0)
+            let converter = BufferConverter(from: inputFormat, to: format)
+            input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
+                guard let converted = converter.convert(buffer) else { return }
+                continuation.yield(AnalyzerInput(buffer: converted))
+            }
+            engine.prepare()
+            try engine.start()
+            self.engine = engine
+            try await analyzer.start(inputSequence: stream)
+            state = .recording
+            if !pressActive { _ = await stop() }   // released while we were still preparing
+        } catch {
+            teardownAudio()
+            state = .unavailable("Could not start the microphone: \(error.localizedDescription)")
+        }
+    }
+
+    /// Returns the final transcript.
+    func stop() async -> String {
+        pressActive = false
+        guard state == .recording else { return transcript }   // still preparing: start() will stop itself
+        state = .finishing
+        teardownAudio()
+        inputContinuation?.finish()
+        inputContinuation = nil
+        try? await analyzer?.finalizeAndFinishThroughEndOfInput()
+        resultsTask?.cancel()
+        resultsTask = nil
+        analyzer = nil
+        transcriber = nil
+        state = .idle
+        return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func teardownAudio() {
+        engine?.inputNode.removeTap(onBus: 0)
+        engine?.stop()
+        engine = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+    }
+}
+
+/// Converts microphone buffers to the analyzer's format on the audio thread.
+private final class BufferConverter: @unchecked Sendable {
+    private let converter: AVAudioConverter?
+    private let target: AVAudioFormat
+
+    init(from source: AVAudioFormat, to target: AVAudioFormat) {
+        self.target = target
+        converter = source == target ? nil : AVAudioConverter(from: source, to: target)
+    }
+
+    func convert(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let converter else { return buffer }
+        let ratio = target.sampleRate / buffer.format.sampleRate
+        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 16
+        guard let output = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else { return nil }
+        var consumed = false
+        var error: NSError?
+        let status = converter.convert(to: output, error: &error) { _, outStatus in
+            if consumed { outStatus.pointee = .noDataNow; return nil }
+            consumed = true
+            outStatus.pointee = .haveData
+            return buffer
+        }
+        return status == .error ? nil : output
+    }
+}

@@ -3,7 +3,7 @@ import SwiftData
 
 /// Container factory and the few queries that are not one-liners.
 public enum PropertyStore {
-    public static let schema = Schema([Property.self, UserPreferences.self])
+    public static let schema = Schema([Property.self, Inspection.self, InspectionObservation.self, UserPreferences.self])
 
     public static func container(inMemory: Bool = false) throws -> ModelContainer {
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
@@ -23,9 +23,22 @@ public enum PropertyStore {
     /// Removes every property and resets preferences. Physical deletion, no soft delete (docs/15 §4).
     @MainActor
     public static func deleteEverything(in context: ModelContext) throws {
+        try context.delete(model: InspectionObservation.self)
+        try context.delete(model: Inspection.self)
         try context.delete(model: Property.self)
         try context.delete(model: UserPreferences.self)
         try context.save()
+        MediaStore.deleteAll()
+    }
+
+    /// Finds the open inspection for a property or starts one.
+    @MainActor
+    public static func openInspection(for property: Property, in context: ModelContext) -> Inspection {
+        if let open = property.openInspection { return open }
+        let inspection = Inspection(property: property)
+        context.insert(inspection)
+        property.inspections.append(inspection)
+        return inspection
     }
 }
 

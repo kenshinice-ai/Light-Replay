@@ -39,6 +39,8 @@ public final class Property {
     public var createdAt: Date
     public var inspectionAt: Date?
     public var notes: String?
+    @Relationship(deleteRule: .cascade, inverse: \Inspection.property)
+    public var inspections: [Inspection]
 
     public init(address: String, suburb: String? = nil, latitude: Double? = nil, longitude: Double? = nil,
                 source: PropertySource = .manual, status: PropertyStatus = .toInspect,
@@ -52,6 +54,14 @@ public final class Property {
         self.statusRaw = status.rawValue
         self.createdAt = createdAt
         self.inspectionAt = inspectionAt
+        self.inspections = []
+    }
+
+    /// The inspection still in progress, if any.
+    public var openInspection: Inspection? { inspections.first { $0.isOpen } }
+
+    public var allObservations: [InspectionObservation] {
+        inspections.flatMap(\.observations).sorted { $0.capturedAt > $1.capturedAt }
     }
 
     public var source: PropertySource {

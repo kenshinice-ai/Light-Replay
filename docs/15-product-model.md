@@ -25,7 +25,11 @@ Property
 | `UserPreferences` | `displayName`、`priorityRaws[]`（≤ 5）、`targetHeightM`、`hapticsEnabled`、`viewpointToleranceM`、`createdAt` | 单行；`PropertyStore.preferences(in:)` 首次创建 |
 | `PropertyStore` | `container(inMemory:)`、`preferences(in:)`、`deleteEverything(in:)` | 删除是物理删除 |
 
-Inspection、Room、Observation、Question、Comparison 随线 B 与 Phase 2 加入。`Priority` 暂以 `UserPreferences.priorityRaws` 表示（单人）；多人（couple 模式）时拆成独立模型。
+| `Inspection` | `uuid`、`startedAt`、`endedAt?`、`property`、`observations[]`（级联删除） | 一套房同时只有一个未结束的 inspection；`PropertyStore.openInspection(for:in:)` 找或建 |
+| `InspectionObservation` | 第 2 节的字段；Swift 类型名避开 `Observation` 模块 | `level` 由 `InspectionObservation.level(for:source:)` 规则赋予；`modelSuggested` 标记模型建议未确认；`mediaPath` 指向 `MediaStore` |
+| `MediaStore` | `saveJPEG`、`delete`、`deleteAll` | 沙盒 Documents/observations，相对路径 |
+
+Room 暂以 `roomLabel` 字符串表示（L0）；Question 暂以 `sentiment == .ask` 表示；Comparison 随 Phase 2 加入。`Priority` 暂以 `UserPreferences.priorityRaws` 表示（单人）；多人（couple 模式）时拆成独立模型。
 
 ## 2. Observation
 

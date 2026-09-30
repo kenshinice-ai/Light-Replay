@@ -36,7 +36,14 @@ struct PropertyDetailView: View {
                     .foregroundStyle(.secondary)
             }
             Section("Your inspection") {
-                Text("Nothing captured yet. Use Inspect when you are at the property.").foregroundStyle(.secondary)
+                let observations = property.allObservations
+                if observations.isEmpty {
+                    Text("Nothing captured yet. Use Inspect when you are at the property.").foregroundStyle(.secondary)
+                } else {
+                    ForEach(observations.prefix(3)) { ObservationRow(observation: $0) }
+                    NavigationLink("All \(observations.count) recorded") { InspectionSummaryView(property: property) }
+                }
+                NavigationLink { InspectView(property: property) } label: { Label("Inspect now", systemImage: "camera.viewfinder") }
             }
             Section("Replay") {
                 Text("Light Replay appears after the first Measure at this property.").foregroundStyle(.secondary)

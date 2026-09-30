@@ -65,5 +65,7 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 - 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App 壳（三个 destination）+ `CaptureCore` 包（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ W1 采集验证器界面；iOS 27 模拟器上构建、运行、6 个测试通过。
 - 线 A W1 已开工：验证器目前记录姿态、一条罗盘读数、一次定位，导出 R0 SceneRecord；下一步在真机上跑，然后加天空分割掩膜与走廊覆盖率。
 - App 壳（2026-09-30 晚）：五个 tab；`PropertyModel` 包（SwiftData：Property、UserPreferences；4 测试）；Properties 的 List / Map、添加房产（Apple 地理编码）、详情页；Inspect tab 按距离选房；Compare 读 You 的优先级、每格 Unknown；You 的优先级 / 偏好 / 隐私与数据 / 高级 / 关于。模拟器上 10 个测试通过、界面走通。
-- 未开始：线 B 原型 A；线 C 小 spike。
+- 线 B（2026-09-30 深夜，分支 `feat/inspect-screen`）：真实的 Inspect 屏。相机预览（AVFoundation）、Capture（照片 + 时刻 / 位置 / 朝向元数据，落库为 InspectionObservation）、Note（按住说话：`SpeechTranscriber` 端侧转写 → Foundation Models `@Generable` 结构化为房间 / 类别 / 情绪 / 摘要，模型不可用时手选）、Like / Concern / Ask 卡片、Measure 入口；Your inspection 页按标签分组；Property 详情显示最近三条。模拟器验证了照片路径（DEBUG 测试照片）与权限按需弹出；**相机、麦克风转写、Foundation Models 三条真机路径未验证**。
+- 未开始：线 C 小 spike（C3 语音结构化的准确率评估要等真机）。
+- 已知欠账：`CLGeocoder` 与 `installTap` 在 iOS 26/27 标记弃用，先用着，换 `MKGeocodingRequest` 与新音频 API 记在 Phase 2；Room 仍是字符串标签（L0），`Question` 模型未拆出（`sentiment == .ask` 即问题）。
 - 待办（Lee）：PCC entitlement；正式商标意见；域名；仓库是否改名。

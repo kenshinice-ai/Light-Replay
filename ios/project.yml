@@ -40,10 +40,11 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
-        NSCameraUsageDescription: "Property Replay uses the camera to measure how much direct sun reaches the spot where you are standing."
+        NSCameraUsageDescription: "Property Replay uses the camera to capture what you see during an inspection and to measure how much direct sun reaches the spot where you are standing."
         NSLocationWhenInUseUsageDescription: "Your location sets where the sun is in the sky for this property. It is kept on this device."
         NSMicrophoneUsageDescription: "Hold to dictate a note. Audio is transcribed on this device and not stored."
         NSMotionUsageDescription: "Device motion keeps the sky scan aligned while you turn."
+        NSSpeechRecognitionUsageDescription: "Notes you dictate are transcribed on this device. No audio is stored."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay
