@@ -29,8 +29,10 @@ final class NoteRecorder: ObservableObject {
 
     var isRecording: Bool { state == .recording || state == .preparing }
 
-    /// Locale for transcription; set from UserPreferences.noteLocale before starting.
-    var locale: Locale = .current
+    /// Preferred transcription language (UserPreferences.noteLanguage); nil follows the phone.
+    var preferredLanguage: String?
+    /// The supported locale actually in use for the current note, for the status bubble.
+    @Published private(set) var activeLocaleName: String?
 
     func start() async {
         pressActive = true
@@ -49,13 +51,13 @@ final class NoteRecorder: ObservableObject {
             return
         }
         guard stillWanted() else { state = .idle; return }
-        let locale = self.locale
-        let supported = await SpeechTranscriber.supportedLocales
-        guard stillWanted() else { state = .idle; return }
-        guard supported.contains(where: { $0.identifier(.bcp47).lowercased().hasPrefix(locale.language.languageCode?.identifier.lowercased() ?? "zz") }) else {
-            state = .unavailable("On-device transcription does not support \(locale.identifier) yet.")
+        guard let locale = await NoteLanguages.resolve(preferredLanguage) else {
+            let wanted = preferredLanguage ?? Locale.current.identifier
+            state = .unavailable("On-device transcription does not support \(wanted) on this phone. Pick another note language in You › Preferences.")
             return
         }
+        activeLocaleName = Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
+        guard stillWanted() else { state = .idle; return }
         let transcriber = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
         do {
             if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {

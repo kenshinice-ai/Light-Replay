@@ -71,4 +71,6 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 - 线 B（2026-09-30 深夜，分支 `feat/inspect-screen`）：真实的 Inspect 屏。相机预览（AVFoundation）、Capture（照片 + 时刻 / 位置 / 朝向元数据，落库为 InspectionObservation）、Note（按住说话：`SpeechTranscriber` 端侧转写 → Foundation Models `@Generable` 结构化为房间 / 类别 / 情绪 / 摘要，模型不可用时手选）、Like / Concern / Ask 卡片、Measure 入口；Your inspection 页按标签分组；Property 详情显示最近三条。模拟器验证了照片路径（DEBUG 测试照片）与权限按需弹出；**相机、麦克风转写、Foundation Models 三条真机路径未验证**。
 - 未开始：线 C 小 spike（C3 语音结构化的准确率评估要等真机）。
 - 2026-09-30 Codex 审计（`docs/reviews/2026-09-30-progress-foundation-audit.md`）15 条中 13 条属实，已修：闪退（两处闭包缺 `@Sendable`，在 ARKit / 音频队列触发主线程隔离断言）、录音按下松开竞态（代号 generation）、光测量等级只由 `lightLevel` 规则映射、保存失败保留草稿、场景编号读磁盘且不覆盖、删除连照片与场景目录、锚点未锁定时 offset 为 null 且记录 rejected、每帧记录且 `t` 来自 ARFrame 时间戳、校验器要求 `lens` 灯与 `t` 上界、地址改用 MapKit 补全与 `MKLocalSearch`（去掉弃用的 `CLGeocoder`）、pin 失败不关闭表单、存储故障横幅、Measure 绑定房产并落一条 light 观察。未修：`installTap` 弃用警告；QualityEvaluator（F05 第二层）；Room 仍是字符串标签（L0），`Question` 模型未拆出。
-- 待办（Lee）：PCC entitlement；正式商标意见；域名；仓库是否改名。
+- PCC（2026-09-30）：App ID 已启用 Private Cloud Compute，`com.apple.developer.private-cloud-compute` 由 `ios/project.yml` 的 `entitlements` 生成，自动签名的描述文件已含此键；真机构建通过。运行时可用性看 You › About › Device capabilities。
+- Note 语言：列表取自设备 `SpeechTranscriber.supportedLocales`（只列 en / zh），存精确标识，`NoteLanguages.resolve` 做精确 / 文字 / 地区匹配；中文转写真机未验证。
+- 待办（Lee）：正式商标意见；域名；仓库是否改名。

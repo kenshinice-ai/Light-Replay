@@ -9,6 +9,7 @@ struct YouView: View {
     @Query private var properties: [Property]
     @State private var confirmingDelete = false
     @State private var deleteError: String?
+    @State private var noteLanguages: [NoteLanguages.Option] = []
 
     var body: some View {
         NavigationStack {
@@ -35,9 +36,10 @@ struct YouView: View {
                             get: { preferences.noteLanguage ?? "" },
                             set: { preferences.noteLanguage = $0.isEmpty ? nil : $0 })) {
                             Text("Follow phone (\(Locale.current.identifier))").tag("")
-                            Text("English (Australia)").tag("en-AU")
-                            Text("中文（简体）").tag("zh-Hans")
-                            Text("中文（繁體）").tag("zh-Hant")
+                            ForEach(noteLanguages) { Text($0.name).tag($0.id) }
+                        }
+                        if noteLanguages.isEmpty {
+                            Text("No English or Chinese transcription locales reported by this phone yet.").font(.footnote).foregroundStyle(.secondary)
                         }
                         Toggle("Haptics on the timeline", isOn: binding.hapticsEnabled)
                         LabeledContent("Measure height") {
@@ -65,7 +67,10 @@ struct YouView: View {
                 }
             }
             .navigationTitle("You")
-            .task { _ = try? PropertyStore.preferences(in: context) }
+            .task {
+                _ = try? PropertyStore.preferences(in: context)
+                noteLanguages = await NoteLanguages.available()
+            }
             .confirmationDialog("Delete every property, note and measurement on this device?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete everything", role: .destructive) {
                     do { try PropertyStore.deleteEverything(in: context) } catch { deleteError = error.localizedDescription }

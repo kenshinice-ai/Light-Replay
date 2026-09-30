@@ -45,6 +45,11 @@ targets:
         NSMicrophoneUsageDescription: "Hold to dictate a note. Audio is transcribed on this device and not stored."
         NSMotionUsageDescription: "Device motion keeps the sky scan aligned while you turn."
         NSSpeechRecognitionUsageDescription: "Notes you dictate are transcribed on this device. No audio is stored."
+    entitlements:
+      path: PropertyReplay/PropertyReplay.entitlements
+      properties:
+        # Private Cloud Compute (ADR-0010): account entitlement granted; automatic signing registers the capability.
+        com.apple.developer.private-cloud-compute: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay

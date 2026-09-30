@@ -119,8 +119,8 @@ struct InspectView: View {
     private var bubbleText: String {
         if !recorder.transcript.isEmpty { return recorder.transcript }
         switch recorder.state {
-        case .preparing: return "Preparing on-device transcription…"
-        case .recording: return "Listening…"
+        case .preparing: return "Preparing on-device transcription\(recorder.activeLocaleName.map { " (\($0))" } ?? "")…"
+        case .recording: return "Listening\(recorder.activeLocaleName.map { " (\($0))" } ?? "")…"
         case .finishing: return "Finishing…"
         case .unavailable(let why): return why
         case .idle: return ""
@@ -164,7 +164,7 @@ struct InspectView: View {
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     if !recorder.isRecording && draft == nil {
-                        recorder.locale = preferencesRows.first?.noteLocale ?? .current
+                        recorder.preferredLanguage = preferencesRows.first?.noteLanguage
                         Task { await recorder.start() }
                     }
                 }
