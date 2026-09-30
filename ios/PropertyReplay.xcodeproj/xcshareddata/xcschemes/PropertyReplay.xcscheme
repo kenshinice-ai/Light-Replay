@@ -75,6 +75,17 @@
                ReferencedContainer = "container:Packages/CaptureCore">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "PropertyModelTests"
+               BuildableName = "PropertyModelTests"
+               BlueprintName = "PropertyModelTests"
+               ReferencedContainer = "container:Packages/PropertyModel">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

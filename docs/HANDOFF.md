@@ -64,5 +64,6 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 - 文档：蓝图 1.1；ADR-0001 至 0016 全部 Accepted；01 / 12 / 13 / 14 / 15 已按 Property Replay 命题重写。
 - 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App 壳（三个 destination）+ `CaptureCore` 包（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ W1 采集验证器界面；iOS 27 模拟器上构建、运行、6 个测试通过。
 - 线 A W1 已开工：验证器目前记录姿态、一条罗盘读数、一次定位，导出 R0 SceneRecord；下一步在真机上跑，然后加天空分割掩膜与走廊覆盖率。
+- App 壳（2026-09-30 晚）：五个 tab；`PropertyModel` 包（SwiftData：Property、UserPreferences；4 测试）；Properties 的 List / Map、添加房产（Apple 地理编码）、详情页；Inspect tab 按距离选房；Compare 读 You 的优先级、每格 Unknown；You 的优先级 / 偏好 / 隐私与数据 / 高级 / 关于。模拟器上 10 个测试通过、界面走通。
 - 未开始：线 B 原型 A；线 C 小 spike。
 - 待办（Lee）：PCC entitlement；正式商标意见；域名；仓库是否改名。

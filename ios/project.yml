@@ -19,6 +19,8 @@ packages:
     path: Packages/SceneRecord
   CaptureCore:
     path: Packages/CaptureCore
+  PropertyModel:
+    path: Packages/PropertyModel
 targets:
   PropertyReplay:
     type: application
@@ -28,6 +30,7 @@ targets:
     dependencies:
       - package: SceneRecord
       - package: CaptureCore
+      - package: PropertyModel
     info:
       path: PropertyReplay/Info.plist
       properties:
@@ -72,3 +75,4 @@ schemes:
       targets:
         - PropertyReplayTests
         - package: CaptureCore/CaptureCoreTests
+        - package: PropertyModel/PropertyModelTests

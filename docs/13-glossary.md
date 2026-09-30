@@ -16,6 +16,8 @@
 | **Priority** | 用户设定的优先维度与权重，Compare 只比这些 |
 | **Lens** | Replay 的一个视角：Light（V1）、Space（V2）、Privacy / Comfort（V2+）；Sound 不做 |
 | **Prep / Inspect / Replay / Compare / Ask** | 产品的五个短词，对应 Before / During / After |
+| **五个 tab** | Home / Properties / Inspect / Compare / You（docs/14 §1） |
+| **You** | 优先级、个人信息、偏好、隐私与数据、高级设置、关于 |
 | **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015） |
 | **Like / Concern / Ask** | 三个快速标签 |
 | **3 things** | Prep 页只显示的三条提醒 |

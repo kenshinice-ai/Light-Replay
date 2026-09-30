@@ -6,7 +6,8 @@
 
 - 每个屏幕先回答：用户在这一刻的任务是什么（Before / During / After）。不服务任务的元素不出现。
 - 每一个功能都值得用户付出它所需要的时间、注意力和信任；否则删。
-- 三个 destination：Home（正在看的房、下一次 inspection）、Properties（shortlist 与历史）、Compare。不做 AI Tab、Sun Tab、Scan Tab、Finance Tab。
+- 五个 destination，按买家的时间线排（Lee 2026-09-30 定）：**Home**（Before：下一次 inspection、最近的房、添加）、**Properties**（shortlist 与历史；同一批房的 List / Map 两种视图）、**Inspect**（During：居中，选你在哪套房、开始；北极星就是这一下）、**Compare**（After：按 You 里设的优先级）、**You**（优先级、个人信息、偏好、隐私与数据、高级设置、关于）。不做 AI Tab、Sun Tab、Scan Tab、Finance Tab。
+- 地图只放用户自己加的房产（按状态着色的 pin）与当前位置；不放 listing、不放门户数据、不放任何评分。
 - Property 详情是一条滚动层级：Prep → Your inspection → Replay → Questions。不做五个 tab。
 
 ## 2. Apple 八条原则在本产品的落点

@@ -17,6 +17,16 @@ Property
 └─ Comparison[]         id, propertyIds[], cells[{dimension, propertyId, value, level, source}]
 ```
 
+## 1a. 已实现（`ios/Packages/PropertyModel`，SwiftData）
+
+| 模型 | 字段 | 说明 |
+|---|---|---|
+| `Property` | `uuid`、`address`、`suburb?`、`latitude?`、`longitude?`、`source`（manual / shared / sample）、`status`（toInspect / inspected / shortlisted / dropped）、`createdAt`、`inspectionAt?`、`notes?` | 坐标来自 Apple 地理编码，只用于 pin；`sample` 只在 DEBUG 出现且标注虚构 |
+| `UserPreferences` | `displayName`、`priorityRaws[]`（≤ 5）、`targetHeightM`、`hapticsEnabled`、`viewpointToleranceM`、`createdAt` | 单行；`PropertyStore.preferences(in:)` 首次创建 |
+| `PropertyStore` | `container(inMemory:)`、`preferences(in:)`、`deleteEverything(in:)` | 删除是物理删除 |
+
+Inspection、Room、Observation、Question、Comparison 随线 B 与 Phase 2 加入。`Priority` 暂以 `UserPreferences.priorityRaws` 表示（单人）；多人（couple 模式）时拆成独立模型。
+
 ## 2. Observation
 
 | 字段 | 类型 | 说明 |

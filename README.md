@@ -46,10 +46,11 @@ light_replay/
 ├── docs/                     规范、ADR、评审、方案（见上表）
 ├── ios/
 │   ├── project.yml · PropertyReplay.xcodeproj（生成物）
-│   ├── PropertyReplay/       App 壳 + W1 采集验证器界面
+│   ├── PropertyReplay/       五个 tab：Home / Properties（List·Map）/ Inspect / Compare / You；W1 采集验证器
 │   └── Packages/
 │       ├── SceneRecord/      测量载荷的校验器与 CLI（规范的 oracle，Swift，28 测试）
-│       └── CaptureCore/      CaptureLog、SceneRecordBuilder、CaptureRecorder（ARKit，5 测试）
+│       ├── CaptureCore/      CaptureLog、SceneRecordBuilder、CaptureRecorder（ARKit，5 测试）
+│       └── PropertyModel/    Property、UserPreferences、PropertyStore（SwiftData，4 测试）
 ├── engine/
 │   ├── lightreplay/          Python 参考实现（scenerecord.py）
 │   └── tests/                含 Swift 跨语言一致性测试

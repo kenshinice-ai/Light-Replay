@@ -19,6 +19,27 @@
 - 建档后 Property 页出现：hero 图（用户分享的或自己拍的）、地址、来源标签、Prep。
 - 不做：抓取门户；持续 preload；planning / hazard。
 
+## 2a. Properties：List 与 Map
+
+- 同一批房产，两种视图，分段控件切换。List 按状态分组（To inspect / Inspected / Shortlisted / Dropped），左滑删除。
+- Map 用 Apple Maps：每套有坐标的房一个 pin，按状态着色；点 pin 出卡片进详情；显示当前位置；没有坐标的房在底部计数提示。地图上只有用户自己的东西。
+- 详情页是一条滚动层级：地址与小地图、状态、看房时间 → Prep → Your inspection → Replay → 删除。
+
+## 2b. Inspect tab（During）
+
+- 居中的 tab。列出房产，允许定位后按距离排序（定位在这一步请求）；选中即进入 Inspect 模式（§4）。
+- 没有房产时提示先添加；不做"无房产也能开始"。
+
+## 2c. You tab
+
+- **Priorities**：最多五个维度，Compare 只比这些；不产生分数。
+- **Profile**：名字（可选）；伴侣共享 Phase 3。
+- **Preferences**：时间轴 haptics；默认 Measure 高度（坐姿眼高 1.15 m）。
+- **Advanced（spike）**：Viewpoint 容差（0.10 / 0.15 / 0.25 实验用）；采集验证器入口。
+- **Privacy & data**：一句话说明什么留在设备；房产计数；删除全部（确认后物理删除）。
+- **About**：版本；证据标签说明；存储健康提示。
+- 原则：只放今天就起作用的控件；不做假开关。
+
 ## 3. Prep：3 things worth noticing
 
 只显示三条，每条带等级与"怎么验证"：
