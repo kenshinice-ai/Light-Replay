@@ -210,7 +210,7 @@ struct InspectView: View {
 
     private func endNote() async {
         let text = await recorder.stop()
-        if case .unavailable(let why) = recorder.state { message = why; return }
+        if case .unavailable = recorder.state { return }   // the transcript bubble already shows the reason
         guard !text.isEmpty else { return }
         var newDraft = ObservationDraft(kind: .voice, room: room, text: text, sensors: sensors.snapshot)
         newDraft.modelNote = NoteStructurer.availabilityNote
