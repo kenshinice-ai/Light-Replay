@@ -35,6 +35,20 @@
                ReferencedContainer = "container:PropertyReplay.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9E6D8044817885D9918B7D3A"
+               BuildableName = "PropertyReplayUITests.xctest"
+               BlueprintName = "PropertyReplayUITests"
+               ReferencedContainer = "container:PropertyReplay.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,17 @@
                BlueprintIdentifier = "5085261A09EB199595D7BC7D"
                BuildableName = "PropertyReplayTests.xctest"
                BlueprintName = "PropertyReplayTests"
+               ReferencedContainer = "container:PropertyReplay.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9E6D8044817885D9918B7D3A"
+               BuildableName = "PropertyReplayUITests.xctest"
+               BlueprintName = "PropertyReplayUITests"
                ReferencedContainer = "container:PropertyReplay.xcodeproj">
             </BuildableReference>
          </TestableReference>

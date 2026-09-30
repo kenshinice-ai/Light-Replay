@@ -23,6 +23,15 @@ struct PropertyReplayApp: App {
     @MainActor
     private static func makeContainer() -> ModelContainer {
         let health = StoreHealth.shared
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest") {
+            // UI tests: a clean in-memory library with the fictional samples on every launch; never touches real data.
+            let container = try! PropertyStore.container(inMemory: true)
+            try? SampleData.insert(into: container.mainContext)
+            health.mode = .deviceOnly
+            return container
+        }
+        #endif
         if SyncSettings.isEnabled {
             do {
                 let container = try PropertyStore.container(iCloudSync: true)

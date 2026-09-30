@@ -79,11 +79,13 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 照片与测量记录存在行上；旧文件启动时迁移 | ✓ | ✓ | 装机即迁移，待 Lee 确认旧照片仍在 | |
 | 测量先落待关联文件，存库失败可重试、重启补关联 | ✓ | ✓ 幂等 / 串房 / 孤儿 | — | |
 | 删除：单事务、失败回滚并提示 | ✓ | ✓ 权限错误上抛 | — | |
-| 草稿单一来源、AI 晚到不覆盖买家修改、Done 前确认 | ✓ | — | — | 需要真机手测：说完立刻改房间，再等 AI 返回 |
+| 草稿单一来源、AI 晚到不覆盖买家修改、Done 前确认 | ✓ | ✓ UI 测试 `InspectFlowUITests`（拍照 / 笔记 / 保存 / 丢弃 / Done 两种选择） | 21:24 保存即崩已修，待 Lee 复测 | 崩溃原因：卡片用了强制解包的 `Binding($draft)`，保存后 SwiftUI 再读一次即崩；UI 测试已证明能复现它 |
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；Swift / Python 1e-7° | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
 | 天空分割（相机帧 → 可见域网格）、QualityEvaluator、测量结果页与回放 | — | — | — | 第三批剩余；SunEngine 已可接入 |
+
+UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风。约 1 分钟，改 Inspect 必跑。
 
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 

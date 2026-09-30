@@ -32,9 +32,9 @@ struct InspectView: View {
                 if draft == nil && (recorder.state != .idle || !recorder.transcript.isEmpty) {
                     transcriptBubble
                 }
-                if let binding = Binding($draft) {
-                    ObservationCard(draft: binding, rooms: Self.defaultRooms, onSave: { _ = save() }, onDiscard: { draft = nil })
-                        .id(binding.wrappedValue.id)
+                if let current = draft {
+                    ObservationCard(draft: draftBinding(current), rooms: Self.defaultRooms, onSave: { _ = save() }, onDiscard: { draft = nil })
+                        .id(current.id)
                         .padding(.horizontal)
                         .padding(.bottom, 8)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -86,7 +86,10 @@ struct InspectView: View {
                         Text(camera.lastError ?? "Starting camera…").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         #if DEBUG
                         if !camera.isAvailable {
+                            // Simulator stand-ins for the camera and microphone so the UI tests walk the real draft paths.
                             Button("Add test photo (simulator)") { Task { await captureTestPhoto() } }.font(.footnote)
+                            Button("Add test note (simulator)") { makeVoiceDraft("The living room felt darker than the listing photos") }.font(.footnote)
+                                .disabled(draft != nil)
                         }
                         #endif
                     }
@@ -228,9 +231,21 @@ struct InspectView: View {
     }
     #endif
 
+    /// Binds the card to the draft without force-unwrapping: SwiftUI reads the binding once more while the card is
+    /// removed, after Save or Discard has set `draft` to nil (device crash 2026-09-30 21:24). Writes only land on the
+    /// same draft.
+    private func draftBinding(_ current: ObservationDraft) -> Binding<ObservationDraft> {
+        Binding(get: { draft ?? current },
+                set: { newValue in if draft?.id == newValue.id { draft = newValue } })
+    }
+
     private func endNote() async {
         let text = await recorder.stop()
         if case .unavailable = recorder.state { return }   // the transcript bubble already shows the reason
+        makeVoiceDraft(text)
+    }
+
+    private func makeVoiceDraft(_ text: String) {
         guard !text.isEmpty, draft == nil else { return }
         var newDraft = ObservationDraft(kind: .voice, room: room, text: text, sensors: sensors.snapshot)
         newDraft.modelNote = NoteStructurer.availabilityNote

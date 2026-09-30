@@ -66,6 +66,18 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: "NO"
+  PropertyReplayUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: PropertyReplayUITests
+    dependencies:
+      - target: PropertyReplay
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: PropertyReplay
   PropertyReplayTests:
     type: bundle.unit-test
     platform: iOS
@@ -85,12 +97,14 @@ schemes:
       targets:
         PropertyReplay: all
         PropertyReplayTests: [test]
+        PropertyReplayUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - PropertyReplayTests
+        - PropertyReplayUITests
         - package: CaptureCore/CaptureCoreTests
         - package: PropertyModel/PropertyModelTests
         - package: SunEngine/SunEngineTests
