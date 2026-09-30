@@ -32,3 +32,6 @@ report/out/
 # Secrets
 .env
 .env.*
+
+# Strategy archive (private; contains licence and channel details) — never commit
+light_replay_history/
