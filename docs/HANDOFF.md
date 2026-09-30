@@ -62,15 +62,33 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 - `light_replay_history/` 与 `field/data/`：不入库。
 - 不改写共享历史；只在 Lee 要求时 commit / push。
 
-## 7. 当前状态（2026-09-30）
+## 7. 当前状态（2026-09-30 深夜）
 
-- 文档：蓝图 1.1；ADR-0001 至 0016 全部 Accepted；01 / 12 / 13 / 14 / 15 已按 Property Replay 命题重写。
-- 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App + `CaptureCore`（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ `PropertyModel`；模拟器测试数以 `xcodebuild test` 的输出为准（HANDOFF 不再手抄计数）。
-- 线 A W1 已开工：验证器记录每帧姿态、全部罗盘读数、一次定位，导出 R0 SceneRecord。**2026-09-30 真机首跑（iPhone 17 Pro，iOS 27.0.1）成功**：167 帧、157 帧正常追踪、最大漂移 0.14 m、罗盘 ±13°、定位 ±8 m，Python 校验通过。下一步天空分割掩膜与走廊覆盖率。北向候选现在写的是 Δ（罗盘读数减去同步帧的相机 AR 方位角），前提是"CLHeading 竖持时等于后摄真方位"，这个映射要按 docs/05 truth 组用日晷验证。
-- App 壳（2026-09-30 晚）：五个 tab；`PropertyModel` 包（SwiftData：Property、UserPreferences；4 测试）；Properties 的 List / Map、添加房产（Apple 地理编码）、详情页；Inspect tab 按距离选房；Compare 读 You 的优先级、每格 Unknown；You 的优先级 / 偏好 / 隐私与数据 / 高级 / 关于。模拟器上 10 个测试通过、界面走通。
-- 线 B（2026-09-30 深夜，分支 `feat/inspect-screen`）：真实的 Inspect 屏。相机预览（AVFoundation）、Capture（照片 + 时刻 / 位置 / 朝向元数据，落库为 InspectionObservation）、Note（按住说话：`SpeechTranscriber` 端侧转写 → Foundation Models `@Generable` 结构化为房间 / 类别 / 情绪 / 摘要，模型不可用时手选）、Like / Concern / Ask 卡片、Measure 入口；Your inspection 页按标签分组；Property 详情显示最近三条。模拟器验证了照片路径（DEBUG 测试照片）与权限按需弹出；**相机、麦克风转写、Foundation Models 三条真机路径未验证**。
-- 未开始：线 C 小 spike（C3 语音结构化的准确率评估要等真机）。
-- 2026-09-30 Codex 审计（`docs/reviews/2026-09-30-progress-foundation-audit.md`）15 条中 13 条属实，已修：闪退（两处闭包缺 `@Sendable`，在 ARKit / 音频队列触发主线程隔离断言）、录音按下松开竞态（代号 generation）、光测量等级只由 `lightLevel` 规则映射、保存失败保留草稿、场景编号读磁盘且不覆盖、删除连照片与场景目录、锚点未锁定时 offset 为 null 且记录 rejected、每帧记录且 `t` 来自 ARFrame 时间戳、校验器要求 `lens` 灯与 `t` 上界、地址改用 MapKit 补全与 `MKLocalSearch`（去掉弃用的 `CLGeocoder`）、pin 失败不关闭表单、存储故障横幅、Measure 绑定房产并落一条 light 观察。未修：`installTap` 弃用警告；QualityEvaluator（F05 第二层）；Room 仍是字符串标签（L0），`Question` 模型未拆出。
-- PCC（2026-09-30）：App ID 已启用 Private Cloud Compute，`com.apple.developer.private-cloud-compute` 由 `ios/project.yml` 的 `entitlements` 生成，自动签名的描述文件已含此键；真机构建通过；iPhone 17 Pro 上 Device capabilities 显示 Foundation Models（端侧）与 Private Cloud Compute 均为 Available。
-- Note 语言：列表取自设备 `SpeechTranscriber.supportedLocales`（只列 en / zh），存精确标识，`NoteLanguages.resolve` 做精确 / 文字 / 地区匹配；2026-09-30 真机中文转写已跑通（Lee 验证）。
+状态词分四档，不混用：**源码**（代码在仓库里）→ **测试**（模拟器或包测试通过）→ **真机**（Lee 或 Claude 在 iPhone 17 Pro / iOS 27.0.1 上走过）→ **现场**（有 `field/` 记录编号）。没有任何一项到"现场"。
+
+| 能力 | 源码 | 测试 | 真机 | 备注 |
+|---|---|---|---|---|
+| 文档：蓝图 1.1，ADR-0001–0017 | ✓ | — | — | ADR-0017 为 iCloud 同步 |
+| SceneRecord 格式与校验（Swift / Python 一致） | ✓ | ✓ | — | `scripts/test.sh` |
+| R0 采集验证器（每帧姿态、全部罗盘读数、一次定位） | ✓ | ✓ | ✓ 首跑 167 帧、漂移 0.14 m、罗盘 ±13°、定位 ±8 m | 北向候选依赖"竖持时 CLHeading = 后摄方位"假设，待日晷验证 |
+| 五个 tab、Properties List / Map、地址补全 | ✓ | ✓ | ✓ | |
+| Inspect：拍照、按住说话、Like / Concern / Ask、Measure 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | |
+| 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
+| PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
+| iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ 容器与推送已注册，App 正常启动 | 双设备同步、离线再上线、删除传播待 Lee 用 iPad 验收 |
+| 照片与测量记录存在行上；旧文件启动时迁移 | ✓ | ✓ | 装机即迁移，待 Lee 确认旧照片仍在 | |
+| 测量先落待关联文件，存库失败可重试、重启补关联 | ✓ | ✓ 幂等 / 串房 / 孤儿 | — | |
+| 删除：单事务、失败回滚并提示 | ✓ | ✓ 权限错误上抛 | — | |
+| 草稿单一来源、AI 晚到不覆盖买家修改、Done 前确认 | ✓ | — | — | 需要真机手测：说完立刻改房间，再等 AI 返回 |
+| 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
+| 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
+| 天空分割、走廊覆盖率、SunEngine、QualityEvaluator、回放 | — | — | — | 下一阶段（第三批） |
+
+第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
+
+仍然开着的：
+- R08 QualityEvaluator 与 heading 原始样本保留（光线链路，第三批）。
+- `installTap` 在 iOS 27 标为弃用，替代 API 未确认，暂留。
+- CloudKit production schema 部署（上架前）；跨设备同日 `scene_id` 冲突（ADR-0017 后果）。
+- Room 仍是字符串标签（L0），`Question` 模型未拆出。
 - 待办（Lee）：正式商标意见；域名；仓库是否改名。

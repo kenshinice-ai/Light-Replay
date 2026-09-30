@@ -39,6 +39,7 @@
 | 14 | 数据入口：用户分享优先；Domain API 不进首发 | Domain 条款 7.6(d) 禁止向第三方展示；REA 无开放 API | [ADR-0014](decisions/ADR-0014-data-entry-tiers.md) |
 | 15 | Inspect 模式 = Capture / Note / Measure；push-to-talk；不做 Sound lens | 看房只有 20 分钟；连续录音撞监控设备法 | [ADR-0015](decisions/ADR-0015-inspect-mode-contract.md) |
 | 16 | 产品名 Property Replay | Property Lens 有四家近似；Property Replay 商标检索 0 条 | [ADR-0016](decisions/ADR-0016-product-name.md) |
+| 17 | 资料库同步到用户自己的 iCloud 私有库；照片和记录跟着行走 | 回家在 iPad 上复看；删除与保存变成一个事务 | [ADR-0017](decisions/ADR-0017-icloud-private-sync.md) |
 
 ## 3. 首发范围（V1 = MVP v0，`12-roadmap.md` Phase 2）
 

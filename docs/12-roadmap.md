@@ -20,7 +20,7 @@
 - [x] Xcode 工程（xcodegen）：App target `PropertyReplay`，bundle `com.pwegroup.propertyreplay`，iOS 27；CaptureCore 包（CaptureLog、SceneRecordBuilder、CaptureRecorder）与 W1 采集验证器界面；模拟器上构建、运行、测试通过（2026-09-30）
 - [x] App 壳：五个 tab、PropertyModel（SwiftData）、Properties List / Map、添加房产、Inspect 选房、Compare 骨架、You（2026-09-30）
 - [x] 线 B 第一版 Inspect 屏：Capture / Note / Measure、观察落库、Your inspection（2026-09-30，PR #2；真机路径待验证）
-- [ ] PCC entitlement 申请状态（Lee）
+- [x] PCC entitlement（2026-09-30 获批并写入 App ID；真机 Device capabilities 显示 Available；业务调用尚未接入）
 - [ ] 正式商标意见（上架前）
 
 ## Phase 1 · 并行验证（第 1–3 周）

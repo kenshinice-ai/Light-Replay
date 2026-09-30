@@ -4,7 +4,7 @@
 
 把 20 分钟看房，变成一份可以回放、比较、验证的房产记忆。其中最硬的一块：站在你会生活的位置扫一次天空，20 秒后得到这个点一年的直射阳光，每个数字带来源、精度、未计入项。
 
-状态：**Phase 1 · 并行验证**（2026-09-30 起）。文档、数据层、Xcode 工程完成；线 A 采集验证器已在模拟器跑通。下一步见文末。
+状态：**Phase 1 · 并行验证**（2026-09-30 起）。文档、数据层、Xcode 工程完成；真机已跑通 R0 采集、Inspect（拍照、中英文语音笔记）、端侧模型与 PCC 能力检查、iCloud 私有库同步。下一步见文末。
 
 ## 三条不变的原则
 
@@ -33,7 +33,7 @@
 | 14 | [docs/12-roadmap.md](docs/12-roadmap.md) | Phase 0–4、汇合门、kill criteria |
 | 15 | [docs/13-glossary.md](docs/13-glossary.md) | 名词表 |
 | 16 | [docs/14-design-principles.md](docs/14-design-principles.md) | 设计原则与 PR 评审六问 |
-| — | [docs/decisions/](docs/decisions/README.md) | ADR-0001 至 0016 |
+| — | [docs/decisions/](docs/decisions/README.md) | ADR-0001 至 0017 |
 | — | [docs/reviews/](docs/reviews/2026-09-10-blueprint-v1-review.md) | 评审记录与复算脚本 |
 | — | [docs/proposals/](docs/proposals/2026-09-30-property-lens-v2-response.md) | 已批准的方案及其来源 |
 | — | 策略稿存档 | `light_replay_history/`，被 `.gitignore` 排除，不入库、不公开 |
@@ -75,4 +75,4 @@ Lee：决定、现场、渠道。Paradise Production：采集、真值、Light P
 
 ## 下一步
 
-Phase 0 完成。Phase 1 已开工：线 A W1 采集验证器已在模拟器上跑通壳子，下一步真机记录一次 OneTake 并导出 SceneRecord，然后接天空分割与走廊覆盖率；线 B 五屏原型与线 C 三个小 spike 待开工（`docs/12-roadmap.md`）。
+Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）按第二轮复审补齐；下一步是最小日照测量闭环：保存测量所需的图像 / 深度 / 姿态，天空分割与走廊覆盖率，SunEngine，QualityEvaluator，再到庭院单点白卡延时验收（`docs/12-roadmap.md`、`docs/HANDOFF.md` §7）。

@@ -20,6 +20,7 @@
 | [ADR-0014](ADR-0014-data-entry-tiers.md) | 数据入口分层：用户分享优先；Domain API 不进首发 | Accepted |
 | [ADR-0015](ADR-0015-inspect-mode-contract.md) | Inspect 模式：Capture / Note / Measure；push-to-talk；不做 Sound lens | Accepted |
 | [ADR-0016](ADR-0016-product-name.md) | 产品名 Property Replay；Light Replay 是功能名 | Accepted |
+| [ADR-0017](ADR-0017-icloud-private-sync.md) | 资料库同步到用户自己的 iCloud 私有库；数据库是唯一事实来源 | Accepted |
 | [ADR-0000](ADR-0000-template.md) | 模板 | — |
 
 待写：天空分割路径的最终选型（W1 评估后）；D_near 与漂移阈值（spike 后）；对外中文名；仓库改名；Finance bridge 的独立 workflow 设计（Phase 4）。
