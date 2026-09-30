@@ -32,3 +32,13 @@ report/out/
 # Secrets
 .env
 .env.*
+
+# Strategy archive (private; contains licence and channel details) — never commit
+light_replay_history/
+
+# Xcode (generated project is committed; user state is not)
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# iCloud conflict copies of the generated project
+ios/* 2.xcodeproj/
