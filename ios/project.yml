@@ -21,6 +21,8 @@ packages:
     path: Packages/CaptureCore
   PropertyModel:
     path: Packages/PropertyModel
+  SunEngine:
+    path: Packages/SunEngine
 targets:
   PropertyReplay:
     type: application
@@ -31,6 +33,7 @@ targets:
       - package: SceneRecord
       - package: CaptureCore
       - package: PropertyModel
+      - package: SunEngine
     info:
       path: PropertyReplay/Info.plist
       properties:
@@ -90,3 +93,4 @@ schemes:
         - PropertyReplayTests
         - package: CaptureCore/CaptureCoreTests
         - package: PropertyModel/PropertyModelTests
+        - package: SunEngine/SunEngineTests

@@ -14,6 +14,7 @@
 		0E13B8F961E09FDBBEA19626 /* PropertiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DCCB9B4BF56A4C8FB64575 /* PropertiesView.swift */; };
 		278034AA9B745A9FF6666D9D /* NoteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA00CC1C2542D85E562623F6 /* NoteRecorder.swift */; };
 		36DE00370C3892C83D871D40 /* InspectionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF1128E73AC7952324860FC0 /* InspectionSummaryView.swift */; };
+		3864C9F563D7D09830C87EBD /* SunEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 29E364CF9369492736B77E96 /* SunEngine */; };
 		52523CE7DB46449B1C6B952D /* InspectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4E2A367577C1588BF7A9CE /* InspectView.swift */; };
 		66E8D2756E4EDCFA4C58F67A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32583E442822AE331F28FD7 /* HomeView.swift */; };
 		6AE5ED6273982D818E109853 /* NoteLanguages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E87FE261D00BF3163A2AF0 /* NoteLanguages.swift */; };
@@ -63,6 +64,7 @@
 		56E87FE261D00BF3163A2AF0 /* NoteLanguages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteLanguages.swift; sourceTree = "<group>"; };
 		5A807E1AE58B536786E0A718 /* InspectTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectTabView.swift; sourceTree = "<group>"; };
 		5F51AF5184C57B464DAE084D /* CaptureCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CaptureCore; path = Packages/CaptureCore; sourceTree = SOURCE_ROOT; };
+		60C83ACAA7B1A65662B5448B /* SunEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SunEngine; path = Packages/SunEngine; sourceTree = SOURCE_ROOT; };
 		68FECAC15F959E4604B7FAB7 /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
 		6A1623A7B8E1C46BD0FBA9C3 /* YouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouView.swift; sourceTree = "<group>"; };
 		7929B7661CCA93A5B9FF7871 /* ObservationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationCard.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				B120201FA882F4571FDE3A10 /* SceneRecord in Frameworks */,
 				8E07C4EA1F0491BB16E951BD /* CaptureCore in Frameworks */,
 				77625D02ED4C1B80B2DBEA88 /* PropertyModel in Frameworks */,
+				3864C9F563D7D09830C87EBD /* SunEngine in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +167,7 @@
 				5F51AF5184C57B464DAE084D /* CaptureCore */,
 				44F1C3A73E49690558614813 /* PropertyModel */,
 				839BCAE5D725B59BB75867EF /* SceneRecord */,
+				60C83ACAA7B1A65662B5448B /* SunEngine */,
 			);
 			path = Packages;
 			sourceTree = "<group>";
@@ -249,6 +253,7 @@
 				D8B964529E5CA08E021EA05F /* SceneRecord */,
 				41DE899D2E42D5E58468055D /* CaptureCore */,
 				B6B612F7C9B3D1071A6F167F /* PropertyModel */,
+				29E364CF9369492736B77E96 /* SunEngine */,
 			);
 			productName = PropertyReplay;
 			productReference = 43937B8CCFECD332E5455D50 /* PropertyReplay.app */;
@@ -307,6 +312,7 @@
 				1D565F13C4D28344FDE698FF /* XCLocalSwiftPackageReference "Packages/CaptureCore" */,
 				3A8C818FBDA9957EB7E77F81 /* XCLocalSwiftPackageReference "Packages/PropertyModel" */,
 				A1B1475A0D5FF2A12914916C /* XCLocalSwiftPackageReference "Packages/SceneRecord" */,
+				3200D44A6EFB1B8E4A835FE5 /* XCLocalSwiftPackageReference "Packages/SunEngine" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 58404C2C225764CACD55AA62 /* Products */;
@@ -603,6 +609,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/CaptureCore;
 		};
+		3200D44A6EFB1B8E4A835FE5 /* XCLocalSwiftPackageReference "Packages/SunEngine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SunEngine;
+		};
 		3A8C818FBDA9957EB7E77F81 /* XCLocalSwiftPackageReference "Packages/PropertyModel" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/PropertyModel;
@@ -614,6 +624,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		29E364CF9369492736B77E96 /* SunEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SunEngine;
+		};
 		41DE899D2E42D5E58468055D /* CaptureCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CaptureCore;

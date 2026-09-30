@@ -9,6 +9,9 @@ mkdir -p "$SCRATCH"
 echo "== SceneRecord (Swift)"
 swift test --package-path "$ROOT/ios/Packages/SceneRecord" --scratch-path "$SCRATCH/SceneRecord-build" 2>&1 | grep -E "Executed|error:" | tail -1
 
+echo "== SunEngine (Swift, parity with engine/tests/fixtures/sun-positions.json)"
+swift test --package-path "$ROOT/ios/Packages/SunEngine" --scratch-path "$SCRATCH/SunEngine-build" 2>&1 | grep -E "Executed|error:" | tail -1
+
 echo "== engine (Python, incl. Swift parity)"
 cd "$ROOT/engine"
 SCENE_RECORD_CHECK="$SCRATCH/SceneRecord-build/debug/scene-record-check" python3 -m unittest discover -s tests 2>&1 | tail -1

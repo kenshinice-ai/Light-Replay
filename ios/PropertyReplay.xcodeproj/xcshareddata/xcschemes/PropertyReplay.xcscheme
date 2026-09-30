@@ -86,6 +86,17 @@
                ReferencedContainer = "container:Packages/PropertyModel">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SunEngineTests"
+               BuildableName = "SunEngineTests"
+               BlueprintName = "SunEngineTests"
+               ReferencedContainer = "container:Packages/SunEngine">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
