@@ -75,7 +75,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | Inspect：拍照、按住说话、Like / Concern / Ask、Measure 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | |
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
 | PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
-| iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ 容器与推送已注册，App 正常启动 | 双设备同步、离线再上线、删除传播待 Lee 用 iPad 验收 |
+| iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ iPhone → iPad：两台真机数据库逐表计数一致，照片与测量记录字节已同步 | 离线再上线、删除传播待测 |
 | 照片与测量记录存在行上；旧文件启动时迁移 | ✓ | ✓ | 装机即迁移，待 Lee 确认旧照片仍在 | |
 | 测量先落待关联文件，存库失败可重试、重启补关联 | ✓ | ✓ 幂等 / 串房 / 孤儿 | — | |
 | 保存 / 删除失败：不崩溃、不留半个改动 | ✓ | ✓ 磁盘存储上的 5 个故障注入（`FailureInjectionTests`） | — | 从不调用 `rollback()`（删过带外部存储的行后它会崩，见组记忆）：失败的插入手动撤销并解除关联；失败的删除保持待删，下次保存完成。全部删除逐行删，批量 `delete(model:)` 与待删行叠加会崩 |
@@ -86,6 +86,8 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 天空分割（相机帧 → 可见域网格）、QualityEvaluator、测量结果页与回放 | — | — | — | 第三批剩余；SunEngine 已可接入 |
 
 UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风。约 1 分钟，改 Inspect 必跑。
+
+界面评审（apple-design）：`reviews/2026-09-30-apple-design-review.md`。扫描界面尚不存在，Measure 目前通向调试页。
 
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
