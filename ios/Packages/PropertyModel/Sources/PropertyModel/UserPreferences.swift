@@ -57,6 +57,8 @@ public final class UserPreferences {
     public var hapticsEnabled: Bool
     /// Viewpoint Lock tolerance in metres (docs/04 §4). Exposed under Advanced so the spike can test 0.10 / 0.15 / 0.25.
     public var viewpointToleranceM: Double
+    /// BCP 47 identifier for dictated notes, e.g. "en-AU" or "zh-Hans"; nil follows the phone's language.
+    public var noteLanguage: String?
     public var createdAt: Date
 
     public init(displayName: String = "", priorities: [PriorityDimension] = [.naturalLight, .space, .privacy],
@@ -67,7 +69,13 @@ public final class UserPreferences {
         self.targetHeightM = targetHeightM
         self.hapticsEnabled = hapticsEnabled
         self.viewpointToleranceM = viewpointToleranceM
+        self.noteLanguage = nil
         self.createdAt = Date()
+    }
+
+    /// The locale dictated notes are transcribed in.
+    public var noteLocale: Locale {
+        noteLanguage.map { Locale(identifier: $0) } ?? .current
     }
 
     public var priorities: [PriorityDimension] {

@@ -95,17 +95,10 @@ struct CaptureValidatorView: View {
         let label = property.map { "\($0.shortAddress)\(roomLabel.map { " · \($0)" } ?? "")" } ?? "Capture validator target"
         guard let log = recorder.stop(targetLabel: label, targetHeightM: height) else { return }
         do {
-            let root = SceneStore.root
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            let sceneID = try SceneRecordBuilder.nextSceneID(in: root, date: log.endedAt, timezone: log.timezone)
-            let document = try SceneRecordBuilder.build(log, sceneID: sceneID)
-            let folder = SceneStore.folder(for: sceneID)
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)   // throws if it exists: never overwrite
-            let file = folder.appending(path: "scene.json")
-            try document.encoded().write(to: file, options: [.atomic, .withoutOverwriting])
-            exportURL = file
+            let result = try SceneExporter.export(log, root: SceneStore.root)
+            exportURL = result.fileURL
             lastError = nil
-            try remember(sceneID: sceneID)
+            try remember(sceneID: result.sceneID)
         } catch {
             lastError = String(describing: error)
         }

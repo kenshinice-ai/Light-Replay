@@ -29,6 +29,9 @@ final class NoteRecorder: ObservableObject {
 
     var isRecording: Bool { state == .recording || state == .preparing }
 
+    /// Locale for transcription; set from UserPreferences.noteLocale before starting.
+    var locale: Locale = .current
+
     func start() async {
         pressActive = true
         switch state {
@@ -46,7 +49,7 @@ final class NoteRecorder: ObservableObject {
             return
         }
         guard stillWanted() else { state = .idle; return }
-        let locale = Locale.current
+        let locale = self.locale
         let supported = await SpeechTranscriber.supportedLocales
         guard stillWanted() else { state = .idle; return }
         guard supported.contains(where: { $0.identifier(.bcp47).lowercased().hasPrefix(locale.language.languageCode?.identifier.lowercased() ?? "zz") }) else {

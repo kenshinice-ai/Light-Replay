@@ -28,6 +28,7 @@
 | D02 light+sensor=measured | 属实 | `level(for:.light,_)` 恒为 Unknown；新增 `lightLevel(qualityLevel:falseValidGuard:bandState:)` 规则 + 测试 |
 | D03 失败仍清草稿 | 属实 | 保存用 do / catch：失败删已写文件、`rollback`、草稿保留并提示；`finish()` 同样 |
 | 补：真机闪退 ×2 | 本轮真机发现 | `ARGeoTrackingConfiguration.checkAvailability` 回调与 `installTap` 闭包补 `@Sendable`（主线程隔离断言在后台队列触发） |
+| 补：真机闪退 ×3（Measure 导出） | 本轮真机发现 | `Data.write` 不能同时用 `.atomic` 与 `.withoutOverwriting`（Foundation 断言），F01 修法引入；导出抽成 `SceneExporter`，加"同编号写两次必须报错"的测试 |
 | 补：ADR-0010 回归 | 子代理补 | `NoteStructurer.summaryWithoutNewNumbers`：摘要里出现转写没有的数字即作废摘要 |
 
 ## 未修（记入 HANDOFF）

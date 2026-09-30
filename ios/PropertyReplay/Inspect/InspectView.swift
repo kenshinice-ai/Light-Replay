@@ -9,6 +9,7 @@ struct InspectView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Query private var preferencesRows: [UserPreferences]
     @Bindable var property: Property
 
     @StateObject private var camera = CameraService()
@@ -161,7 +162,12 @@ struct InspectView: View {
         .contentShape(Rectangle())
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in if !recorder.isRecording && draft == nil { Task { await recorder.start() } } }
+                .onChanged { _ in
+                    if !recorder.isRecording && draft == nil {
+                        recorder.locale = preferencesRows.first?.noteLocale ?? .current
+                        Task { await recorder.start() }
+                    }
+                }
                 .onEnded { _ in Task { await endNote() } }
         )
         .disabled(draft != nil)

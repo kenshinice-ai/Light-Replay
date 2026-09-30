@@ -31,6 +31,14 @@ struct YouView: View {
                         LabeledContent("Partner", value: "Sharing arrives in Phase 3")
                     }
                     Section("Preferences") {
+                        Picker("Note language", selection: Binding(
+                            get: { preferences.noteLanguage ?? "" },
+                            set: { preferences.noteLanguage = $0.isEmpty ? nil : $0 })) {
+                            Text("Follow phone (\(Locale.current.identifier))").tag("")
+                            Text("English (Australia)").tag("en-AU")
+                            Text("中文（简体）").tag("zh-Hans")
+                            Text("中文（繁體）").tag("zh-Hant")
+                        }
                         Toggle("Haptics on the timeline", isOn: binding.hapticsEnabled)
                         LabeledContent("Measure height") {
                             Stepper(String(format: "%.2f m", preferences.targetHeightM), value: binding.targetHeightM, in: 0.3...2.0, step: 0.05)
