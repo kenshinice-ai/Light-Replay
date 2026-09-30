@@ -1,6 +1,8 @@
 # 03 · SceneRecord 数据规范
 
-版本 0.1.0 · 2026-09-10 · Swift 包 `SceneRecord` 与 `engine/lightreplay/scenerecord.py` 以此为准
+版本 0.1.0 · 2026-09-10 · Swift 包 `ios/Packages/SceneRecord` 与 `engine/lightreplay/scenerecord.py` 以此为准
+
+定位：SceneRecord 是 Property 图中 LightObservation 的载荷（ADR-0012，`15-product-model.md`）。一个 TargetPoint 一份；Property 图只引用 `scene_id`。R 等级与时段四态对外映射为证据五级（ADR-0013），映射只在展示层做，不写回本文件。
 
 ## 1. 原则
 

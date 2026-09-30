@@ -6,6 +6,22 @@
 
 | 名词 | 定义 |
 |---|---|
+| **Property Replay** | 产品名（ADR-0016）。Replay 是功能族：Light Replay、Space Replay |
+| **Property** | 产品对象：一套房及其持续生长的记录（ADR-0012） |
+| **Inspection** | 一次到场看房；隶属 Property |
+| **Room** | 用户标注的房间（L0 手工）；隶属 Inspection |
+| **Observation** | 一条现场记录：照片、语音转写、标签、或 LightObservation；带证据等级与来源标签 |
+| **LightObservation** | 以 SceneRecord 为载荷的 Observation |
+| **Question** | 待验证的事，标注问谁（agent / conveyancer / inspector）；由 Ask 标签或 followUp 生成 |
+| **Priority** | 用户设定的优先维度与权重，Compare 只比这些 |
+| **Lens** | Replay 的一个视角：Light（V1）、Space（V2）、Privacy / Comfort（V2+）；Sound 不做 |
+| **Prep / Inspect / Replay / Compare / Ask** | 产品的五个短词，对应 Before / During / After |
+| **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015） |
+| **Like / Concern / Ask** | 三个快速标签 |
+| **3 things** | Prep 页只显示的三条提醒 |
+| **Your inspection** | 看房后的记忆页，不是报告 |
+| **Repeat Inspection Rate** | 北极星：完成第一套后下一套是否主动打开 |
+| **TTFC** | Time to First Capture：进入 Inspect 到第一条记录 |
 | **TargetPoint** | 用户关心的那个点：镜头所在位置 + 确认的高度（如沙发眼高 1.15 m）。结果只对这个点成立 |
 | **OneTake** | 一次采集会话：锚定并拍 Hero、原位扫天、方向确认，一气呵成 |
 | **Hero frame** | OneTake 开始时的高分辨率主照片，结果页的背景 |
@@ -61,6 +77,18 @@
 | **帧级标记** | 对关键帧整体做的判断（有反射、窗帘未拉开、过曝），与逐像素分割区分 |
 | **内参 K** | 相机焦距与主点，把像素变成射线 |
 | **追踪状态** | normal / limited / not available；limited 时帧降权 |
+
+## 证据（ADR-0013）
+
+| 名词 | 定义 |
+|---|---|
+| **Verified** | 用户确认的事实或带出处的授权数据 |
+| **Observed · measured** | 现场传感器测得，过质量门槛 |
+| **Observed · noted** | 现场用户记录 |
+| **Strong indication** | 多来源一致 |
+| **Indicative** | 模型推断，待验证 |
+| **Unknown** | 资料不足；永远显示，不留空 |
+| **来源标签** | listing / user_photo / user_voice / sensor / open_data / model |
 
 ## 验证
 

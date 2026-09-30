@@ -34,3 +34,16 @@ Solmetric SunEye、Solar Pathfinder、Aurora、OpenSolar：地平线采集方法
 - Direct Sun Tracker 是否加入现场天空扫描。
 - Apple 是否把"按时间重打光"做进系统相册。
 - Sunnook 是否公开发布并加入外部遮挡。
+
+## 6. 门户与买家侧工具（2026-09-30 补）
+
+| 对象 | 公开能力 | 与我们的差别 | 状态 |
+|---|---|---|---|
+| Domain（App 与 Developer API） | AI Interactive Floorplans（照片自动匹配房间）、3D tour、估价、shortlist【引 Codex 09-30】；Developer API 按合同报价、条款 7.6(d) 禁止向第三方展示 API 产品【验】 | listing 侧；无现场证据；API 不是消费级入口 | 在售 |
+| realestate.com.au | Property Profiles、历史照片、AI Detected Features、Tour the Property、iGUIDE 3D、ChatGPT 房源搜索【引 Codex 09-30】 | listing 侧；无开放 API | 在售 |
+| Realestate Lens（Promethic Labs，AU） | 买家侧 AI 合同审阅、suburb 研究、看房计划【验】 | 做的是我们明确不做的法律文件；同在买家侧，可能扩展到看房记忆 | pre-launch |
+| PropertyLens（US）/ app.propertylens.au / PropertyLenz | 买家报告与 API、LensAI；澳洲同名站点；房东巡检 App【验】 | 名字冲突（ADR-0016）；能力上是数据报告，不是现场 | 在售 |
+| SunQuest、SunCast | AR 太阳轨迹、阴影【引 Codex 09-30】 | 同第 2 节 | 在售 |
+
+**只有我们与太阳能行业工具做"现场遮挡实测"这一列**；门户与太阳 App 都没有。这是 ADR-0012 里护城河第 0 条的依据。
+
