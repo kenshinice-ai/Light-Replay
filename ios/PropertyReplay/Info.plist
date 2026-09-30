@@ -25,18 +25,29 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Property Replay uses the camera to capture what you see during an inspection and to measure how much direct sun reaches the spot where you are standing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Your location sets where the sun is in the sky for this property. It is kept on this device.</string>
+	<string>Your location sets where the sun is in the sky for this property. It stays with your records on this device and in your private iCloud.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hold to dictate a note. Audio is transcribed on this device and not stored.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Device motion keeps the sky scan aligned while you turn.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Notes you dictate are transcribed on this device. No audio is stored.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 </dict>
 </plist>

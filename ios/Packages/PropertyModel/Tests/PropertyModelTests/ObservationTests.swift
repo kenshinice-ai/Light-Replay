@@ -18,7 +18,7 @@ final class ObservationTests: XCTestCase {
         first.endedAt = Date()
         let next = PropertyStore.openInspection(for: property, in: context)
         XCTAssertNotEqual(first.uuid, next.uuid)
-        XCTAssertEqual(property.inspections.count, 2)
+        XCTAssertEqual(property.inspections?.count, 2)
     }
 
     func testObservationLevelsFollowRules() {
@@ -37,14 +37,13 @@ final class ObservationTests: XCTestCase {
         let context = try makeContext()
         let property = Property(address: "2 Test Lane, Nowhere VIC 3000")
         context.insert(property)
-        let inspection = PropertyStore.openInspection(for: property, in: context)
         let observation = InspectionObservation(kind: .voice, category: .naturalLight, source: .userVoice, text: "Ask about the extension permit", roomLabel: "Living")
         observation.sentiment = .ask
-        observation.inspection = inspection
-        inspection.observations.append(observation)
-        try context.save()
+        observation.photoData = Data([0xFF, 0xD8])
+        try PropertyStore.record(observation, for: property, in: context)
         XCTAssertTrue(observation.followUp)
         XCTAssertEqual(property.allObservations.count, 1)
+        XCTAssertEqual(property.status, .inspected, "recording something marks the property inspected")
         context.delete(property)
         try context.save()
         XCTAssertEqual(try context.fetch(FetchDescriptor<InspectionObservation>()).count, 0)

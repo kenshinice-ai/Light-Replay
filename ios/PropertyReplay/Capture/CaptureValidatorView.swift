@@ -4,24 +4,28 @@ import SceneRecord
 import SwiftData
 import SwiftUI
 
-/// W1 capture validator (docs/07 W1). One button, live stats, export of the SceneRecord. When opened from Inspect it
-/// is bound to a property and leaves an `InspectionObservation(kind: .light)` behind; from You › Advanced it is unbound.
+/// W1 capture validator (docs/07 W1). One button, live stats, a shareable SceneRecord. When opened from Inspect it is
+/// bound to a property and leaves an `InspectionObservation(kind: .light)` carrying the record; from You › Advanced it is
+/// unbound and only shared. A bound record goes to disk as a PendingCapture before the database is touched (R02).
 struct CaptureValidatorView: View {
     let property: Property?
     let roomLabel: String?
 
     @Environment(\.modelContext) private var context
-    @Query private var preferencesRows: [UserPreferences]
+    @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @StateObject private var recorder = CaptureRecorder()
     @State private var exportURL: URL?
     @State private var lastError: String?
+    /// Recorded and safe on disk, but not yet on a row. Retried here, or on the next launch.
+    @State private var pending: PendingCapture?
+    @State private var attachError: String?
     @State private var stoppedWithoutExport = false
 
     var body: some View {
         List {
             Section(property?.shortAddress ?? "Unbound debug capture") {
                 if let property { Text("\(property.address)\(roomLabel.map { " · \($0)" } ?? "")").font(.footnote).foregroundStyle(.secondary) }
-                else { Text("Not attached to a property. The record is exported but not remembered.").font(.footnote).foregroundStyle(.secondary) }
+                else { Text("Not attached to a property. The record can be shared but is not remembered.").font(.footnote).foregroundStyle(.secondary) }
             }
             switch recorder.availability {
             case .supported:
@@ -46,9 +50,17 @@ struct CaptureValidatorView: View {
                     ContentUnavailableView("Needs a real iPhone", systemImage: "iphone.slash", description: Text(reason))
                 }
             }
+            if let pending {
+                Section("Not added to the property yet") {
+                    Text(attachError ?? "Saving…").font(.footnote).foregroundStyle(.orange)
+                    Text("The record \(pending.sceneID) is kept on this phone and is added automatically the next time the app opens.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Try again") { attach() }
+                }
+            }
             if let exportURL {
                 Section("Last record") {
-                    Text(exportURL.deletingLastPathComponent().lastPathComponent).font(.footnote.monospaced())
+                    Text(exportURL.deletingPathExtension().lastPathComponent).font(.footnote.monospaced())
                     ShareLink(item: exportURL) { Label("Share scene.json", systemImage: "square.and.arrow.up") }
                 }
             }
@@ -95,25 +107,41 @@ struct CaptureValidatorView: View {
         let label = property.map { "\($0.shortAddress)\(roomLabel.map { " · \($0)" } ?? "")" } ?? "Capture validator target"
         guard let log = recorder.stop(targetLabel: label, targetHeightM: height) else { return }
         do {
-            let result = try SceneExporter.export(log, root: SceneStore.root)
-            exportURL = result.fileURL
+            let legacy = (try? FileManager.default.contentsOfDirectory(atPath: LegacyFiles.scenesRoot.path)) ?? []
+            let taken = PendingCaptures.takenSceneIDs(in: context).union(legacy)
+            let sceneID = SceneRecordBuilder.nextSceneID(taken: taken, date: log.endedAt, timezone: log.timezone)
+            let record = try SceneRecordBuilder.build(log, sceneID: sceneID).encoded()
+            exportURL = try shareCopy(record, sceneID: sceneID)
             lastError = nil
-            try remember(sceneID: result.sceneID)
+            guard let property else { return }
+            let capture = PendingCapture(sceneID: sceneID, propertyUUID: property.uuid, roomLabel: roomLabel,
+                                         capturedAt: log.endedAt, record: record)
+            try PendingCaptures.write(capture)
+            pending = capture
+            attach()
         } catch {
             lastError = String(describing: error)
         }
     }
 
-    /// A light observation on the property's open inspection. Its level is Unknown until an analysis passes (ADR-0013).
-    private func remember(sceneID: String) throws {
-        guard let property else { return }
-        let inspection = PropertyStore.openInspection(for: property, in: context)
-        let observation = InspectionObservation(kind: .light, category: .naturalLight, source: .sensor, roomLabel: roomLabel)
-        observation.sceneId = sceneID
-        observation.text = "Light measurement recorded (analysis pending)"
-        observation.inspection = inspection
-        inspection.observations.append(observation)
-        context.insert(observation)
-        try context.save()
+    /// Puts the pending record on the property's open inspection. Idempotent by scene id.
+    private func attach() {
+        guard let capture = pending, let property else { return }
+        do {
+            try PendingCaptures.commit(capture, to: property, in: context)
+            pending = nil
+            attachError = nil
+        } catch {
+            attachError = "Couldn't add it to the property: \(error.localizedDescription)"
+        }
+    }
+
+    /// A temporary file for the share sheet. The record itself lives on the observation row.
+    private func shareCopy(_ record: Data, sceneID: String) throws -> URL {
+        let folder = URL.temporaryDirectory.appending(path: "scenes", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = folder.appending(path: "\(sceneID).json")
+        try record.write(to: url, options: .atomic)
+        return url
     }
 }

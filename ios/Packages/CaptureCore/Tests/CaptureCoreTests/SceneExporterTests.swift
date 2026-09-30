@@ -28,4 +28,11 @@ final class SceneExporterTests: XCTestCase {
         let document = try SceneRecordBuilder.build(emptyLog(), sceneID: first.sceneID)
         XCTAssertThrowsError(try SceneExporter.write(document, sceneID: first.sceneID, root: root))
     }
+
+    func testNextIDSkipsEveryTakenIDOfTheDayOnly() {
+        let log = emptyLog()
+        let id = { (n: Int) in SceneRecordBuilder.sceneID(date: log.endedAt, sequence: n, timezone: log.timezone) }
+        XCTAssertEqual(SceneRecordBuilder.nextSceneID(taken: [], date: log.endedAt, timezone: log.timezone), id(1))
+        XCTAssertEqual(SceneRecordBuilder.nextSceneID(taken: [id(1), id(4), "PR-19990101-07"], date: log.endedAt, timezone: log.timezone), id(5))
+    }
 }

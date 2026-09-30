@@ -9,7 +9,8 @@ struct InspectView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Query private var preferencesRows: [UserPreferences]
+    @Environment(\.scenePhase) private var scenePhase
+    @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @Bindable var property: Property
 
     @StateObject private var camera = CameraService()
@@ -20,6 +21,7 @@ struct InspectView: View {
     @State private var flash = false
     @State private var busy = false
     @State private var message: String?
+    @State private var confirmingExit = false
 
     var body: some View {
         ZStack {
@@ -30,8 +32,9 @@ struct InspectView: View {
                 if draft == nil && (recorder.state != .idle || !recorder.transcript.isEmpty) {
                     transcriptBubble
                 }
-                if let draft {
-                    ObservationCard(draft: draft, rooms: Self.defaultRooms, onSave: save, onDiscard: { self.draft = nil })
+                if let binding = Binding($draft) {
+                    ObservationCard(draft: binding, rooms: Self.defaultRooms, onSave: { _ = save() }, onDiscard: { draft = nil })
+                        .id(binding.wrappedValue.id)
                         .padding(.horizontal)
                         .padding(.bottom, 8)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -43,10 +46,20 @@ struct InspectView: View {
         .animation(.easeOut(duration: 0.2), value: draft != nil)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)   // camera-style: the three actions are the only controls (docs/14 §1)
+        .navigationBarBackButtonHidden(draft != nil || recorder.isRecording)   // leaving goes through Done, which asks (R04)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { finish() }
+                Button("Done") { Task { await requestFinish() } }
             }
+        }
+        .confirmationDialog(unsavedTitle, isPresented: $confirmingExit, titleVisibility: .visible) {
+            Button("Save and finish") { if save() { finish() } }
+            Button("Discard and finish", role: .destructive) { draft = nil; finish() }
+            Button("Keep inspecting", role: .cancel) {}
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Never keep the microphone open in the background; what was said becomes a draft (R05).
+            if phase == .background, recorder.isRecording { Task { await endNote() } }
         }
         .task {
             sensors.start()
@@ -218,50 +231,58 @@ struct InspectView: View {
     private func endNote() async {
         let text = await recorder.stop()
         if case .unavailable = recorder.state { return }   // the transcript bubble already shows the reason
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, draft == nil else { return }
         var newDraft = ObservationDraft(kind: .voice, room: room, text: text, sensors: sensors.snapshot)
         newDraft.modelNote = NoteStructurer.availabilityNote
         draft = newDraft
-        if let suggestion = await NoteStructurer.structure(transcript: text, rooms: Self.defaultRooms) {
+        // The suggestion arrives later and merges only into this same draft, never into a newer one (R03).
+        let id = newDraft.id
+        Task {
+            guard let suggestion = await NoteStructurer.structure(transcript: text, rooms: Self.defaultRooms),
+                  draft?.id == id else { return }
             draft?.apply(suggestion)
         }
     }
 
-    private func save(_ draft: ObservationDraft) {
-        guard StoreHealth.shared.isPersistent else { message = "Storage problem: this note cannot be saved right now."; return }
-        let inspection = PropertyStore.openInspection(for: property, in: context)
+    /// Saves the draft on screen. Returns false and keeps the draft when anything fails.
+    private func save() -> Bool {
+        guard let draft else { return true }
+        guard StoreHealth.shared.isPersistent else { message = "Storage problem: this note cannot be saved right now."; return false }
         let observation = InspectionObservation(kind: draft.kind, category: draft.category, sentiment: draft.sentiment,
-                                      source: draft.kind == .photo ? .userPhoto : .userVoice,
-                                      text: draft.text, roomLabel: draft.room)
+                                                source: draft.kind == .photo ? .userPhoto : .userVoice,
+                                                text: draft.text, roomLabel: draft.room)
         observation.summary = draft.summary
         observation.modelSuggested = draft.modelSuggested
+        observation.photoData = draft.photoData
         observation.headingDeg = draft.sensors.headingDeg
         observation.headingAccuracyDeg = draft.sensors.headingAccuracyDeg
         observation.latitude = draft.sensors.latitude
         observation.longitude = draft.sensors.longitude
         do {
-            if let data = draft.photoData {
-                observation.mediaPath = try MediaStore.saveJPEG(data, for: observation.uuid)
-            }
-            observation.inspection = inspection
-            inspection.observations.append(observation)
-            context.insert(observation)
-            if property.status == .toInspect { property.status = .inspected }
-            try context.save()
+            try PropertyStore.record(observation, for: property, in: context)
         } catch {
-            MediaStore.delete(observation.mediaPath)
-            context.rollback()
             message = "Couldn't save: \(error.localizedDescription). Your draft is still here."
-            return
+            return false
         }
         message = nil
         self.draft = nil
+        return true
+    }
+
+    private var unsavedTitle: String {
+        draft?.kind == .photo ? "This photo isn't saved yet." : "This note isn't saved yet."
+    }
+
+    /// Done: a note being dictated is finished first; anything unsaved gets an explicit choice (R04).
+    private func requestFinish() async {
+        if recorder.isRecording { await endNote() }
+        if draft != nil { confirmingExit = true } else { finish() }
     }
 
     private func finish() {
         property.openInspection?.endedAt = Date()
         do {
-            try context.save()
+            try PropertyStore.commit(context)
             dismiss()
         } catch {
             message = "Couldn't close the inspection: \(error.localizedDescription)"
@@ -269,18 +290,25 @@ struct InspectView: View {
     }
 }
 
-/// What the card edits before an InspectionObservation exists.
-struct ObservationDraft {
+/// What the card edits before an InspectionObservation exists. One value, owned by InspectView and bound into the card,
+/// so what is on screen is what gets saved (R03). The buyer's choices always win over a late model suggestion.
+struct ObservationDraft: Identifiable {
+    enum Field: Hashable { case room, category, sentiment }
+
+    let id = UUID()
     var kind: ObservationKind
-    var room: String
     var text: String?
     var summary: String?
     var photoData: Data?
-    var category: ObservationCategory = .other
-    var sentiment: Sentiment = .neutral
-    var modelSuggested = false
     var modelNote: String?
     var sensors: InspectSensors.Snapshot
+    private(set) var room: String
+    private(set) var category: ObservationCategory = .other
+    private(set) var sentiment: Sentiment = .neutral
+    /// Fields the buyer set; a suggestion never overwrites them.
+    private(set) var setByBuyer: Set<Field> = []
+    /// Fields that still hold the model's suggestion.
+    private(set) var setByModel: Set<Field> = []
 
     init(kind: ObservationKind, room: String, text: String? = nil, photoData: Data? = nil, sensors: InspectSensors.Snapshot) {
         self.kind = kind
@@ -290,12 +318,25 @@ struct ObservationDraft {
         self.sensors = sensors
     }
 
+    /// Stored as InspectionObservation.modelSuggested: some tag is still the model's, not the buyer's.
+    var modelSuggested: Bool { !setByModel.isEmpty }
+
+    mutating func setRoom(_ value: String) { room = value; buyerSet(.room) }
+    mutating func setCategory(_ value: ObservationCategory) { category = value; buyerSet(.category) }
+    mutating func setSentiment(_ value: Sentiment) { sentiment = value; buyerSet(.sentiment) }
+
     mutating func apply(_ suggestion: NoteStructurer.Suggestion) {
-        if let room = suggestion.room { self.room = room }
-        category = suggestion.category
-        sentiment = suggestion.sentiment
+        if let suggested = suggestion.room, !setByBuyer.contains(.room) { room = suggested; setByModel.insert(.room) }
+        if !setByBuyer.contains(.category) { category = suggestion.category; setByModel.insert(.category) }
+        if !setByBuyer.contains(.sentiment) { sentiment = suggestion.sentiment; setByModel.insert(.sentiment) }
         summary = suggestion.summary
-        modelSuggested = true
-        modelNote = "Suggested by the on-device model · Indicative until you confirm"
+        modelNote = setByModel.isEmpty
+            ? "Summary by the on-device model · Indicative"
+            : "Suggested by the on-device model · Indicative until you confirm"
+    }
+
+    private mutating func buyerSet(_ field: Field) {
+        setByBuyer.insert(field)
+        setByModel.remove(field)
     }
 }

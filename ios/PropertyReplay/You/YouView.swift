@@ -1,3 +1,4 @@
+import CloudKit
 import PropertyModel
 import SwiftData
 import SwiftUI
@@ -5,11 +6,13 @@ import SwiftUI
 /// Priorities, profile, preferences, privacy and data. Only controls that do something today appear here.
 struct YouView: View {
     @Environment(\.modelContext) private var context
-    @Query private var preferencesRows: [UserPreferences]
+    @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @Query private var properties: [Property]
     @State private var confirmingDelete = false
     @State private var deleteError: String?
     @State private var noteLanguages: [NoteLanguages.Option] = []
+    @State private var iCloudAccount: String?
+    @AppStorage(SyncSettings.key) private var syncWanted = true
 
     var body: some View {
         NavigationStack {
@@ -54,24 +57,33 @@ struct YouView: View {
                     }
                 }
                 Section("Privacy & data") {
-                    Text("Addresses go to Apple Maps only to place a pin. Properties, photos, notes and measurements stay on this device; nothing is uploaded unless you share a page.")
+                    Toggle("iCloud sync", isOn: $syncWanted)
+                    LabeledContent("Now", value: storageSummary)
+                    if syncWanted != (StoreHealth.shared.mode == .iCloud) && StoreHealth.shared.isPersistent {
+                        Text("Takes effect the next time you open the app.").font(.footnote).foregroundStyle(.orange)
+                    }
+                    Text("Addresses go to Apple Maps only to place a pin. Properties, photos, notes and measurements stay on this device and, with iCloud sync on, in your private iCloud so your iPad sees them too. No one else, including us, can read them. Nothing else is uploaded unless you share a page.")
                         .font(.footnote).foregroundStyle(.secondary)
                     LabeledContent("Properties", value: "\(properties.count)")
                     Button("Delete everything", role: .destructive) { confirmingDelete = true }
+                    ForEach(StoreHealth.shared.messages, id: \.self) { Text($0).font(.footnote).foregroundStyle(.orange) }
                 }
                 Section("About") {
                     LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
                     NavigationLink("What the evidence labels mean") { EvidenceLegendView() }
                     NavigationLink("Device capabilities") { CapabilitiesView() }
-                    ForEach(StoreHealth.shared.messages, id: \.self) { Text($0).font(.footnote).foregroundStyle(.orange) }
                 }
             }
             .navigationTitle("You")
             .task {
                 _ = try? PropertyStore.preferences(in: context)
                 noteLanguages = await NoteLanguages.available()
+                iCloudAccount = await Self.iCloudAccountStatus()
             }
-            .confirmationDialog("Delete every property, note and measurement on this device?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            .confirmationDialog(StoreHealth.shared.mode == .iCloud
+                                ? "Delete every property, note and measurement on this device and in your iCloud?"
+                                : "Delete every property, note and measurement on this device?",
+                                isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete everything", role: .destructive) {
                     do { try PropertyStore.deleteEverything(in: context) } catch { deleteError = error.localizedDescription }
                 }
@@ -79,6 +91,27 @@ struct YouView: View {
             .alert("Couldn't delete everything", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: { Text(deleteError ?? "") }
+        }
+    }
+}
+
+extension YouView {
+    private var storageSummary: String {
+        switch StoreHealth.shared.mode {
+        case .iCloud: iCloudAccount.map { "iCloud · \($0)" } ?? "iCloud"
+        case .deviceOnly: "This device only"
+        case .memory: "Not saved (storage problem)"
+        }
+    }
+
+    static func iCloudAccountStatus() async -> String {
+        guard let status = try? await CKContainer(identifier: PropertyStore.cloudContainerID).accountStatus() else { return "status unknown" }
+        switch status {
+        case .available: return "signed in"
+        case .noAccount: return "not signed in to iCloud"
+        case .restricted: return "restricted on this device"
+        case .temporarilyUnavailable: return "temporarily unavailable"
+        default: return "status unknown"
         }
     }
 }

@@ -86,18 +86,16 @@ public enum EvidenceSource: String, Codable, Sendable {
 /// A visit to a property. Observations hang off it; one open inspection per property at a time.
 @Model
 public final class Inspection {
-    public var uuid: UUID
-    public var startedAt: Date
+    public var uuid: UUID = UUID()
+    public var startedAt: Date = Date()
     public var endedAt: Date?
     public var property: Property?
     @Relationship(deleteRule: .cascade, inverse: \InspectionObservation.inspection)
-    public var observations: [InspectionObservation]
+    public var observations: [InspectionObservation]? = []
 
-    public init(property: Property, startedAt: Date = Date()) {
-        self.uuid = UUID()
+    /// Insert into a context before attaching to a property (`PropertyStore.openInspection`).
+    public init(startedAt: Date = Date()) {
         self.startedAt = startedAt
-        self.property = property
-        self.observations = []
     }
 
     public var isOpen: Bool { endedAt == nil }
@@ -107,34 +105,38 @@ public final class Inspection {
 /// "Observation"; the Swift name avoids clashing with the Observation module that  expands into.
 @Model
 public final class InspectionObservation {
-    public var uuid: UUID
-    public var kindRaw: String
-    public var categoryRaw: String
-    public var sentimentRaw: String
-    public var levelRaw: String
-    public var sourceRaw: String
+    public var uuid: UUID = UUID()
+    public var kindRaw: String = ObservationKind.tag.rawValue
+    public var categoryRaw: String = ObservationCategory.other.rawValue
+    public var sentimentRaw: String = Sentiment.neutral.rawValue
+    public var levelRaw: String = EvidenceLevel.unknown.rawValue
+    public var sourceRaw: String = EvidenceSource.userPhoto.rawValue
     /// The buyer's words: transcript for voice, caption for photo.
     public var text: String?
     /// One-sentence model summary of a voice note (Indicative), kept apart from the transcript.
     public var summary: String?
-    /// Relative path under the app's observation media folder.
+    /// The photo (JPEG). Kept by the store beside the row and mirrored to iCloud as an asset (ADR-0017), so a row and its
+    /// photo are saved and deleted in one transaction.
+    @Attribute(.externalStorage) public var photoData: Data?
+    /// Legacy (before ADR-0017): relative path under Documents/observations. `LegacyFiles.migrate` moves it into `photoData`.
     public var mediaPath: String?
     public var roomLabel: String?
-    public var capturedAt: Date
+    public var capturedAt: Date = Date()
     public var headingDeg: Double?
     public var headingAccuracyDeg: Double?
     public var latitude: Double?
     public var longitude: Double?
-    public var followUp: Bool
+    public var followUp: Bool = false
     /// True while category / sentiment / room came from the model and the buyer has not confirmed them.
-    public var modelSuggested: Bool
+    public var modelSuggested: Bool = false
     /// `scene_id` of the SceneRecord for `kind == .light`.
     public var sceneId: String?
+    /// The SceneRecord JSON for `kind == .light`, stored with the row (ADR-0017). Files on disk are export copies only.
+    @Attribute(.externalStorage) public var sceneRecordData: Data?
     public var inspection: Inspection?
 
     public init(kind: ObservationKind, category: ObservationCategory = .other, sentiment: Sentiment = .neutral,
                 source: EvidenceSource, text: String? = nil, roomLabel: String? = nil, capturedAt: Date = Date()) {
-        self.uuid = UUID()
         self.kindRaw = kind.rawValue
         self.categoryRaw = category.rawValue
         self.sentimentRaw = sentiment.rawValue

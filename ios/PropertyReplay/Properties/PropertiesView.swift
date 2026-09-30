@@ -22,7 +22,7 @@ struct PropertiesView: View {
                     ContentUnavailableView {
                         Label("No properties yet", systemImage: "house")
                     } description: {
-                        Text("Add the homes you plan to inspect. They stay on this device.")
+                        Text("Add the homes you plan to inspect. They stay on this device and in your iCloud.")
                     } actions: {
                         Button("Add a property") { showingAdd = true }.buttonStyle(.borderedProminent)
                         #if DEBUG

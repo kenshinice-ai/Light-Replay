@@ -527,7 +527,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.pwegroup.propertyreplay;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -562,7 +562,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.pwegroup.propertyreplay;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};

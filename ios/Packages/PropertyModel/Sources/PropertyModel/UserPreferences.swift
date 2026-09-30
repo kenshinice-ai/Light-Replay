@@ -44,22 +44,23 @@ public enum PriorityDimension: String, CaseIterable, Codable, Sendable, Identifi
     }
 }
 
-/// One row per install. Everything here is the person's, editable and deletable (docs/11 §3, Moat 4 caveat).
+/// One row per iCloud account (per install when sync is off). Everything here is the person's, editable and deletable (docs/11 §3, Moat 4 caveat).
 @Model
 public final class UserPreferences {
     public static let maximumPriorities = 5
     public static let defaultTargetHeightM = 1.15   // seated eye height, docs/04 §2
 
-    public var displayName: String
+    public var displayName: String = ""
     /// Ordered, at most `maximumPriorities` entries of `PriorityDimension.rawValue`.
-    public var priorityRaws: [String]
-    public var targetHeightM: Double
-    public var hapticsEnabled: Bool
+    public var priorityRaws: [String] = []
+    public var targetHeightM: Double = UserPreferences.defaultTargetHeightM
+    public var hapticsEnabled: Bool = true
     /// Viewpoint Lock tolerance in metres (docs/04 §4). Exposed under Advanced so the spike can test 0.10 / 0.15 / 0.25.
-    public var viewpointToleranceM: Double
+    public var viewpointToleranceM: Double = 0.15
     /// BCP 47 identifier for dictated notes, e.g. "en-AU" or "zh-Hans"; nil follows the phone's language.
     public var noteLanguage: String?
-    public var createdAt: Date
+    /// The oldest row wins when two devices each created one before syncing (`PropertyStore.preferences`).
+    public var createdAt: Date = Date()
 
     public init(displayName: String = "", priorities: [PriorityDimension] = [.naturalLight, .space, .privacy],
                 targetHeightM: Double = UserPreferences.defaultTargetHeightM, hapticsEnabled: Bool = true,

@@ -190,9 +190,14 @@ public enum SceneRecordBuilder {
 
     /// Next unused id for the day, read from what is already on disk so two screens can never collide.
     public static func nextSceneID(in root: URL, date: Date, timezone: TimeZone) throws -> String {
-        let prefix = String(sceneID(date: date, sequence: 0, timezone: timezone).dropLast(2))   // "PR-YYYYMMDD-"
         let existing = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
-        let used = existing.filter { $0.hasPrefix(prefix) }.compactMap { Int($0.dropFirst(prefix.count)) }
+        return nextSceneID(taken: Set(existing), date: date, timezone: timezone)
+    }
+
+    /// The next id for the local day after every id in `taken` (rows, pending captures, legacy folders).
+    public static func nextSceneID(taken: Set<String>, date: Date, timezone: TimeZone) -> String {
+        let prefix = String(sceneID(date: date, sequence: 0, timezone: timezone).dropLast(2))   // "PR-YYYYMMDD-"
+        let used = taken.filter { $0.hasPrefix(prefix) }.compactMap { Int($0.dropFirst(prefix.count)) }
         return sceneID(date: date, sequence: (used.max() ?? 0) + 1, timezone: timezone)
     }
 }

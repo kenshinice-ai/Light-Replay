@@ -3,9 +3,9 @@ import SwiftUI
 
 /// The tag-and-save card shown under the viewfinder right after a Capture or Note.
 struct ObservationCard: View {
-    @State var draft: ObservationDraft
+    @Binding var draft: ObservationDraft
     let rooms: [String]
-    let onSave: (ObservationDraft) -> Void
+    let onSave: () -> Void
     let onDiscard: () -> Void
 
     var body: some View {
@@ -27,16 +27,16 @@ struct ObservationCard: View {
             }
             HStack {
                 Menu {
-                    ForEach(rooms, id: \.self) { name in Button(name) { draft.room = name } }
+                    ForEach(rooms, id: \.self) { name in Button(name) { draft.setRoom(name) } }
                 } label: { chip(draft.room, "door.left.hand.open") }
                 Menu {
-                    ForEach(ObservationCategory.allCases) { c in Button(c.displayName, systemImage: c.systemImage) { draft.category = c } }
+                    ForEach(ObservationCategory.allCases) { c in Button(c.displayName, systemImage: c.systemImage) { draft.setCategory(c) } }
                 } label: { chip(draft.category.displayName, draft.category.systemImage) }
             }
             HStack(spacing: 8) {
                 ForEach([Sentiment.like, .concern, .ask]) { s in
                     Button {
-                        draft.sentiment = draft.sentiment == s ? .neutral : s
+                        draft.setSentiment(draft.sentiment == s ? .neutral : s)
                     } label: {
                         Label(s.displayName, systemImage: s.systemImage)
                             .font(.footnote.weight(.medium))
@@ -53,7 +53,7 @@ struct ObservationCard: View {
             HStack {
                 Button("Discard", role: .destructive, action: onDiscard).font(.footnote)
                 Spacer()
-                Button("Save") { onSave(draft) }.buttonStyle(.borderedProminent).font(.footnote.weight(.semibold))
+                Button("Save", action: onSave).buttonStyle(.borderedProminent).font(.footnote.weight(.semibold))
             }
         }
         .padding(12)

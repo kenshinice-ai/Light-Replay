@@ -14,6 +14,7 @@ struct AddPropertyView: View {
     @State private var inspectionAt: Date? = nil
     @State private var isSaving = false
     @State private var pinFailed = false
+    @State private var storageError: String?
     @State private var picked: AddressCompleter.Pick?
 
     var body: some View {
@@ -48,11 +49,14 @@ struct AddPropertyView: View {
                     }
                 }
                 Section {
-                    Text("Only the address you type is sent to Apple Maps, to suggest matches and place the pin. It is kept on this device.")
+                    Text("Only the address you type is sent to Apple Maps, to suggest matches and place the pin. The property is kept on this device and, with iCloud sync on, in your iCloud.")
                         .font(.footnote).foregroundStyle(.secondary)
                     if pinFailed {
                         Text("Couldn't place this address on the map. You can save it without a pin and place the pin later from the property page.")
                             .font(.footnote).foregroundStyle(.orange)
+                    }
+                    if let storageError {
+                        Text("Couldn't save: \(storageError). Nothing was added; try again.").font(.footnote).foregroundStyle(.red)
                     }
                     if !StoreHealth.shared.isPersistent {
                         Text("Storage problem: saving is disabled until the app can write to disk.").font(.footnote).foregroundStyle(.red)
@@ -91,6 +95,7 @@ struct AddPropertyView: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
+        storageError = nil
         let typed = completer.query.trimmingCharacters(in: .whitespacesAndNewlines)
         var hit = picked
         if hit == nil, !pinFailed {
@@ -101,7 +106,12 @@ struct AddPropertyView: View {
                                 latitude: hit?.latitude, longitude: hit?.longitude,
                                 inspectionAt: hasInspection ? (inspectionAt ?? nextSaturdayMorning) : nil)
         context.insert(property)
-        do { try context.save() } catch { pinFailed = true; return }
+        do {
+            try PropertyStore.commit(context)   // rolls the insert back on failure, so a retry never adds a second row (R06)
+        } catch {
+            storageError = error.localizedDescription
+            return
+        }
         dismiss()
     }
 }

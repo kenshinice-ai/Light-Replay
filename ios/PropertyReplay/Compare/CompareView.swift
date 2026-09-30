@@ -7,7 +7,7 @@ import SwiftUI
 struct CompareView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Property.createdAt, order: .reverse) private var properties: [Property]
-    @Query private var preferencesRows: [UserPreferences]
+    @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @State private var picked: Set<PersistentIdentifier> = []
 
     private var priorities: [PriorityDimension] { preferencesRows.first?.priorities ?? [] }

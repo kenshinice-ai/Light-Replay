@@ -1,66 +1,97 @@
 import Foundation
 import SwiftData
 
-/// Container factory and the few queries that are not one-liners.
+/// Container factory, transactions and the few queries that are not one-liners. The database is the single source of
+/// truth for rows and their bytes (ADR-0017): every write here either saves completely or rolls back and throws.
 public enum PropertyStore {
     public static let schema = Schema([Property.self, Inspection.self, InspectionObservation.self, UserPreferences.self])
+    /// The CloudKit container for the private database (ADR-0017). Must match the app's iCloud entitlement.
+    public static let cloudContainerID = "iCloud.com.pwegroup.propertyreplay"
 
-    public static func container(inMemory: Bool = false) throws -> ModelContainer {
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
+    /// `iCloudSync` mirrors the store to the person's private CloudKit database; tests and the memory fallback never sync.
+    public static func container(inMemory: Bool = false, iCloudSync: Bool = false) throws -> ModelContainer {
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory,
+                                               cloudKitDatabase: iCloudSync && !inMemory ? .private(cloudContainerID) : .none)
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
-    /// The single preferences row, created on first use.
+    /// Saves, or discards every pending change and rethrows, so a failed save never leaves half a change in memory.
+    @MainActor
+    public static func commit(_ context: ModelContext) throws {
+        do { try context.save() } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    /// The preferences row, created on first use. Two devices can each create one before they sync; the oldest wins
+    /// and the others are removed, so every screen reads the same row.
     @MainActor
     public static func preferences(in context: ModelContext) throws -> UserPreferences {
-        if let existing = try context.fetch(FetchDescriptor<UserPreferences>()).first { return existing }
+        let rows = try context.fetch(FetchDescriptor<UserPreferences>(sortBy: [SortDescriptor(\.createdAt)]))
+        if let oldest = rows.first {
+            if rows.count > 1 {
+                rows.dropFirst().forEach(context.delete)
+                try commit(context)
+            }
+            return oldest
+        }
         let created = UserPreferences()
         context.insert(created)
-        try context.save()
+        try commit(context)
         return created
     }
 
-    /// Removes every property and resets preferences. Physical deletion, no soft delete (docs/15 §4).
-    /// Files first, then rows, so a failed file wipe never leaves rows pointing at ghosts.
+    /// Removes every property and resets preferences, here and (with sync on) in iCloud. Physical deletion, no soft
+    /// delete (docs/15 §4). Rows go first because they hold the bytes; legacy folders are removed afterwards and an
+    /// error there is reported, not hidden.
     @MainActor
     public static func deleteEverything(in context: ModelContext) throws {
-        try MediaStore.deleteAll()
-        try SceneStore.deleteAll()
-        try context.delete(model: InspectionObservation.self)
-        try context.delete(model: Inspection.self)
-        try context.delete(model: Property.self)
-        try context.delete(model: UserPreferences.self)
-        try context.save()
+        do {
+            try context.delete(model: InspectionObservation.self)
+            try context.delete(model: Inspection.self)
+            try context.delete(model: Property.self)
+            try context.delete(model: UserPreferences.self)
+        } catch {
+            context.rollback()
+            throw error
+        }
+        try commit(context)
+        try LegacyFiles.removeAll()
     }
 
-    /// Deletes one property with its photos and measurement folders.
+    /// Deletes one property with everything recorded for it (cascade). Photos and records go with their rows.
     @MainActor
     public static func delete(_ property: Property, in context: ModelContext) throws {
-        for observation in property.allObservations {
-            MediaStore.delete(observation.mediaPath)
-            SceneStore.delete(sceneID: observation.sceneId)
-        }
         context.delete(property)
-        try context.save()
+        try commit(context)
     }
 
-    /// Deletes one observation with its files.
+    /// Deletes one observation and its photo or record.
     @MainActor
     public static func delete(_ observation: InspectionObservation, in context: ModelContext) throws {
-        MediaStore.delete(observation.mediaPath)
-        SceneStore.delete(sceneID: observation.sceneId)
         context.delete(observation)
-        try context.save()
+        try commit(context)
     }
 
-    /// Finds the open inspection for a property or starts one.
+    /// Finds the open inspection for a property or starts one. Does not save.
     @MainActor
     public static func openInspection(for property: Property, in context: ModelContext) -> Inspection {
         if let open = property.openInspection { return open }
-        let inspection = Inspection(property: property)
+        let inspection = Inspection()
         context.insert(inspection)
-        property.inspections.append(inspection)
+        inspection.property = property
         return inspection
+    }
+
+    /// Adds an observation to the property's open inspection and saves; on failure nothing is kept.
+    @MainActor
+    public static func record(_ observation: InspectionObservation, for property: Property, in context: ModelContext) throws {
+        let inspection = openInspection(for: property, in: context)
+        context.insert(observation)
+        observation.inspection = inspection
+        if property.status == .toInspect { property.status = .inspected }
+        try commit(context)
     }
 }
 
@@ -90,6 +121,6 @@ public enum SampleData {
                                     longitude: item.longitude, source: .sample, status: item.status,
                                     inspectionAt: inspectionAt))
         }
-        try context.save()
+        try PropertyStore.commit(context)
     }
 }

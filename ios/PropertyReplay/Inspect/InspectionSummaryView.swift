@@ -6,6 +6,7 @@ import SwiftUI
 struct InspectionSummaryView: View {
     @Environment(\.modelContext) private var context
     let property: Property
+    @State private var deleteError: String?
 
     private var observations: [InspectionObservation] { property.allObservations }
 
@@ -20,6 +21,9 @@ struct InspectionSummaryView: View {
             }
         }
         .navigationTitle("Your inspection")
+        .alert("Couldn't delete", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(deleteError ?? "") }
     }
 
     @ViewBuilder
@@ -29,7 +33,11 @@ struct InspectionSummaryView: View {
             Section {
                 ForEach(items) { ObservationRow(observation: $0) }
                     .onDelete { offsets in
-                        for index in offsets { try? PropertyStore.delete(items[index], in: context) }
+                        do {
+                            for index in offsets { try PropertyStore.delete(items[index], in: context) }
+                        } catch {
+                            deleteError = "\(error.localizedDescription) Nothing was removed; try again."
+                        }
                     }
             } header: {
                 Label(title, systemImage: symbol)
@@ -41,9 +49,13 @@ struct InspectionSummaryView: View {
 struct ObservationRow: View {
     let observation: InspectionObservation
 
+    private var thumbnail: UIImage? {
+        observation.photoData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 168, height: 168))
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            if let path = observation.mediaPath, let image = UIImage(contentsOfFile: MediaStore.url(for: path).path) {
+            if let image = thumbnail {
                 Image(uiImage: image).resizable().scaledToFill().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
                 Image(systemName: observation.kind == .voice ? "waveform" : observation.category.systemImage)

@@ -11,6 +11,8 @@ struct PropertyDetailView: View {
     @Bindable var property: Property
     @State private var confirmingDelete = false
     @State private var pinNote: String?
+    @State private var placingPin = false
+    @State private var deleteError: String?
 
     var body: some View {
         List {
@@ -23,11 +25,16 @@ struct PropertyDetailView: View {
                     .listRowInsets(EdgeInsets())
                     .allowsHitTesting(false)
                 }
-                TextField("Address", text: $property.address, axis: .vertical)
+                TextField("Address", text: $property.address)
+                    .onSubmit { Task { await placePin() } }
                 Button {
-                    Task { await placePinAgain() }
+                    Task { await placePin() }
                 } label: {
                     Label(property.coordinate == nil ? "Place pin" : "Place pin again", systemImage: "mappin.and.ellipse")
+                }
+                .disabled(placingPin)
+                if property.isPinStale && pinNote == nil {
+                    Text("The pin was for the previous address, so it is hidden. Place the pin again.").font(.footnote).foregroundStyle(.orange)
                 }
                 if let pinNote { Text(pinNote).font(.footnote).foregroundStyle(.orange) }
                 Picker("Status", selection: $property.status) {
@@ -64,17 +71,29 @@ struct PropertyDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Remove this property and everything recorded for it?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Remove", role: .destructive) {
-                try? PropertyStore.delete(property, in: context)
-                dismiss()
+                do {
+                    try PropertyStore.delete(property, in: context)
+                    dismiss()
+                } catch {
+                    deleteError = "\(error.localizedDescription) Nothing was removed; try again."
+                }
             }
         }
+        .alert("Couldn't remove this property", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(deleteError ?? "") }
     }
 
-    private func placePinAgain() async {
-        if let hit = await AddressCompleter.resolve(property.address) {
-            property.latitude = hit.latitude
-            property.longitude = hit.longitude
-            property.suburb = hit.locality
+    /// Resolves the current address. A result for an address the buyer has since edited is dropped (R07).
+    private func placePin() async {
+        let query = property.address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        placingPin = true
+        defer { placingPin = false }
+        let hit = await AddressCompleter.resolve(query)
+        guard property.address.trimmingCharacters(in: .whitespacesAndNewlines) == query else { return }
+        if let hit {
+            property.setPin(latitude: hit.latitude, longitude: hit.longitude, suburb: hit.locality, forAddress: property.address)
             pinNote = nil
         } else {
             pinNote = "Couldn't find this address on the map. Check the spelling or add the suburb."

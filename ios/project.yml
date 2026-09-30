@@ -39,9 +39,13 @@ targets:
         CFBundleVersion: "1"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # iPad is for reading at home (ADR-0017); it keeps every orientation so it can join Split View.
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        # CloudKit sends silent pushes when another device changes the library.
+        UIBackgroundModes: [remote-notification]
         ITSAppUsesNonExemptEncryption: false
         NSCameraUsageDescription: "Property Replay uses the camera to capture what you see during an inspection and to measure how much direct sun reaches the spot where you are standing."
-        NSLocationWhenInUseUsageDescription: "Your location sets where the sun is in the sky for this property. It is kept on this device."
+        NSLocationWhenInUseUsageDescription: "Your location sets where the sun is in the sky for this property. It stays with your records on this device and in your private iCloud."
         NSMicrophoneUsageDescription: "Hold to dictate a note. Audio is transcribed on this device and not stored."
         NSMotionUsageDescription: "Device motion keeps the sky scan aligned while you turn."
         NSSpeechRecognitionUsageDescription: "Notes you dictate are transcribed on this device. No audio is stored."
@@ -50,10 +54,14 @@ targets:
       properties:
         # Private Cloud Compute (ADR-0010): account entitlement granted; automatic signing registers the capability.
         com.apple.developer.private-cloud-compute: true
+        # iCloud private database (ADR-0017). Automatic signing sets aps-environment to production when archiving.
+        com.apple.developer.icloud-container-identifiers: [iCloud.com.pwegroup.propertyreplay]
+        com.apple.developer.icloud-services: [CloudKit]
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: "NO"
   PropertyReplayTests:
     type: bundle.unit-test
