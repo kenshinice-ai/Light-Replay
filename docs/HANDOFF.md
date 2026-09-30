@@ -31,6 +31,9 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 ```
 
 - 构建产物必须在 iCloud 之外（`~/Library/Caches/propertyreplay/`）：codesign 拒绝带 iCloud FinderInfo 的 bundle，这是本组所有 app 的通病。脚本已处理；手跑 `swift build` 请加 `--scratch-path`。
+- App：`cd ios && xcodegen generate`（改了 `project.yml` 之后），然后
+  `xcodebuild test -project PropertyReplay.xcodeproj -scheme PropertyReplay -destination 'platform=iOS Simulator,name=iPhone 17 Pro (iOS 27)' -derivedDataPath ~/Library/Caches/propertyreplay/DerivedData`。
+  模拟器必须是 iOS 27 运行时（26.x 装不上）。`PropertyReplay.xcodeproj` 是生成物，不手改。
 - ARKit、LiDAR、RoomPlan、Foundation Models 只能真机；模拟器只跑纯算法与界面。
 - iOS 27 是最低系统（ADR-0011）。测试机需要 LiDAR 且至少一台支持 Apple Intelligence。
 
@@ -59,6 +62,7 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 ## 7. 当前状态（2026-09-30）
 
 - 文档：蓝图 1.1；ADR-0001 至 0016 全部 Accepted；01 / 12 / 13 / 14 / 15 已按 Property Replay 命题重写。
-- 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。
-- 未开始：Xcode 工程；线 A W1 采集验证器；线 B 原型 A；线 C 小 spike。
+- 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App 壳（三个 destination）+ `CaptureCore` 包（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ W1 采集验证器界面；iOS 27 模拟器上构建、运行、6 个测试通过。
+- 线 A W1 已开工：验证器目前记录姿态、一条罗盘读数、一次定位，导出 R0 SceneRecord；下一步在真机上跑，然后加天空分割掩膜与走廊覆盖率。
+- 未开始：线 B 原型 A；线 C 小 spike。
 - 待办（Lee）：PCC entitlement；正式商标意见；域名；仓库是否改名。

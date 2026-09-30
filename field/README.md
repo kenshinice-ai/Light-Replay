@@ -15,7 +15,7 @@ field/
 
 规则：
 
-- 场景编号 `LR-YYYYMMDD-NN`，与 SceneRecord 的 `scene_id` 一一对应。
+- 场景编号 `PR-YYYYMMDD-NN`，与 SceneRecord 的 `scene_id` 一一对应。
 - 每个场景在采集前决定是否属于 **holdout**（`capture-log.csv` 的 `holdout` 列）。holdout 场景的任何数据不得用于调参。
 - 延时记录按 `docs/08-ground-truth-protocol.md` 执行；没有白卡的延时不算真值。
 - 不记录人、门牌、室内物品；只记录目标点、窗与天空。

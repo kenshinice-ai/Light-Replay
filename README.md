@@ -4,7 +4,7 @@
 
 把 20 分钟看房，变成一份可以回放、比较、验证的房产记忆。其中最硬的一块：站在你会生活的位置扫一次天空，20 秒后得到这个点一年的直射阳光，每个数字带来源、精度、未计入项。
 
-状态：**Phase 0 · 对齐**（2026-09-30）。文档与 SceneRecord 数据层完成；Xcode 工程与三周 spike 即将开始。下一步见文末。
+状态：**Phase 1 · 并行验证**（2026-09-30 起）。文档、数据层、Xcode 工程完成；线 A 采集验证器已在模拟器跑通。下一步见文末。
 
 ## 三条不变的原则
 
@@ -45,7 +45,11 @@ light_replay/
 ├── README.md · CLAUDE.md
 ├── docs/                     规范、ADR、评审、方案（见上表）
 ├── ios/
-│   └── Packages/SceneRecord/ 测量载荷的数据模型、校验器、CLI（Swift，28 测试）
+│   ├── project.yml · PropertyReplay.xcodeproj（生成物）
+│   ├── PropertyReplay/       App 壳 + W1 采集验证器界面
+│   └── Packages/
+│       ├── SceneRecord/      测量载荷的校验器与 CLI（规范的 oracle，Swift，28 测试）
+│       └── CaptureCore/      CaptureLog、SceneRecordBuilder、CaptureRecorder（ARKit，5 测试）
 ├── engine/
 │   ├── lightreplay/          Python 参考实现（scenerecord.py）
 │   └── tests/                含 Swift 跨语言一致性测试
@@ -70,4 +74,4 @@ Lee：决定、现场、渠道。Paradise Production：采集、真值、Light P
 
 ## 下一步
 
-Phase 0 剩余：Xcode 工程（xcodegen，App `PropertyReplay`，bundle `com.pwegroup.propertyreplay`，iOS 27）。然后 Phase 1 并行开工：线 A W1 采集验证器（`docs/07-spike-plan.md`）、线 B 五屏原型、线 C 三个小 spike（`docs/12-roadmap.md`）。
+Phase 0 完成。Phase 1 已开工：线 A W1 采集验证器已在模拟器上跑通壳子，下一步真机记录一次 OneTake 并导出 SceneRecord，然后接天空分割与走廊覆盖率；线 B 五屏原型与线 C 三个小 spike 待开工（`docs/12-roadmap.md`）。

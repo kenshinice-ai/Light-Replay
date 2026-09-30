@@ -17,7 +17,7 @@
 - [x] D1–D5 决定；名字 Property Replay（ADR-0016）
 - [x] ADR-0012 至 0016；蓝图 1.1；01、03、10、11、13 修订；14、15、HANDOFF 新建
 - [x] SceneRecord Swift 包与 Python 参考实现并入主线（iOS 27；时区别名修正；`scripts/test.sh`）
-- [ ] Xcode 工程（xcodegen）：App target `PropertyReplay`，bundle `com.pwegroup.propertyreplay`，iOS 27，链接 SceneRecord
+- [x] Xcode 工程（xcodegen）：App target `PropertyReplay`，bundle `com.pwegroup.propertyreplay`，iOS 27；CaptureCore 包（CaptureLog、SceneRecordBuilder、CaptureRecorder）与 W1 采集验证器界面；模拟器上构建、运行、测试通过（2026-09-30）
 - [ ] PCC entitlement 申请状态（Lee）
 - [ ] 正式商标意见（上架前）
 
