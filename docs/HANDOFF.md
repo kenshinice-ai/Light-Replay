@@ -27,7 +27,10 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 ## 3. 怎么跑
 
 ```bash
-./scripts/test.sh          # SceneRecord Swift 单元测试 + Python 参考实现 + 跨语言一致性
+./scripts/test.sh          # SceneRecord Swift 单元测试 + Python 参考实现 + 跨语言一致性（不含 App）
+cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj -scheme PropertyReplay \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro (iOS 27)' -derivedDataPath ~/Library/Caches/propertyreplay/DerivedData
+                            # App 冒烟 + CaptureCore + PropertyModel（模拟器）
 ```
 
 - 构建产物必须在 iCloud 之外（`~/Library/Caches/propertyreplay/`）：codesign 拒绝带 iCloud FinderInfo 的 bundle，这是本组所有 app 的通病。脚本已处理；手跑 `swift build` 请加 `--scratch-path`。
@@ -62,10 +65,10 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 ## 7. 当前状态（2026-09-30）
 
 - 文档：蓝图 1.1；ADR-0001 至 0016 全部 Accepted；01 / 12 / 13 / 14 / 15 已按 Property Replay 命题重写。
-- 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App 壳（三个 destination）+ `CaptureCore` 包（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ W1 采集验证器界面；iOS 27 模拟器上构建、运行、6 个测试通过。
-- 线 A W1 已开工：验证器目前记录姿态、一条罗盘读数、一次定位，导出 R0 SceneRecord；下一步在真机上跑，然后加天空分割掩膜与走廊覆盖率。
+- 代码：`ios/Packages/SceneRecord`（Swift，28 测试）与 `engine/lightreplay/scenerecord.py`（30 测试含一致性）全绿。`ios/PropertyReplay.xcodeproj`（xcodegen 生成，`ios/project.yml` 是源）：App + `CaptureCore`（`CaptureLog`、`SceneRecordBuilder`、`CaptureRecorder`）+ `PropertyModel`；模拟器测试数以 `xcodebuild test` 的输出为准（HANDOFF 不再手抄计数）。
+- 线 A W1 已开工：验证器记录每帧姿态、全部罗盘读数、一次定位，导出 R0 SceneRecord。**2026-09-30 真机首跑（iPhone 17 Pro，iOS 27.0.1）成功**：167 帧、157 帧正常追踪、最大漂移 0.14 m、罗盘 ±13°、定位 ±8 m，Python 校验通过。下一步天空分割掩膜与走廊覆盖率。北向候选现在写的是 Δ（罗盘读数减去同步帧的相机 AR 方位角），前提是"CLHeading 竖持时等于后摄真方位"，这个映射要按 docs/05 truth 组用日晷验证。
 - App 壳（2026-09-30 晚）：五个 tab；`PropertyModel` 包（SwiftData：Property、UserPreferences；4 测试）；Properties 的 List / Map、添加房产（Apple 地理编码）、详情页；Inspect tab 按距离选房；Compare 读 You 的优先级、每格 Unknown；You 的优先级 / 偏好 / 隐私与数据 / 高级 / 关于。模拟器上 10 个测试通过、界面走通。
 - 线 B（2026-09-30 深夜，分支 `feat/inspect-screen`）：真实的 Inspect 屏。相机预览（AVFoundation）、Capture（照片 + 时刻 / 位置 / 朝向元数据，落库为 InspectionObservation）、Note（按住说话：`SpeechTranscriber` 端侧转写 → Foundation Models `@Generable` 结构化为房间 / 类别 / 情绪 / 摘要，模型不可用时手选）、Like / Concern / Ask 卡片、Measure 入口；Your inspection 页按标签分组；Property 详情显示最近三条。模拟器验证了照片路径（DEBUG 测试照片）与权限按需弹出；**相机、麦克风转写、Foundation Models 三条真机路径未验证**。
 - 未开始：线 C 小 spike（C3 语音结构化的准确率评估要等真机）。
-- 已知欠账：`CLGeocoder` 与 `installTap` 在 iOS 26/27 标记弃用，先用着，换 `MKGeocodingRequest` 与新音频 API 记在 Phase 2；Room 仍是字符串标签（L0），`Question` 模型未拆出（`sentiment == .ask` 即问题）。
+- 2026-09-30 Codex 审计（`docs/reviews/2026-09-30-progress-foundation-audit.md`）15 条中 13 条属实，已修：闪退（两处闭包缺 `@Sendable`，在 ARKit / 音频队列触发主线程隔离断言）、录音按下松开竞态（代号 generation）、光测量等级只由 `lightLevel` 规则映射、保存失败保留草稿、场景编号读磁盘且不覆盖、删除连照片与场景目录、锚点未锁定时 offset 为 null 且记录 rejected、每帧记录且 `t` 来自 ARFrame 时间戳、校验器要求 `lens` 灯与 `t` 上界、地址改用 MapKit 补全与 `MKLocalSearch`（去掉弃用的 `CLGeocoder`）、pin 失败不关闭表单、存储故障横幅、Measure 绑定房产并落一条 light 观察。未修：`installTap` 弃用警告；QualityEvaluator（F05 第二层）；Room 仍是字符串标签（L0），`Question` 模型未拆出。
 - 待办（Lee）：PCC entitlement；正式商标意见；域名；仓库是否改名。

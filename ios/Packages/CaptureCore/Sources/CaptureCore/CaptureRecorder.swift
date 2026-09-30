@@ -5,7 +5,7 @@ import simd
 import UIKit
 
 /// Week-1 capture validator (docs/07 W1): runs an ARKit world-tracking session, samples every frame's pose
-/// and intrinsics as plain values, records one magnetometer reading and one location fix, and hands back a
+/// and intrinsics as plain values, records heading readings and a location fix, and hands back a
 /// `CaptureLog`. It never keeps ARFrames and never computes anything about the sun.
 @MainActor
 public final class CaptureRecorder: NSObject, ObservableObject {
@@ -17,10 +17,12 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     @Published public private(set) var isRunning = false
     @Published public private(set) var frameCount = 0
     @Published public private(set) var trackingState = "not_available"
-    @Published public private(set) var currentDriftM = 0.0
-    @Published public private(set) var maxDriftM = 0.0
-    @Published public private(set) var heading: HeadingSample?
+    @Published public private(set) var anchorLocked = false
+    @Published public private(set) var currentDriftM: Double?
+    @Published public private(set) var maxDriftM: Double?
+    @Published public private(set) var latestHeading: HeadingSample?
     @Published public private(set) var location: LocationSample?
+    @Published public private(set) var failureReason: String?
 
     public let availability: Availability
     public var viewpointToleranceM = 0.15
@@ -28,10 +30,13 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     private let session = ARSession()
     private let locationManager = CLLocationManager()
     private var startedAt: Date?
+    private var firstFrameAt: Date?
+    private var firstFrameTimestamp: TimeInterval?
     private var anchor: SIMD3<Double>?
+    private var anchorFrameID: String?
     private var frames: [FrameSample] = []
+    private var headings: [HeadingSample] = []
     private var sessionID = UUID().uuidString
-    private var lastSampleTime: TimeInterval = -1
 
     public override init() {
         if ARWorldTrackingConfiguration.isSupported {
@@ -48,14 +53,22 @@ public final class CaptureRecorder: NSObject, ObservableObject {
 
     public func start() {
         guard availability == .supported, !isRunning else { return }
+        // Fresh session, fresh evidence: nothing from a previous scan may leak into this record.
         frames.removeAll()
+        headings.removeAll()
         anchor = nil
+        anchorFrameID = nil
+        anchorLocked = false
         frameCount = 0
-        maxDriftM = 0
-        currentDriftM = 0
+        maxDriftM = nil
+        currentDriftM = nil
+        latestHeading = nil
+        location = nil
+        failureReason = nil
+        firstFrameAt = nil
+        firstFrameTimestamp = nil
         sessionID = UUID().uuidString
         startedAt = Date()
-        lastSampleTime = -1
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity   // az_ar is measured from the session's -Z axis (docs/02 §3)
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
@@ -69,7 +82,7 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     }
 
     /// Stops the session and returns the log. Returns nil if nothing was started.
-    public func stop() -> CaptureLog? {
+    public func stop(targetLabel: String = "Capture validator target", targetHeightM: Double? = nil) -> CaptureLog? {
         guard isRunning, let startedAt else { return nil }
         session.pause()
         locationManager.stopUpdatingHeading()
@@ -87,16 +100,21 @@ public final class CaptureRecorder: NSObject, ObservableObject {
             sessionID: sessionID,
             startedAt: startedAt,
             endedAt: Date(),
+            firstFrameAt: firstFrameAt,
             timezone: .current,
             device: device,
             appVersion: info?["CFBundleShortVersionString"] as? String ?? "0",
             appBuild: info?["CFBundleVersion"] as? String ?? "0",
-            targetLabel: "Capture validator target",
-            targetHeightM: nil,
+            targetLabel: targetLabel,
+            targetHeightM: targetHeightM,
             frames: frames,
-            heading: heading,
+            anchor: anchor,
+            anchorFrameID: anchorFrameID,
+            maxDriftM: maxDriftM,
+            headings: headings,
             location: location,
-            viewpointToleranceM: viewpointToleranceM
+            viewpointToleranceM: viewpointToleranceM,
+            failureReason: failureReason
         )
     }
 
@@ -148,22 +166,43 @@ extension CaptureRecorder: ARSessionDelegate {
         }
     }
 
+    nonisolated public func session(_ session: ARSession, didFailWithError error: any Error) {
+        let text = error.localizedDescription
+        MainActor.assumeIsolated {
+            self.failureReason = "failed: \(text)"
+            self.trackingState = "not_available"
+        }
+    }
+
+    nonisolated public func sessionWasInterrupted(_ session: ARSession) {
+        MainActor.assumeIsolated { self.failureReason = "interrupted" }
+    }
+
+    nonisolated public func sessionInterruptionEnded(_ session: ARSession) {
+        MainActor.assumeIsolated { self.failureReason = (self.failureReason ?? "interrupted") + "; interruption ended" }
+    }
+
     private func record(transform: [Double], intrinsics: [Double], state: String,
                         hasDepth: Bool, exposure: Double, timestamp: TimeInterval) {
-        guard isRunning, let startedAt else { return }
-        if lastSampleTime < 0 { lastSampleTime = timestamp }
+        guard isRunning else { return }
+        if firstFrameTimestamp == nil {
+            firstFrameTimestamp = timestamp
+            firstFrameAt = Date()
+        }
         let position = SIMD3(transform[12], transform[13], transform[14])
-        if anchor == nil, state == "normal" { anchor = position }
-        let drift = anchor.map { simd_distance($0, position) } ?? 0
+        let frameID = String(format: "f%05d", frames.count)
+        if anchor == nil, state == "normal" {
+            anchor = position
+            anchorFrameID = frameID
+            anchorLocked = true
+        }
+        let drift = anchor.map { simd_distance($0, position) }
         currentDriftM = drift
-        maxDriftM = max(maxDriftM, drift)
+        if let drift { maxDriftM = max(maxDriftM ?? 0, drift) }
         trackingState = state
-        // Poses every frame would be ~60 Hz; 10 Hz is plenty for W1 drift statistics (docs/02 §7).
-        guard timestamp - lastSampleTime >= 0.1 || frames.isEmpty else { return }
-        lastSampleTime = timestamp
         frames.append(FrameSample(
-            frameID: String(format: "f%05d", frames.count),
-            t: max(0, Date().timeIntervalSince(startedAt)),
+            frameID: frameID,
+            t: timestamp - (firstFrameTimestamp ?? timestamp),
             cameraTransform: transform,
             intrinsics: intrinsics,
             trackingState: state,
@@ -179,7 +218,11 @@ extension CaptureRecorder: CLLocationManagerDelegate {
     nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
         let sample = HeadingSample(trueHeading: newHeading.trueHeading, magneticHeading: newHeading.magneticHeading,
                                    headingAccuracy: newHeading.headingAccuracy, sampledAt: newHeading.timestamp)
-        MainActor.assumeIsolated { if self.heading == nil { self.heading = sample } }   // first reading = session start heading
+        MainActor.assumeIsolated {
+            guard self.isRunning else { return }
+            self.headings.append(sample)
+            self.latestHeading = sample
+        }
     }
 
     nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -189,6 +232,8 @@ extension CaptureRecorder: CLLocationManagerDelegate {
                                     horizontalAccuracyM: last.horizontalAccuracy >= 0 ? last.horizontalAccuracy : nil,
                                     verticalAccuracyM: last.verticalAccuracy >= 0 ? last.verticalAccuracy : nil,
                                     capturedAt: last.timestamp)
-        MainActor.assumeIsolated { self.location = sample }
+        MainActor.assumeIsolated { if self.isRunning { self.location = sample } }
     }
+
+    nonisolated public func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}
 }

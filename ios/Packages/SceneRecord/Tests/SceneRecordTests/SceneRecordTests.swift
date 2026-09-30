@@ -62,7 +62,7 @@ final class SceneRecordTests: XCTestCase {
          "segmentation":{"model":"synthetic-test-only","glass_detected":false,"reflection_flags":[],"manual_edits":[]},"near_field":null}
         """ )
         r["quality"] = try json("""
-        {"level":"R1","gates":{"level":"pass","coverage":"pass","north":"warn","segmentation":"pass"},"flags":["synthetic_fixture"],"false_valid_guard":"passed","blocked_reason":null}
+        {"level":"R1","gates":{"level":"pass","coverage":"pass","north":"warn","segmentation":"pass","lens":"pass"},"flags":["synthetic_fixture"],"false_valid_guard":"passed","blocked_reason":null}
         """ )
         r["analysis"] = try json("""
         [{"query":{"date_from":"2026-06-21","date_to":"2026-06-21","time_window":["10:00","12:00"],"scenario":"current"},

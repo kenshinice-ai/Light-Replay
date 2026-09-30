@@ -4,6 +4,17 @@ import SwiftUI
 /// Inspect (during, centred so it is one tap from anywhere), Compare (after), You (priorities, settings, data).
 struct RootView: View {
     var body: some View {
+        VStack(spacing: 0) {
+            if !StoreHealth.shared.isPersistent {
+                Text("Storage problem: nothing you add will survive quitting the app. See You › About.")
+                    .font(.footnote.weight(.medium)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(8).background(Color.red)
+            }
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView {
             Tab("Home", systemImage: "house") { HomeView() }
             Tab("Properties", systemImage: "list.bullet.rectangle") { PropertiesView() }

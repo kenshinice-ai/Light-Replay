@@ -52,9 +52,18 @@ enum NoteStructurer {
             return Suggestion(room: e.room.flatMap { rooms.contains($0) ? $0 : nil },
                               category: ObservationCategory(rawValue: e.category.rawValue) ?? .other,
                               sentiment: Sentiment(rawValue: e.sentiment.rawValue) ?? .neutral,
-                              summary: e.summary)
+                              summary: summaryWithoutNewNumbers(e.summary, transcript: transcript))
         } catch {
             return nil
         }
+    }
+
+    /// ADR-0010: a model may restate, never add. Any digit run in the summary that is absent from the transcript
+    /// voids the summary; the transcript itself is always kept.
+    static func summaryWithoutNewNumbers(_ summary: String, transcript: String) -> String {
+        let numbers = { (text: String) -> Set<String> in
+            Set(text.split(whereSeparator: { !$0.isNumber }).map(String.init))
+        }
+        return numbers(summary).isSubset(of: numbers(transcript)) ? summary : ""
     }
 }

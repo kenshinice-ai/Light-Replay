@@ -32,7 +32,7 @@ final class InspectSensors: NSObject, ObservableObject, CLLocationManagerDelegat
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        let valid = newHeading.headingAccuracy >= 0
+        let valid = newHeading.headingAccuracy >= 0 && newHeading.trueHeading >= 0   // CLHeading: negative = unavailable
         let heading = valid ? newHeading.trueHeading : nil
         let accuracy = valid ? newHeading.headingAccuracy : nil
         MainActor.assumeIsolated {

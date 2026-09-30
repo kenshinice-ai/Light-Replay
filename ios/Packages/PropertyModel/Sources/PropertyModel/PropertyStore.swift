@@ -21,14 +21,36 @@ public enum PropertyStore {
     }
 
     /// Removes every property and resets preferences. Physical deletion, no soft delete (docs/15 §4).
+    /// Files first, then rows, so a failed file wipe never leaves rows pointing at ghosts.
     @MainActor
     public static func deleteEverything(in context: ModelContext) throws {
+        try MediaStore.deleteAll()
+        try SceneStore.deleteAll()
         try context.delete(model: InspectionObservation.self)
         try context.delete(model: Inspection.self)
         try context.delete(model: Property.self)
         try context.delete(model: UserPreferences.self)
         try context.save()
-        MediaStore.deleteAll()
+    }
+
+    /// Deletes one property with its photos and measurement folders.
+    @MainActor
+    public static func delete(_ property: Property, in context: ModelContext) throws {
+        for observation in property.allObservations {
+            MediaStore.delete(observation.mediaPath)
+            SceneStore.delete(sceneID: observation.sceneId)
+        }
+        context.delete(property)
+        try context.save()
+    }
+
+    /// Deletes one observation with its files.
+    @MainActor
+    public static func delete(_ observation: InspectionObservation, in context: ModelContext) throws {
+        MediaStore.delete(observation.mediaPath)
+        SceneStore.delete(sceneID: observation.sceneId)
+        context.delete(observation)
+        try context.save()
     }
 
     /// Finds the open inspection for a property or starts one.

@@ -65,7 +65,7 @@ struct PropertiesView: View {
                             }
                         }
                         .onDelete { offsets in
-                            for index in offsets { context.delete(group[index]) }
+                            for index in offsets { try? PropertyStore.delete(group[index], in: context) }
                         }
                     }
                 }

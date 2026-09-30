@@ -153,7 +153,7 @@ def _capture(value):
         ids.add(f["frame_id"])
         _vector(f["camera_transform"], 16, fpath + ".camera_transform")
         _vector(f["intrinsics"], 9, fpath + ".intrinsics")
-        _number(f["t"], fpath + ".t", low=0)
+        _number(f["t"], fpath + ".t", low=0, high=end - start)
         _number(f["lens_offset_m"], fpath + ".lens_offset_m", low=0, nullable=True)
         _number(f["exposure_offset"], fpath + ".exposure_offset", nullable=True)
         _bool(f["used_for_visibility"], fpath + ".used_for_visibility")
@@ -367,7 +367,7 @@ def validate(record):
     q = _object(r["quality"], "$.quality", "level gates flags false_valid_guard blocked_reason")
     _enum(q["level"], ("R0", "R1", "R2", "R3"), "$.quality.level")
     _enum(q["false_valid_guard"], ("blocked", "passed"), "$.quality.false_valid_guard")
-    gates = _object(q["gates"], "$.quality.gates", "level coverage north segmentation")
+    gates = _object(q["gates"], "$.quality.gates", "level coverage north segmentation lens")
     for key, gate in gates.items():
         _enum(gate, ("pass", "warn", "blocked"), "$.quality.gates." + key)
     _strings(q["flags"], "$.quality.flags")

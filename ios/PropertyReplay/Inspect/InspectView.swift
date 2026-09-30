@@ -54,6 +54,7 @@ struct InspectView: View {
         .onDisappear {
             camera.stop()
             sensors.stop()
+            Task { _ = await recorder.stop() }
         }
     }
 
@@ -135,7 +136,7 @@ struct InspectView: View {
                 Spacer()
                 shutter
                 Spacer()
-                NavigationLink { CaptureValidatorView() } label: {
+                NavigationLink { CaptureValidatorView(property: property, roomLabel: room) } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "sun.max.fill").font(.title2)
                         Text("Measure").font(.caption2)
@@ -221,6 +222,7 @@ struct InspectView: View {
     }
 
     private func save(_ draft: ObservationDraft) {
+        guard StoreHealth.shared.isPersistent else { message = "Storage problem: this note cannot be saved right now."; return }
         let inspection = PropertyStore.openInspection(for: property, in: context)
         let observation = InspectionObservation(kind: draft.kind, category: draft.category, sentiment: draft.sentiment,
                                       source: draft.kind == .photo ? .userPhoto : .userVoice,
@@ -231,21 +233,33 @@ struct InspectView: View {
         observation.headingAccuracyDeg = draft.sensors.headingAccuracyDeg
         observation.latitude = draft.sensors.latitude
         observation.longitude = draft.sensors.longitude
-        if let data = draft.photoData {
-            observation.mediaPath = try? MediaStore.saveJPEG(data, for: observation.uuid)
+        do {
+            if let data = draft.photoData {
+                observation.mediaPath = try MediaStore.saveJPEG(data, for: observation.uuid)
+            }
+            observation.inspection = inspection
+            inspection.observations.append(observation)
+            context.insert(observation)
+            if property.status == .toInspect { property.status = .inspected }
+            try context.save()
+        } catch {
+            MediaStore.delete(observation.mediaPath)
+            context.rollback()
+            message = "Couldn't save: \(error.localizedDescription). Your draft is still here."
+            return
         }
-        observation.inspection = inspection
-        inspection.observations.append(observation)
-        context.insert(observation)
-        try? context.save()
+        message = nil
         self.draft = nil
-        if property.status == .toInspect { property.status = .inspected }
     }
 
     private func finish() {
         property.openInspection?.endedAt = Date()
-        try? context.save()
-        dismiss()
+        do {
+            try context.save()
+            dismiss()
+        } catch {
+            message = "Couldn't close the inspection: \(error.localizedDescription)"
+        }
     }
 }
 

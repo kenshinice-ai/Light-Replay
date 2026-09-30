@@ -178,7 +178,7 @@ internal enum SceneValidator {
         let q = try object(r.value("quality"), "$.quality", "level gates flags false_valid_guard blocked_reason")
         let level = try choice(q.value("level"), ["R0", "R1", "R2", "R3"], "$.quality.level")
         let guardState = try choice(q.value("false_valid_guard"), ["blocked", "passed"], "$.quality.false_valid_guard")
-        let gates = try object(q.value("gates"), "$.quality.gates", "level coverage north segmentation")
+        let gates = try object(q.value("gates"), "$.quality.gates", "level coverage north segmentation lens")
         for (key, value) in gates { try choice(value, ["pass", "warn", "blocked"], "$.quality.gates." + key) }
         _ = try strings(q.value("flags"), "$.quality.flags")
         try optionalText(q.value("blocked_reason"), "$.quality.blocked_reason")
@@ -222,7 +222,7 @@ internal enum SceneValidator {
             try require(ids.insert(id).inserted, fp, "duplicate frame_id")
             try vector(f.value("camera_transform"), 16, fp + ".camera_transform")
             try vector(f.value("intrinsics"), 9, fp + ".intrinsics")
-            try number(f.value("t"), fp + ".t", low: 0)
+            try number(f.value("t"), fp + ".t", low: 0, high: end - start)
             try optionalNumber(f.value("lens_offset_m"), fp + ".lens_offset_m", low: 0)
             try optionalNumber(f.value("exposure_offset"), fp + ".exposure_offset")
             try boolean(f.value("used_for_visibility"), fp + ".used_for_visibility")

@@ -46,7 +46,7 @@
 | `started_at`, `ended_at` | datetime | |
 | `world_alignment` | enum | `gravity`（推荐）或 `gravityAndHeading`；后者的 yaw 只是磁来源候选，不作真北 |
 | `hero_frame` | object | `frame_id`、`image_ref`、`timestamp`、`intrinsics`、`camera_transform`（16 个数，列主序）、`exposure` |
-| `frames[]` | array | 每帧：`frame_id`、`t`、`camera_transform`、`intrinsics`、`tracking_state`（`normal` / `limited:<reason>` / `not_available`）、`lens_offset_m`（与锚点距离）、`depth_ref`、`depth_confidence_ref`、`mask_ref`、`exposure_offset`、`used_for_visibility` |
+| `frames[]` | array | 每帧：`frame_id`、`t`（自首帧起的秒数，来自 ARFrame 时间戳，≤ `ended_at − started_at`）、`camera_transform`、`intrinsics`、`tracking_state`（`normal` / `limited:<reason>` / `not_available`）、`lens_offset_m`（与锚点距离；锚点锁定前为 null）、`depth_ref`、`depth_confidence_ref`、`mask_ref`、`exposure_offset`、`used_for_visibility` |
 | `viewpoint_lock` | object | `anchor_world`、`tolerance_m`、`max_drift_m`、`frames_within`、`frames_beyond`、`handling`（`depth_recentered` / `tolerated` / `rejected`）|
 | `guidance` | object | `question`（`winter_breakfast` / `full_year` / `west_afternoon` / `custom`）、`corridor_ref` |
 
@@ -104,7 +104,7 @@
 ## 8. quality
 
 ```json
-{ "level": "R1", "gates": { "level": "pass", "coverage": "pass", "north": "pass", "segmentation": "warn" },
+{ "level": "R1", "gates": { "level": "pass", "coverage": "pass", "north": "pass", "segmentation": "warn", "lens": "pass" },
   "flags": ["glass_present", "drift_recentered"], "false_valid_guard": "passed", "blocked_reason": null,
   "assist": { "coach": "fm-ondevice", "copy": "fm-ondevice", "glass_flag": "fm-keyframe", "pcc_used": false, "degraded": [] } }
 ```

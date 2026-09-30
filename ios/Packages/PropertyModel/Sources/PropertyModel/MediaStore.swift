@@ -21,10 +21,41 @@ public enum MediaStore {
 
     public static func delete(_ relativePath: String?) {
         guard let relativePath else { return }
-        try? FileManager.default.removeItem(at: url(for: relativePath))
+        removeIgnoringMissing(url(for: relativePath))
     }
 
-    public static func deleteAll() {
-        try? FileManager.default.removeItem(at: root)
+    /// Removes every photo. Throws on anything other than "nothing there".
+    public static func deleteAll() throws {
+        try removeThrowingUnlessMissing(root)
+    }
+
+    static func removeIgnoringMissing(_ url: URL) {
+        try? removeThrowingUnlessMissing(url)
+    }
+
+    static func removeThrowingUnlessMissing(_ url: URL) throws {
+        do { try FileManager.default.removeItem(at: url) }
+        catch let error as CocoaError where error.code == .fileNoSuchFile { return }
+        catch let error as NSError where error.domain == NSPOSIXErrorDomain && error.code == ENOENT { return }
+    }
+}
+
+/// Measurement records (SceneRecord folders, docs/03 §9) live beside the photos under Documents/scenes.
+public enum SceneStore {
+    public static var root: URL {
+        URL.documentsDirectory.appending(path: "scenes", directoryHint: .isDirectory)
+    }
+
+    public static func folder(for sceneID: String) -> URL {
+        root.appending(path: sceneID, directoryHint: .isDirectory)
+    }
+
+    public static func delete(sceneID: String?) {
+        guard let sceneID else { return }
+        MediaStore.removeIgnoringMissing(folder(for: sceneID))
+    }
+
+    public static func deleteAll() throws {
+        try MediaStore.removeThrowingUnlessMissing(root)
     }
 }

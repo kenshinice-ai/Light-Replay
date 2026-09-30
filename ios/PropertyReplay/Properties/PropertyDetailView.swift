@@ -10,6 +10,7 @@ struct PropertyDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable var property: Property
     @State private var confirmingDelete = false
+    @State private var pinNote: String?
 
     var body: some View {
         List {
@@ -22,7 +23,13 @@ struct PropertyDetailView: View {
                     .listRowInsets(EdgeInsets())
                     .allowsHitTesting(false)
                 }
-                Text(property.address)
+                TextField("Address", text: $property.address, axis: .vertical)
+                Button {
+                    Task { await placePinAgain() }
+                } label: {
+                    Label(property.coordinate == nil ? "Place pin" : "Place pin again", systemImage: "mappin.and.ellipse")
+                }
+                if let pinNote { Text(pinNote).font(.footnote).foregroundStyle(.orange) }
                 Picker("Status", selection: $property.status) {
                     ForEach(PropertyStatus.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
@@ -53,12 +60,24 @@ struct PropertyDetailView: View {
             }
         }
         .navigationTitle(property.shortAddress)
+        .task(id: property.address) { pinNote = nil }
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Remove this property and everything recorded for it?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Remove", role: .destructive) {
-                context.delete(property)
+                try? PropertyStore.delete(property, in: context)
                 dismiss()
             }
+        }
+    }
+
+    private func placePinAgain() async {
+        if let hit = await AddressCompleter.resolve(property.address) {
+            property.latitude = hit.latitude
+            property.longitude = hit.longitude
+            property.suburb = hit.locality
+            pinNote = nil
+        } else {
+            pinNote = "Couldn't find this address on the map. Check the spelling or add the suburb."
         }
     }
 }

@@ -24,8 +24,13 @@ final class ObservationTests: XCTestCase {
     func testObservationLevelsFollowRules() {
         XCTAssertEqual(InspectionObservation.level(for: .photo, source: .userPhoto), .observedNoted)
         XCTAssertEqual(InspectionObservation.level(for: .voice, source: .userVoice), .observedNoted)
-        XCTAssertEqual(InspectionObservation.level(for: .light, source: .sensor), .observedMeasured)
+        XCTAssertEqual(InspectionObservation.level(for: .light, source: .sensor), .unknown, "light is never measured by construction")
         XCTAssertEqual(InspectionObservation.level(for: .voice, source: .model), .indicative)
+        XCTAssertEqual(InspectionObservation.lightLevel(qualityLevel: "R1", falseValidGuard: "passed", bandState: "direct"), .observedMeasured)
+        XCTAssertEqual(InspectionObservation.lightLevel(qualityLevel: "R1", falseValidGuard: "passed", bandState: "sensitive"), .indicative)
+        XCTAssertEqual(InspectionObservation.lightLevel(qualityLevel: "R1", falseValidGuard: "passed", bandState: "unknown"), .unknown)
+        XCTAssertEqual(InspectionObservation.lightLevel(qualityLevel: "R0", falseValidGuard: "blocked", bandState: "direct"), .unknown)
+        XCTAssertEqual(InspectionObservation.lightLevel(qualityLevel: "R2", falseValidGuard: "blocked", bandState: "direct"), .unknown)
     }
 
     func testAskSetsFollowUpAndCascadeDelete() throws {

@@ -18,6 +18,8 @@ final class NoteRecorder: ObservableObject {
     @Published private(set) var transcript = ""
     /// True between press and release. Preparation can outlive a short press; when it finishes we honour this.
     private var pressActive = false
+    /// Bumped by every start() and stop(); an in-flight start() abandons itself when it is no longer current.
+    private var generation = 0
 
     private var engine: AVAudioEngine?
     private var analyzer: SpeechAnalyzer?
@@ -33,14 +35,20 @@ final class NoteRecorder: ObservableObject {
         case .idle, .unavailable: break
         default: return
         }
+        generation += 1
+        let mine = generation
         state = .preparing
         transcript = ""
+        /// After every await: bail out if the finger lifted or another start()/stop() superseded us.
+        func stillWanted() -> Bool { mine == generation && pressActive }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .unavailable("Microphone access is off. Enable it in Settings to dictate notes.")
             return
         }
+        guard stillWanted() else { state = .idle; return }
         let locale = Locale.current
         let supported = await SpeechTranscriber.supportedLocales
+        guard stillWanted() else { state = .idle; return }
         guard supported.contains(where: { $0.identifier(.bcp47).lowercased().hasPrefix(locale.language.languageCode?.identifier.lowercased() ?? "zz") }) else {
             state = .unavailable("On-device transcription does not support \(locale.identifier) yet.")
             return
@@ -54,11 +62,13 @@ final class NoteRecorder: ObservableObject {
             state = .unavailable("Speech model is not installed: \(error.localizedDescription)")
             return
         }
+        guard stillWanted() else { state = .idle; return }
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
             state = .unavailable("No compatible audio format for transcription.")
             return
         }
+        guard stillWanted() else { state = .idle; return }
         let (stream, continuation) = AsyncStream.makeStream(of: AnalyzerInput.self)
         self.transcriber = transcriber
         self.analyzer = analyzer
@@ -83,7 +93,8 @@ final class NoteRecorder: ObservableObject {
             let input = engine.inputNode
             let inputFormat = input.outputFormat(forBus: 0)
             let converter = BufferConverter(from: inputFormat, to: format)
-            input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
+            // @Sendable: the tap runs on the audio thread; an actor-isolated closure would trap there (device crash 2026-09-30).
+            input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { @Sendable buffer, _ in
                 guard let converted = converter.convert(buffer) else { return }
                 continuation.yield(AnalyzerInput(buffer: converted))
             }
@@ -91,8 +102,8 @@ final class NoteRecorder: ObservableObject {
             try engine.start()
             self.engine = engine
             try await analyzer.start(inputSequence: stream)
+            guard stillWanted() else { await shutdown(); state = .idle; return }   // released while preparing
             state = .recording
-            if !pressActive { _ = await stop() }   // released while we were still preparing
         } catch {
             teardownAudio()
             state = .unavailable("Could not start the microphone: \(error.localizedDescription)")
@@ -102,8 +113,23 @@ final class NoteRecorder: ObservableObject {
     /// Returns the final transcript.
     func stop() async -> String {
         pressActive = false
-        guard state == .recording else { return transcript }   // still preparing: start() will stop itself
-        state = .finishing
+        generation += 1
+        switch state {
+        case .recording:
+            state = .finishing
+            await shutdown()
+            state = .idle
+            return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        case .preparing:
+            state = .idle          // the in-flight start() sees the new generation and cleans up after itself
+            return ""
+        default:
+            return transcript
+        }
+    }
+
+    /// Stops audio, drains the analyzer, releases everything. Safe to call twice.
+    private func shutdown() async {
         teardownAudio()
         inputContinuation?.finish()
         inputContinuation = nil
@@ -112,8 +138,6 @@ final class NoteRecorder: ObservableObject {
         resultsTask = nil
         analyzer = nil
         transcriber = nil
-        state = .idle
-        return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func teardownAudio() {

@@ -55,7 +55,7 @@
   "geometry": null,
   "analysis": [],
   "quality": {
-    "level": "R0", "gates": {"level": "pass", "coverage": "blocked", "north": "blocked", "segmentation": "blocked"},
+    "level": "R0", "gates": {"level": "pass", "coverage": "blocked", "north": "blocked", "segmentation": "blocked", "lens": "blocked"},
     "flags": ["synthetic_fixture", "sensors_unavailable"],
     "false_valid_guard": "blocked", "blocked_reason": "Synthetic capture-only example; no analysis evidence"
   },

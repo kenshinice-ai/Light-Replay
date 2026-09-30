@@ -29,10 +29,7 @@ struct InspectionSummaryView: View {
             Section {
                 ForEach(items) { ObservationRow(observation: $0) }
                     .onDelete { offsets in
-                        for index in offsets {
-                            MediaStore.delete(items[index].mediaPath)
-                            context.delete(items[index])
-                        }
+                        for index in offsets { try? PropertyStore.delete(items[index], in: context) }
                     }
             } header: {
                 Label(title, systemImage: symbol)

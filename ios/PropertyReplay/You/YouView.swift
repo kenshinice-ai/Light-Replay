@@ -8,6 +8,7 @@ struct YouView: View {
     @Query private var preferencesRows: [UserPreferences]
     @Query private var properties: [Property]
     @State private var confirmingDelete = false
+    @State private var deleteError: String?
 
     var body: some View {
         NavigationStack {
@@ -39,11 +40,11 @@ struct YouView: View {
                         LabeledContent("Viewpoint tolerance") {
                             Stepper(String(format: "%.2f m", preferences.viewpointToleranceM), value: binding.viewpointToleranceM, in: 0.05...0.5, step: 0.05)
                         }
-                        NavigationLink("Capture validator") { CaptureValidatorView() }
+                        NavigationLink("Capture validator (unbound, debug)") { CaptureValidatorView(property: nil, roomLabel: nil) }
                     }
                 }
                 Section("Privacy & data") {
-                    Text("Properties, photos, notes and measurements stay on this device. Nothing is uploaded unless you share a page.")
+                    Text("Addresses go to Apple Maps only to place a pin. Properties, photos, notes and measurements stay on this device; nothing is uploaded unless you share a page.")
                         .font(.footnote).foregroundStyle(.secondary)
                     LabeledContent("Properties", value: "\(properties.count)")
                     Button("Delete everything", role: .destructive) { confirmingDelete = true }
@@ -51,14 +52,20 @@ struct YouView: View {
                 Section("About") {
                     LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
                     NavigationLink("What the evidence labels mean") { EvidenceLegendView() }
+                    NavigationLink("Device capabilities") { CapabilitiesView() }
                     ForEach(StoreHealth.shared.messages, id: \.self) { Text($0).font(.footnote).foregroundStyle(.orange) }
                 }
             }
             .navigationTitle("You")
             .task { _ = try? PropertyStore.preferences(in: context) }
             .confirmationDialog("Delete every property, note and measurement on this device?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-                Button("Delete everything", role: .destructive) { try? PropertyStore.deleteEverything(in: context) }
+                Button("Delete everything", role: .destructive) {
+                    do { try PropertyStore.deleteEverything(in: context) } catch { deleteError = error.localizedDescription }
+                }
             }
+            .alert("Couldn't delete everything", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: { Text(deleteError ?? "") }
         }
     }
 }

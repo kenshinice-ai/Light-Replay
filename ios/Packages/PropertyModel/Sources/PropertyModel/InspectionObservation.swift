@@ -151,10 +151,20 @@ public final class InspectionObservation {
     /// Observed · measured; anything a model produced is Indicative.
     public static func level(for kind: ObservationKind, source: EvidenceSource) -> EvidenceLevel {
         switch (kind, source) {
-        case (.light, .sensor): .observedMeasured
+        case (.light, _): .unknown          // only the SceneRecord quality mapping can raise this (lightLevel below)
         case (_, .model): .indicative
         case (.photo, _), (.voice, _), (.tag, _): .observedNoted
-        default: .unknown
+        }
+    }
+
+    /// Rule for light measurements (ADR-0013, docs/15 §2): a passed R1/R2 record's stable-direct band is measured;
+    /// its direction-sensitive band is indicative; anything else, including R0 or a blocked guard, stays unknown.
+    public static func lightLevel(qualityLevel: String, falseValidGuard: String, bandState: String) -> EvidenceLevel {
+        guard qualityLevel != "R0", falseValidGuard == "passed" else { return .unknown }
+        switch bandState {
+        case "direct": return .observedMeasured
+        case "sensitive": return .indicative
+        default: return .unknown
         }
     }
 
