@@ -107,7 +107,7 @@ struct AddPropertyView: View {
                                 inspectionAt: hasInspection ? (inspectionAt ?? nextSaturdayMorning) : nil)
         context.insert(property)
         do {
-            try PropertyStore.commit(context)   // rolls the insert back on failure, so a retry never adds a second row (R06)
+            try PropertyStore.commit(context, discardingInserted: [property])   // a retry never adds a second row (R06)
         } catch {
             storageError = error.localizedDescription
             return

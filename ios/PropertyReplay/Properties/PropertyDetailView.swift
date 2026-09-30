@@ -12,7 +12,6 @@ struct PropertyDetailView: View {
     @State private var confirmingDelete = false
     @State private var pinNote: String?
     @State private var placingPin = false
-    @State private var deleteError: String?
 
     var body: some View {
         List {
@@ -73,15 +72,13 @@ struct PropertyDetailView: View {
             Button("Remove", role: .destructive) {
                 do {
                     try PropertyStore.delete(property, in: context)
-                    dismiss()
                 } catch {
-                    deleteError = "\(error.localizedDescription) Nothing was removed; try again."
+                    // The deletion stays pending and completes with the next save; this page must not outlive it.
+                    StoreHealth.shared.note("Removing a property didn't finish saving (\(error.localizedDescription)); it completes with the next save.")
                 }
+                dismiss()
             }
         }
-        .alert("Couldn't remove this property", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: { Text(deleteError ?? "") }
     }
 
     /// Resolves the current address. A result for an address the buyer has since edited is dropped (R07).

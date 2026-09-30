@@ -2,7 +2,11 @@ import Foundation
 import SwiftData
 
 /// Container factory, transactions and the few queries that are not one-liners. The database is the single source of
-/// truth for rows and their bytes (ADR-0017): every write here either saves completely or rolls back and throws.
+/// truth for rows and their bytes (ADR-0017).
+///
+/// Failure rule: never `ModelContext.rollback()`. It traps once a model with an external-storage attribute has been
+/// deleted in the context (group memory swiftdata-rollback-after-delete-traps; found in PWE Receipts 2026-09-30).
+/// A failed insert removes what it inserted by hand; a failed delete stays pending and completes on the next save.
 public enum PropertyStore {
     public static let schema = Schema([Property.self, Inspection.self, InspectionObservation.self, UserPreferences.self])
     /// The CloudKit container for the private database (ADR-0017). Must match the app's iCloud entitlement.
@@ -15,11 +19,20 @@ public enum PropertyStore {
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
-    /// Saves, or discards every pending change and rethrows, so a failed save never leaves half a change in memory.
+    /// An on-disk store at a given URL, never synced. For failure-injection tests on a real store.
+    public static func container(storeURL: URL) throws -> ModelContainer {
+        try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: storeURL, cloudKitDatabase: .none)])
+    }
+
+    /// The save itself. Tests replace it to inject failures.
+    @MainActor public static var save: (ModelContext) throws -> Void = { try $0.save() }
+
+    /// Saves; on failure deletes the models this change inserted (so a retry never duplicates them) and rethrows.
+    /// Callers detach relationships to surviving models first, so nothing keeps pointing at a discarded model.
     @MainActor
-    public static func commit(_ context: ModelContext) throws {
-        do { try context.save() } catch {
-            context.rollback()
+    public static func commit(_ context: ModelContext, discardingInserted inserted: [any PersistentModel] = []) throws {
+        do { try save(context) } catch {
+            for model in inserted { context.delete(model) }
             throw error
         }
     }
@@ -38,29 +51,27 @@ public enum PropertyStore {
         }
         let created = UserPreferences()
         context.insert(created)
-        try commit(context)
+        try commit(context, discardingInserted: [created])
         return created
     }
 
     /// Removes every property and resets preferences, here and (with sync on) in iCloud. Physical deletion, no soft
     /// delete (docs/15 §4). Rows go first because they hold the bytes; legacy folders are removed afterwards and an
     /// error there is reported, not hidden.
+    /// Deletes row by row: SwiftData's batch `delete(model:)` traps on save when the context already holds a pending
+    /// delete of a model with external storage (FailureInjectionTests, 2026-09-30).
     @MainActor
     public static func deleteEverything(in context: ModelContext) throws {
-        do {
-            try context.delete(model: InspectionObservation.self)
-            try context.delete(model: Inspection.self)
-            try context.delete(model: Property.self)
-            try context.delete(model: UserPreferences.self)
-        } catch {
-            context.rollback()
-            throw error
-        }
+        for property in try context.fetch(FetchDescriptor<Property>()) where !property.isDeleted { context.delete(property) }
+        for inspection in try context.fetch(FetchDescriptor<Inspection>()) where !inspection.isDeleted { context.delete(inspection) }
+        for observation in try context.fetch(FetchDescriptor<InspectionObservation>()) where !observation.isDeleted { context.delete(observation) }
+        for preferences in try context.fetch(FetchDescriptor<UserPreferences>()) where !preferences.isDeleted { context.delete(preferences) }
         try commit(context)
         try LegacyFiles.removeAll()
     }
 
-    /// Deletes one property with everything recorded for it (cascade). Photos and records go with their rows.
+    /// Deletes one property with everything recorded for it (cascade). Photos and records go with their rows. If the save
+    /// fails the deletion stays pending and completes with the next successful save.
     @MainActor
     public static func delete(_ property: Property, in context: ModelContext) throws {
         context.delete(property)
@@ -84,14 +95,28 @@ public enum PropertyStore {
         return inspection
     }
 
-    /// Adds an observation to the property's open inspection and saves; on failure nothing is kept.
+    /// Adds an observation to the property's open inspection and saves; on failure nothing of this change is kept.
     @MainActor
     public static func record(_ observation: InspectionObservation, for property: Property, in context: ModelContext) throws {
+        let startsInspection = property.openInspection == nil
         let inspection = openInspection(for: property, in: context)
+        let previousStatus = property.status
         context.insert(observation)
         observation.inspection = inspection
         if property.status == .toInspect { property.status = .inspected }
-        try commit(context)
+        do {
+            try save(context)
+        } catch {
+            // Undo by hand (never rollback): detach, then delete what this call inserted.
+            observation.inspection = nil
+            context.delete(observation)
+            if startsInspection {
+                inspection.property = nil
+                context.delete(inspection)
+            }
+            property.status = previousStatus
+            throw error
+        }
     }
 }
 

@@ -26,3 +26,8 @@
 - 两台设备同时在线、离线再上线、删除传播、`UserPreferences` 两行合并，都要 Lee 的 iPad 登录同一 Apple ID 后手测。
 - 上架前要在 CloudKit Console 把 schema 部署到 production。
 - 模拟器没有 iCloud 账号，只验证了"无账号时照常本地运行"。
+
+## 补记（同晚，真机崩溃之后）
+
+- 保存或丢弃照片 / 笔记即崩（21:24 两次）：卡片用了强制解包的 `Binding($draft)`，我修 R03 时引入。已换成不解包的绑定，并加 UI 测试 `InspectFlowUITests`；把旧写法换回去，测试报"app crashed"。
+- R01 的"失败即 rollback"在带外部存储的行被删除后会崩（PWE Receipts 同日发现）。已改为从不 rollback：插入失败手动撤销并解除关联，删除失败保持待删。故障注入测试还抓到两处：重试时新记录挂到已删除的 inspection 上（静默丢数据），以及待删行与批量删除叠加后保存崩溃。均已修，5 个故障注入测试覆盖。

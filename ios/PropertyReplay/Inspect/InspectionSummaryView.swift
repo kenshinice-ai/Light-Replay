@@ -36,7 +36,7 @@ struct InspectionSummaryView: View {
                         do {
                             for index in offsets { try PropertyStore.delete(items[index], in: context) }
                         } catch {
-                            deleteError = "\(error.localizedDescription) Nothing was removed; try again."
+                            deleteError = "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves."
                         }
                     }
             } header: {

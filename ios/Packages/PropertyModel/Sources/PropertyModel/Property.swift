@@ -61,10 +61,10 @@ public final class Property {
     }
 
     /// The inspection still in progress, if any.
-    public var openInspection: Inspection? { (inspections ?? []).first { $0.isOpen } }
+    public var openInspection: Inspection? { (inspections ?? []).first { $0.isOpen && !$0.isDeleted } }
 
     public var allObservations: [InspectionObservation] {
-        (inspections ?? []).flatMap { $0.observations ?? [] }.sorted { $0.capturedAt > $1.capturedAt }
+        (inspections ?? []).filter { !$0.isDeleted }.flatMap { $0.observations ?? [] }.filter { !$0.isDeleted }.sorted { $0.capturedAt > $1.capturedAt }
     }
 
     public var source: PropertySource {
