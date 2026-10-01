@@ -10,13 +10,17 @@ public struct PendingCapture: Codable, Sendable, Equatable {
     public var roomLabel: String?
     public var capturedAt: Date
     public var record: Data
+    /// What the observation says, e.g. "Light scan · winter sun path 92% seen · analysis pending". Optional so files
+    /// written before it existed still decode.
+    public var note: String?
 
-    public init(sceneID: String, propertyUUID: UUID, roomLabel: String?, capturedAt: Date, record: Data) {
+    public init(sceneID: String, propertyUUID: UUID, roomLabel: String?, capturedAt: Date, record: Data, note: String? = nil) {
         self.sceneID = sceneID
         self.propertyUUID = propertyUUID
         self.roomLabel = roomLabel
         self.capturedAt = capturedAt
         self.record = record
+        self.note = note
     }
 }
 
@@ -52,7 +56,7 @@ public enum PendingCaptures {
                                                 roomLabel: capture.roomLabel, capturedAt: capture.capturedAt)
         observation.sceneId = capture.sceneID
         observation.sceneRecordData = capture.record
-        observation.text = "Light measurement recorded (analysis pending)"
+        observation.text = capture.note ?? "Light measurement recorded (analysis pending)"
         try PropertyStore.record(observation, for: property, in: context)
         try? remove(sceneID: capture.sceneID, root: root)   // a leftover is recognised by scene_id next time
         return observation

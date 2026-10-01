@@ -4,9 +4,12 @@ import Foundation
 import simd
 import UIKit
 
-/// Week-1 capture validator (docs/07 W1): runs an ARKit world-tracking session, samples every frame's pose
-/// and intrinsics as plain values, records heading readings and a location fix, and hands back a
-/// `CaptureLog`. It never keeps ARFrames and never computes anything about the sun.
+/// The OneTake recorder (docs/04, docs/07 W1): runs an ARKit world-tracking session, samples every frame's pose
+/// and intrinsics as plain values, records heading readings and a location fix, and hands back a `CaptureLog`.
+/// It never keeps ARFrames and never computes anything about the sun.
+///
+/// Two stages: `startPreview()` runs the session so a camera view can show it and the compass can settle;
+/// `start()` begins the record (and the preview if needed), and the viewpoint anchor locks on the next normal frame.
 @MainActor
 public final class CaptureRecorder: NSObject, ObservableObject {
     public enum Availability: Sendable, Equatable {
@@ -14,11 +17,16 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         case unsupported(String)
     }
 
+    /// True while a record is being taken.
     @Published public private(set) var isRunning = false
+    /// True while the ARSession runs, recording or not.
+    @Published public private(set) var isPreviewing = false
     @Published public private(set) var frameCount = 0
     @Published public private(set) var trackingState = "not_available"
     @Published public private(set) var anchorLocked = false
     @Published public private(set) var currentDriftM: Double?
+    /// Lens position minus the anchor, AR world metres. Nil before the anchor locks.
+    @Published public private(set) var currentOffset: SIMD3<Double>?
     @Published public private(set) var maxDriftM: Double?
     @Published public private(set) var latestHeading: HeadingSample?
     @Published public private(set) var location: LocationSample?
@@ -26,6 +34,10 @@ public final class CaptureRecorder: NSObject, ObservableObject {
 
     public let availability: Availability
     public var viewpointToleranceM = 0.15
+    /// Called on the main queue with every frame while the session runs. It must not keep the frame.
+    public var frameObserver: (@MainActor (ARFrame) -> Void)?
+    /// The session a camera view (RealityKit `ARView`) displays. The recorder stays its delegate.
+    public var arSession: ARSession { session }
 
     private let session = ARSession()
     private let locationManager = CLLocationManager()
@@ -51,24 +63,13 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
     }
 
-    public func start() {
-        guard availability == .supported, !isRunning else { return }
-        // Fresh session, fresh evidence: nothing from a previous scan may leak into this record.
-        frames.removeAll()
-        headings.removeAll()
-        anchor = nil
-        anchorFrameID = nil
-        anchorLocked = false
-        frameCount = 0
-        maxDriftM = nil
-        currentDriftM = nil
+    /// Runs the session without recording: camera view, tracking, compass and location warm up.
+    public func startPreview() {
+        guard availability == .supported, !isPreviewing else { return }
         latestHeading = nil
         location = nil
         failureReason = nil
-        firstFrameAt = nil
-        firstFrameTimestamp = nil
-        sessionID = UUID().uuidString
-        startedAt = Date()
+        trackingState = "not_available"
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity   // az_ar is measured from the session's -Z axis (docs/02 §3)
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
@@ -78,16 +79,45 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         locationManager.startUpdatingLocation()
         if CLLocationManager.headingAvailable() { locationManager.startUpdatingHeading() }
         session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        isPreviewing = true
+    }
+
+    /// Begins a record in the running session (starting it if needed). The anchor locks on the next normal frame.
+    public func start() {
+        guard availability == .supported, !isRunning else { return }
+        startPreview()
+        // Fresh record, fresh evidence: nothing from a previous scan may leak into this one.
+        frames.removeAll()
+        headings.removeAll()
+        anchor = nil
+        anchorFrameID = nil
+        anchorLocked = false
+        frameCount = 0
+        maxDriftM = nil
+        currentDriftM = nil
+        currentOffset = nil
+        failureReason = nil
+        firstFrameAt = nil
+        firstFrameTimestamp = nil
+        sessionID = UUID().uuidString
+        startedAt = Date()
         isRunning = true
     }
 
-    /// Stops the session and returns the log. Returns nil if nothing was started.
-    public func stop(targetLabel: String = "Capture validator target", targetHeightM: Double? = nil) -> CaptureLog? {
-        guard isRunning, let startedAt else { return nil }
+    /// Stops the session without keeping anything. Safe when nothing runs.
+    public func endPreview() {
+        guard isPreviewing else { return }
         session.pause()
         locationManager.stopUpdatingHeading()
         locationManager.stopUpdatingLocation()
+        isPreviewing = false
         isRunning = false
+    }
+
+    /// Stops the session and returns the log. Returns nil if nothing was recorded.
+    public func stop(targetLabel: String = "Capture validator target", targetHeightM: Double? = nil) -> CaptureLog? {
+        guard isRunning, let startedAt else { return nil }
+        endPreview()
         let device = DeviceInfo(
             model: Self.modelIdentifier,
             os: "iOS \(UIDevice.current.systemVersion)",
@@ -153,6 +183,9 @@ public final class CaptureRecorder: NSObject, ObservableObject {
 
 extension CaptureRecorder: ARSessionDelegate {
     nonisolated public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // The delegate queue is main (init), so the frame is handed to the observer synchronously; it must not
+        // outlive this callback.
+        MainActor.assumeIsolated { self.frameObserver?(frame) }
         // Extract plain values now; the ARFrame must not outlive this callback.
         let transform = Self.flatten(frame.camera.transform)
         let intrinsics = Self.flatten(frame.camera.intrinsics)
@@ -184,6 +217,7 @@ extension CaptureRecorder: ARSessionDelegate {
 
     private func record(transform: [Double], intrinsics: [Double], state: String,
                         hasDepth: Bool, exposure: Double, timestamp: TimeInterval) {
+        if trackingState != state { trackingState = state }   // published: only on change, not 60 times a second
         guard isRunning else { return }
         if firstFrameTimestamp == nil {
             firstFrameTimestamp = timestamp
@@ -198,8 +232,8 @@ extension CaptureRecorder: ARSessionDelegate {
         }
         let drift = anchor.map { simd_distance($0, position) }
         currentDriftM = drift
+        currentOffset = anchor.map { position - $0 }
         if let drift { maxDriftM = max(maxDriftM ?? 0, drift) }
-        trackingState = state
         frames.append(FrameSample(
             frameID: frameID,
             t: timestamp - (firstFrameTimestamp ?? timestamp),
@@ -219,9 +253,9 @@ extension CaptureRecorder: CLLocationManagerDelegate {
         let sample = HeadingSample(trueHeading: newHeading.trueHeading, magneticHeading: newHeading.magneticHeading,
                                    headingAccuracy: newHeading.headingAccuracy, sampledAt: newHeading.timestamp)
         MainActor.assumeIsolated {
-            guard self.isRunning else { return }
-            self.headings.append(sample)
+            guard self.isPreviewing else { return }
             self.latestHeading = sample
+            if self.isRunning { self.headings.append(sample) }
         }
     }
 
@@ -232,7 +266,7 @@ extension CaptureRecorder: CLLocationManagerDelegate {
                                     horizontalAccuracyM: last.horizontalAccuracy >= 0 ? last.horizontalAccuracy : nil,
                                     verticalAccuracyM: last.verticalAccuracy >= 0 ? last.verticalAccuracy : nil,
                                     capturedAt: last.timestamp)
-        MainActor.assumeIsolated { if self.isRunning { self.location = sample } }
+        MainActor.assumeIsolated { if self.isPreviewing { self.location = sample } }
     }
 
     nonisolated public func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}

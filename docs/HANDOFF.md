@@ -72,7 +72,8 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | SceneRecord 格式与校验（Swift / Python 一致） | ✓ | ✓ | — | `scripts/test.sh` |
 | R0 采集验证器（每帧姿态、全部罗盘读数、一次定位） | ✓ | ✓ | ✓ 首跑 167 帧、漂移 0.14 m、罗盘 ±13°、定位 ±8 m | 北向候选依赖"竖持时 CLHeading = 后摄方位"假设，待日晷验证 |
 | 五个 tab、Properties List / Map、地址补全 | ✓ | ✓ | ✓ | |
-| Inspect：拍照、按住说话、Like / Concern / Ask、Measure 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | |
+| Inspect：拍照、按住说话、Like / Concern / Ask、Light 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | Measure 在界面上改名 Light（ADR-0015 修订） |
+| Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`，模拟器假相机） | 已装 iPhone / iPad，待 Lee 实测 | 不出日照小时：没有天空分割，记录仍是 R0。真机上要看：弧线是否落在天空对的位置、罗盘 σ、转一圈后覆盖率能否到 90% |
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
 | PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
 | iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ iPhone → iPad：两台真机数据库逐表计数一致，照片与测量记录字节已同步 | 离线再上线、删除传播待测 |
@@ -83,9 +84,9 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；Swift / Python 1e-7° | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
-| 天空分割（相机帧 → 可见域网格）、QualityEvaluator、测量结果页与回放 | — | — | — | 第三批剩余；SunEngine 已可接入 |
+| 天空分割（相机帧 → 可见域网格）、QualityEvaluator、日照结果页与回放 | — | — | — | 第三批剩余；扫描界面与 SunEngine 已就位，分割接上后结果卡换成时段 |
 
-UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风。约 1 分钟，改 Inspect 必跑。
+UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机（`-syntheticSweepSpeed <度/秒>`，0 = 不动）。约 2.5 分钟，改 Inspect 或 Light 必跑。用专用模拟器 "Property Replay iPhone"：默认的 iPhone 17/18 Pro 模拟器会被别的项目会话占用（组记忆 simulator-shared-with-other-sessions）。
 
 界面评审（apple-design）：`reviews/2026-09-30-apple-design-review.md`。扫描界面尚不存在，Measure 目前通向调试页。
 

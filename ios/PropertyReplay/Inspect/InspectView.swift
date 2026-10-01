@@ -22,6 +22,7 @@ struct InspectView: View {
     @State private var busy = false
     @State private var message: String?
     @State private var confirmingExit = false
+    @State private var scanningLight = false
 
     var body: some View {
         ZStack {
@@ -56,6 +57,9 @@ struct InspectView: View {
             Button("Save and finish") { if save() { finish() } }
             Button("Discard and finish", role: .destructive) { draft = nil; finish() }
             Button("Keep inspecting", role: .cancel) {}
+        }
+        .fullScreenCover(isPresented: $scanningLight, onDismiss: { Task { await camera.start() } }) {
+            LightScanView(property: property, roomLabel: room)
         }
         .onChange(of: scenePhase) { _, phase in
             // Never keep the microphone open in the background; what was said becomes a draft (R05).
@@ -153,14 +157,21 @@ struct InspectView: View {
                 Spacer()
                 shutter
                 Spacer()
-                NavigationLink { CaptureValidatorView(property: property, roomLabel: room) } label: {
+                Button {
+                    camera.stop()   // ARKit needs the camera to itself
+                    scanningLight = true
+                } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: "sun.max.fill").font(.title2)
-                        Text("Measure").font(.caption2)
+                        Image(systemName: "sun.max.fill").font(.title2).foregroundStyle(SunPathOverlay.sun)
+                        Text("Light").font(.caption2)
                     }
                     .frame(width: 72)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .disabled(recorder.isRecording)
+                .accessibilityLabel("Light")
+                .accessibilityHint("Scan the sky to see where the sun passes")
             }
             .padding(.horizontal, 28)
             .padding(.vertical, 14)

@@ -107,18 +107,11 @@ struct CaptureValidatorView: View {
         let label = property.map { "\($0.shortAddress)\(roomLabel.map { " · \($0)" } ?? "")" } ?? "Capture validator target"
         guard let log = recorder.stop(targetLabel: label, targetHeightM: height) else { return }
         do {
-            let legacy = (try? FileManager.default.contentsOfDirectory(atPath: LegacyFiles.scenesRoot.path)) ?? []
-            let taken = PendingCaptures.takenSceneIDs(in: context).union(legacy)
-            let sceneID = SceneRecordBuilder.nextSceneID(taken: taken, date: log.endedAt, timezone: log.timezone)
-            let record = try SceneRecordBuilder.build(log, sceneID: sceneID).encoded()
-            exportURL = try shareCopy(record, sceneID: sceneID)
+            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, note: nil, in: context)
+            exportURL = outcome.shareURL
             lastError = nil
-            guard let property else { return }
-            let capture = PendingCapture(sceneID: sceneID, propertyUUID: property.uuid, roomLabel: roomLabel,
-                                         capturedAt: log.endedAt, record: record)
-            try PendingCaptures.write(capture)
-            pending = capture
-            attach()
+            pending = outcome.pending
+            attachError = outcome.attachError.map { "Couldn't add it to the property: \($0)" }
         } catch {
             lastError = String(describing: error)
         }
@@ -128,20 +121,11 @@ struct CaptureValidatorView: View {
     private func attach() {
         guard let capture = pending, let property else { return }
         do {
-            try PendingCaptures.commit(capture, to: property, in: context)
+            try LightCaptureSaver.attach(capture, to: property, in: context)
             pending = nil
             attachError = nil
         } catch {
             attachError = "Couldn't add it to the property: \(error.localizedDescription)"
         }
-    }
-
-    /// A temporary file for the share sheet. The record itself lives on the observation row.
-    private func shareCopy(_ record: Data, sceneID: String) throws -> URL {
-        let folder = URL.temporaryDirectory.appending(path: "scenes", directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let url = folder.appending(path: "\(sceneID).json")
-        try record.write(to: url, options: .atomic)
-        return url
     }
 }

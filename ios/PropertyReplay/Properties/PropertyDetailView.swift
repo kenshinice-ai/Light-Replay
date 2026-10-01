@@ -12,6 +12,7 @@ struct PropertyDetailView: View {
     @State private var confirmingDelete = false
     @State private var pinNote: String?
     @State private var placingPin = false
+    @State private var scanningLight = false
 
     var body: some View {
         List {
@@ -58,13 +59,23 @@ struct PropertyDetailView: View {
                 }
                 NavigationLink { InspectView(property: property) } label: { Label("Inspect now", systemImage: "camera.viewfinder") }
             }
-            Section("Replay") {
-                Text("Light Replay appears after the first Measure at this property.").foregroundStyle(.secondary)
+            Section("Light") {
+                let scans = property.allObservations.filter { $0.kind == .light }
+                if scans.isEmpty {
+                    Text("Stand where you'd sit and scan the sky. You'll see where the sun passes through the year.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(scans.prefix(3)) { ObservationRow(observation: $0) }
+                }
+                Button { scanningLight = true } label: {
+                    Label(scans.isEmpty ? "Scan the light here" : "Scan again", systemImage: "sun.max")
+                }
             }
             Section {
                 Button("Remove property", role: .destructive) { confirmingDelete = true }
             }
         }
+        .fullScreenCover(isPresented: $scanningLight) { LightScanView(property: property, roomLabel: nil) }
         .navigationTitle(property.shortAddress)
         .task(id: property.address) { pinNote = nil }
         .navigationBarTitleDisplayMode(.inline)

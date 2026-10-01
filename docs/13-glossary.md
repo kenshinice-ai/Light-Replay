@@ -18,7 +18,8 @@
 | **Prep / Inspect / Replay / Compare / Ask** | 产品的五个短词，对应 Before / During / After |
 | **五个 tab** | Home / Properties / Inspect / Compare / You（docs/14 §1） |
 | **You** | 优先级、个人信息、偏好、隐私与数据、高级设置、关于 |
-| **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015） |
+| **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015）。Measure 在界面上叫 **Light**（2026-10-01 修订） |
+| **Light scan** | Light 动作的界面：全屏相机 + 太阳路径叠加 + 单行指引 + 走廊覆盖率（`04` §11） |
 | **Like / Concern / Ask** | 三个快速标签 |
 | **3 things** | Prep 页只显示的三条提醒 |
 | **Your inspection** | 看房后的记忆页，不是报告 |

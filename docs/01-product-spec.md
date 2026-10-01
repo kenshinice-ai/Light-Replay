@@ -7,7 +7,7 @@
 | 阶段 | 用户的问题 | 产品给什么 | 时间预算 |
 |---|---|---|---|
 | **Before · Prep** | 我要去看这套房，该注意什么？ | 3 things worth noticing；建议 OneTake 的点；看房时刻的太阳位置 | 1 分钟 |
-| **During · Inspect** | 我只有 20 分钟，帮我记住真正重要的 | Capture / Note / Measure；Like / Concern / Ask | ≤ 3 分钟额外操作 |
+| **During · Inspect** | 我只有 20 分钟，帮我记住真正重要的 | Capture / Note / Light；Like / Concern / Ask | ≤ 3 分钟额外操作 |
 | **After · Replay · Compare · Ask** | 看了 6 套，哪一套更符合我的生活？ | Your inspection；Replay · Light；Compare；Ask next | 回家后 |
 
 首批用户：正在比较住宅、有明确日照或空间问题的自住买家与租客（墨尔本、悉尼）。以任务招募，不以族裔或"喜欢科技"招募。Paradise Production 的采集员是第二类用户（`09-light-passport.md`）。
@@ -58,7 +58,7 @@
 |---|---|---|---|
 | **Capture** | 拍一张 | 时刻、位置与精度、朝向候选、设备姿态、可选房间标签 | Observation（user_photo，Observed·noted） |
 | **Note** | 按住说话 | 端侧转写；FM 结构化为 room / category / sentiment / text / followUp；原文保留可编辑；不存音频 | Observation（user_voice，Observed·noted）；followUp → Question |
-| **Measure** | 站到会生活的位置，按 `04-capture-protocol.md` 做 OneTake | SceneRecord | LightObservation（sensor，等级按 R1 结果映射） |
+| **Light**（文档旧称 Measure） | 站到会生活的位置，按 `04-capture-protocol.md` 做 OneTake；界面见 `04` §11 | SceneRecord | LightObservation（sensor，等级按 R1 结果映射） |
 
 - 三个快速标签：Like / Concern / Ask。Ask 自动生成 Question。
 - 五盏质量灯（水平与追踪、走廊覆盖、方向、分割、镜头）只在 Measure 时出现；任一阻断只出 R0，且界面说明原因。

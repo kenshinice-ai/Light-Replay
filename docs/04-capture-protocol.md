@@ -81,3 +81,25 @@
 
 - 非 LiDAR：R1 可用，漂移按阈值；R2 不可用。
 - 导入照片：只进 R0。
+
+## 11. Light scan 界面（2026-10-01 实现）
+
+入口：Inspect 底栏右侧 **Light**；房产详情的 Light 区块 "Scan the light here"。全屏呈现（`fullScreenCover`），Inspect 的相机先停，ARKit 独占相机。
+
+| 部分 | 做什么 | 实现 |
+|---|---|---|
+| 相机 | RealityKit `ARView` 显示采集器自己的 ARSession，记录与画面是同一个会话 | `ARCameraView`，关闭运动模糊、HDR、景深等渲染效果 |
+| 两段式 | 打开即预览（追踪、罗盘、定位预热）；按 **Start** 才开始记录，锚点在下一帧正常追踪时锁定 | `CaptureRecorder.startPreview()` / `start()` |
+| 太阳路径 | 冬至（主）、春分、夏至三条弧，10 分钟一点，每 3 小时标时刻；当前太阳位置标 "Now"。看过的段变太阳黄，没看过的段为白色虚线 | `SunPathOverlay`（Canvas），弧线由 SunEngine 算，`az_ar = az_true − Δ` |
+| 方向 Δ | 罗盘实时估计：`Δ = trueHeading − az_ar(相机)`，圆周均值，σ = max(报告精度, 读数分散)；相机俯仰超过 50° 的读数不用。右上角显示 "Compass ±σ°"，结果卡写 "approximate" | `LiveYaw`；NorthResolver 融合仍按 docs/05 离线做 |
+| 问题 | Winter sun（默认，冬至 ± 6 周，按半球取 6 月或 12 月）/ All-year sun；可在扫描中切换，已看过的部分保留 | `LightQuestion` |
+| 覆盖 | 相机视锥看过的天空格（去掉每边 8% 边缘），只在正常追踪、视点漂移 ≤ 容差、转速 ≤ 60°/s 时计入；覆盖率 = 走廊内看过的格 / 走廊格。目标 90%（候选，与第 6 节走廊灯一致） | `SkySweep`、`CorridorProgress` |
+| 指引 | 每次一句，优先级：追踪 → 锚定 → 回到圆圈 → 慢一点 → 找北 → 够了 → 朝缺口转（左右 / 上下，指向最近的未看走廊格） | `ScanCoach` |
+| 视点 | 中央圆圈；绿点是镜头相对起点的水平位置，按容差缩放，超出变橙 | `driftDot` |
+| 保存 | 达标后 Save 变为主按钮并有成功触感；未达标点 Save 先询问；关闭时询问是否丢弃。保存走 PendingCapture → 行（R02）；观察文字写明问题与覆盖率、"analysis pending" | `LightCaptureSaver` |
+| 触感 | 锚点锁定（轻）、达标（成功）、保存成功 / 失败 | `.sensoryFeedback` |
+
+诚实边界：**"看过"不等于"是天空"**。当前没有天空分割，所以不判断直射、不出小时数，记录仍是 R0；结果卡明说"日照时段要等天空分析"。五盏灯里只有走廊覆盖有了前身（"看过"的覆盖），镜头脏污、分割、方向两组一致、曝光锁定都还没接。
+
+模拟器（仅 DEBUG）：ARKit 不可用时用脚本化的假相机扫过北半天空，Δ = 0，画面是画出来的天空与地面，标注 "Simulator · pretend camera"。它只用于看界面和 UI 测试（`LightScanUITests`），真机永远不会走这条路。
+

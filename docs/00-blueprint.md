@@ -10,7 +10,7 @@
 
 - **Property 是产品对象。** 一套房是一个持续生长的记录：Prep、Inspection、Room、Observation、Question、Priority、Comparison（ADR-0012、`15-product-model.md`）。
 - **TargetPoint 是物理分析单位。** 结果只对应一个点和一个高度；换座位就是另一次采集（ADR-0001）。
-- **OneTake 是英雄采集。** 它是 Inspect 模式里的 Measure 动作，不是另一个模式（ADR-0015）。
+- **OneTake 是英雄采集。** 它是 Inspect 模式里的 Light 动作（文档旧称 Measure），不是另一个模式（ADR-0015）。
 - **SceneRecord 是证据底座。** 每个测量结果都能回溯到采集会话、姿态、掩膜、方向来源与算法版本；它作为 LightObservation 挂进 Property 图。
 - **证据分级对外统一。** Verified / Observed·measured / Observed·noted / Strong indication / Indicative / Unknown，每条带来源标签（ADR-0013）。R0–R3 只在测量链内部。
 - **输出按等级解锁。** 更大、更漂亮的结果只在输入等级足够时出现；视觉不能比证据更确定。
@@ -47,7 +47,7 @@
 - 系统：iOS 27 及以上（ADR-0011）。
 - Property：地址、hero 图、来源、用户分享的 listing 内容；Share Extension（URL / 截图 / PDF）+ 手动地址（ADR-0014）。
 - Prep：3 things worth noticing（Indicative）+ 建议 OneTake 的点。
-- Inspect：相机式界面，Capture / Note / Measure；Like / Concern / Ask；五盏质量灯（含镜头脏污）（ADR-0015）。
+- Inspect：相机式界面，Capture / Note / Light；Like / Concern / Ask；五盏质量灯（含镜头脏污）（ADR-0015）。
 - Your inspection：liked / unsure / ask next / replay。
 - Replay · Light：R1 结果页，Why / Confidence / Verify 三段式，时段 haptics；参考模式 R0 只画太阳弧。
 - Compare：用户五个优先级，两到三套，每格带等级与来源，未测显示 Unknown。

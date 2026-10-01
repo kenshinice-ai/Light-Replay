@@ -46,7 +46,7 @@ light_replay/
 ├── docs/                     规范、ADR、评审、方案（见上表）
 ├── ios/
 │   ├── project.yml · PropertyReplay.xcodeproj（生成物）
-│   ├── PropertyReplay/       五个 tab：Home / Properties（List·Map）/ Inspect（相机、Capture / Note / Measure）/ Compare / You；W1 采集验证器
+│   ├── PropertyReplay/       五个 tab：Home / Properties（List·Map）/ Inspect（相机、Capture / Note / Light）/ Compare / You；W1 采集验证器
 │   └── Packages/
 │       ├── SceneRecord/      测量载荷的校验器与 CLI（规范的 oracle，Swift，28 测试）
 │       ├── CaptureCore/      CaptureLog、SceneRecordBuilder、CaptureRecorder（ARKit，5 测试）
