@@ -7,9 +7,9 @@ let package = Package(
     name: "CaptureCore",
     platforms: [.iOS("27.0")],
     products: [.library(name: "CaptureCore", targets: ["CaptureCore"])],
-    dependencies: [.package(path: "../SceneRecord")],
+    dependencies: [.package(path: "../SceneRecord"), .package(path: "../NorthResolver")],
     targets: [
-        .target(name: "CaptureCore", dependencies: ["SceneRecord"]),
+        .target(name: "CaptureCore", dependencies: ["SceneRecord", "NorthResolver"]),
         .testTarget(name: "CaptureCoreTests", dependencies: ["CaptureCore", "SceneRecord"])
     ]
 )

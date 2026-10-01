@@ -163,6 +163,8 @@ public final class InspectionObservation {
 
     /// Rule for light measurements (ADR-0013, docs/15 §2): a passed R1/R2 record's stable-direct band is measured;
     /// its direction-sensitive band is indicative; anything else, including R0 or a blocked guard, stays unknown.
+    /// Pass values only from a record `SceneRecordDocument` accepted: that is where the lights are worked out again
+    /// from the evidence (QualityEvaluator), so a level written into a file is not taken at its word.
     public static func lightLevel(qualityLevel: String, falseValidGuard: String, bandState: String) -> EvidenceLevel {
         guard qualityLevel != "R0", falseValidGuard == "passed" else { return .unknown }
         switch bandState {

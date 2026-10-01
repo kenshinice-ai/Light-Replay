@@ -1,4 +1,5 @@
 import Foundation
+import NorthResolver
 import SceneRecord
 
 /// Turns a `CaptureLog` into a capture-only (R0, blocked) SceneRecord document that passes `SceneValidator`.
@@ -8,6 +9,10 @@ public enum SceneRecordBuilder {
     /// The heading is taken as the true azimuth of the back camera's forward axis (portrait, CLHeading referenced
     /// to the top of the device). This mapping is an assumption until the sundial check in docs/05 §2 (truth group).
     public static let headingAxisAssumption = "CLHeading (portrait) taken as the back camera's true azimuth; verify against the sundial (docs/05)"
+    /// A phone compass is never trusted below this σ, whatever it reports (docs/05 §2, candidate).
+    public static let magneticPriorSigmaDeg = 8.0
+    /// A heading is tied to a pose only when one with normal tracking lies this close in time.
+    public static let maximumPoseGapS = 1.0
 
     public static func build(_ log: CaptureLog, sceneID: String, createdAt: Date = Date()) throws -> SceneRecordDocument {
         let stamp = ISO8601DateFormatter()
@@ -52,7 +57,7 @@ public enum SceneRecordBuilder {
             ])
         } ?? .null
 
-        let magnetometer = magneticCandidate(log, time: time)
+        let north = resolvedNorth([magneticCandidate(log, time: time)], time: time, at: createdAt)
 
         let location: JSONValue = log.location.map { loc in
             .object([
@@ -75,7 +80,7 @@ public enum SceneRecordBuilder {
             "timezone": .string(log.timezone.identifier),
             "app": .object([
                 "version": .string(log.appVersion), "build": .string(log.appBuild),
-                "algorithms": .object(["sun": .null, "segmentation": .null, "north": .null, "visibility": .null])
+                "algorithms": .object(["sun": .null, "segmentation": .null, "north": .string(NorthResolver.version), "visibility": .null])
             ]),
             "device": .object([
                 "model": .string(log.device.model), "os": .string(log.device.os),
@@ -104,14 +109,15 @@ public enum SceneRecordBuilder {
                 ]),
                 "guidance": .object(["question": .string("custom"), "corridor_ref": .null])
             ]),
-            "north": .object(["candidates": .array([magnetometer]), "resolved": .null]),
+            "north": north.value,
             "visibility": .null,
             "geometry": .null,
             "analysis": .array([]),
             "quality": .object([
                 "level": .string("R0"),
+                // North is stated as NorthResolver gives it; the validator refuses a light the evidence does not give.
                 "gates": .object(["level": .string(anchorLocked ? "pass" : "blocked"), "coverage": .string("blocked"),
-                                  "north": .string("blocked"), "segmentation": .string("blocked"),
+                                  "north": .string(north.gate.rawValue), "segmentation": .string("blocked"),
                                   "lens": .string("blocked")]),
                 "flags": .array(flags),
                 "false_valid_guard": .string("blocked"),
@@ -124,8 +130,11 @@ public enum SceneRecordBuilder {
         return try SceneRecordDocument(fields: fields)
     }
 
-    /// The magnetic-group candidate for NorthResolver (docs/05 §2, §4). `yaw_deg` is Δ, the true azimuth of the
-    /// AR −Z axis: the heading of the camera at the sample time minus the camera's AR azimuth in that frame.
+    /// The magnetic-group candidate (docs/05 §2, §4). Every valid compass reading that can be tied to a pose gives one
+    /// sample of Δ, the true azimuth of the AR −Z axis: the heading at that moment minus the camera's AR azimuth in
+    /// the frame nearest to it. The candidate is their circular median, and its σ is the larger of the readings' σ
+    /// and their spread across the sweep, so a compass that wanders while the phone turns says so. All samples stay
+    /// in `raw.samples` for recomputation and calibration (review R08).
     private static func magneticCandidate(_ log: CaptureLog, time: (Date) -> JSONValue) -> JSONValue {
         var candidate: [String: JSONValue] = ["source": .string("magnetometer"), "group": .string("magnetic")]
         func invalid(_ reason: String, raw: [String: JSONValue] = [:]) -> JSONValue {
@@ -136,7 +145,7 @@ public enum SceneRecordBuilder {
             if !raw.isEmpty { candidate["raw"] = .object(raw) }
             return .object(candidate)
         }
-        guard let heading = log.firstValidHeading else {
+        guard let first = log.firstValidHeading else {
             if let any = log.headings.first {
                 return invalid("no valid heading (accuracy or true heading negative)", raw: [
                     "true_heading": .number(any.trueHeading), "magnetic_heading": .number(any.magneticHeading),
@@ -145,39 +154,121 @@ public enum SceneRecordBuilder {
             }
             return invalid("no heading sample")
         }
-        // Synchronise with the pose closest to the reading; only frames with normal tracking count.
-        let synced = log.frames
-            .filter { $0.trackingState == "normal" }
-            .compactMap { frame -> (FrameSample, TimeInterval)? in
-                guard let date = log.frameDate(frame) else { return nil }
-                return (frame, abs(date.timeIntervalSince(heading.sampledAt)))
-            }
-            .min { $0.1 < $1.1 }
-        guard let (frame, gap) = synced, gap <= 1.0 else {
+        // Only poses with normal tracking count, and only within a second of the reading.
+        let tracked = log.frames.filter { $0.trackingState == "normal" }
+        let valid = log.headings.filter(\.isValid)
+        let samples: [CompassSample] = valid.compactMap { heading in
+            guard let firstFrameAt = log.firstFrameAt,
+                  let (frame, gap) = nearest(tracked, to: heading.sampledAt.timeIntervalSince(firstFrameAt)),
+                  gap <= maximumPoseGapS else { return nil }
+            return CompassSample(heading: heading, frame: frame, gapS: gap)
+        }
+        guard !samples.isEmpty else {
             return invalid("no synchronized pose within 1 s of the heading sample", raw: [
-                "true_heading": .number(heading.trueHeading), "magnetic_heading": .number(heading.magneticHeading),
-                "heading_accuracy": .number(heading.headingAccuracy), "sampled_at": time(heading.sampledAt)
+                "true_heading": .number(first.trueHeading), "magnetic_heading": .number(first.magneticHeading),
+                "heading_accuracy": .number(first.headingAccuracy), "sampled_at": time(first.sampledAt)
             ])
         }
-        let cameraAz = frame.cameraAzimuthAR
-        var yaw = (heading.trueHeading - cameraAz).truncatingRemainder(dividingBy: 360)
-        if yaw < 0 { yaw += 360 }
-        // Sigma rule from docs/05 §2: max(headingAccuracy, prior); group spread is a NorthResolver concern.
-        let sigma = max(heading.headingAccuracy, 8.0)
-        candidate["yaw_deg"] = .number(yaw)
-        candidate["sigma_deg"] = .number(sigma)
+        let sampleValues: [JSONValue] = samples.map { sample in
+            .object([
+                "sampled_at": time(sample.heading.sampledAt),
+                "true_heading": .number(sample.heading.trueHeading),
+                "magnetic_heading": .number(sample.heading.magneticHeading),
+                "heading_accuracy": .number(sample.heading.headingAccuracy),
+                "frame_id": .string(sample.frame.frameID),
+                "camera_az_ar_deg": .number(sample.frame.cameraAzimuthAR),
+                "camera_pitch_deg": .number(sample.frame.cameraPitchDeg),
+                "pose_gap_s": .number(sample.gapS),
+                "yaw_deg": .number(sample.yawDeg),
+                "used": .bool(sample.isLevelEnough)
+            ])
+        }
+        let used = samples.filter(\.isLevelEnough)
+        guard let lead = used.first else {
+            return invalid("every heading was read with the camera pitched beyond \(Int(LiveYaw.maximumPitchDeg)) degrees",
+                           raw: ["samples": .array(sampleValues)])
+        }
+        let merged = NorthResolver.merge(used.map { ($0.yawDeg, $0.sigmaDeg) })
+        candidate["yaw_deg"] = .number(merged.yawDeg)
+        candidate["sigma_deg"] = .number(merged.sigmaDeg)
         candidate["valid"] = .bool(true)
         candidate["raw"] = .object([
-            "true_heading": .number(heading.trueHeading),
-            "magnetic_heading": .number(heading.magneticHeading),
-            "heading_accuracy": .number(heading.headingAccuracy),
-            "sampled_at": time(heading.sampledAt),
-            "frame_id": .string(frame.frameID),
-            "camera_az_ar_deg": .number(cameraAz),
-            "pose_gap_s": .number(gap),
-            "assumption": .string(headingAxisAssumption)
+            // The first usable reading, as before: the session-start heading of docs/05 §4.
+            "true_heading": .number(lead.heading.trueHeading),
+            "magnetic_heading": .number(lead.heading.magneticHeading),
+            "heading_accuracy": .number(lead.heading.headingAccuracy),
+            "sampled_at": time(lead.heading.sampledAt),
+            "frame_id": .string(lead.frame.frameID),
+            "camera_az_ar_deg": .number(lead.frame.cameraAzimuthAR),
+            "pose_gap_s": .number(lead.gapS),
+            "assumption": .string(headingAxisAssumption),
+            "merged": .object([
+                "method": .string("circular_median"),
+                // Seen: every heading the session delivered. Valid: accuracy and true heading not negative.
+                // Total: valid and tied to a pose (these are in `samples`). Used: also level enough to merge.
+                "readings_seen": .number(Double(log.headings.count)),
+                "readings_valid": .number(Double(valid.count)),
+                "samples_used": .number(Double(used.count)),
+                "samples_total": .number(Double(samples.count)),
+                "spread_deg": .number(merged.spreadDeg),
+                "prior_sigma_deg": .number(magneticPriorSigmaDeg),
+                "max_pitch_deg": .number(LiveYaw.maximumPitchDeg)
+            ]),
+            "samples": .array(sampleValues)
         ])
         return .object(candidate)
+    }
+
+    /// The frame nearest to `t` seconds after the first frame, and how far away it is. `frames` is in time order.
+    private static func nearest(_ frames: [FrameSample], to t: Double) -> (frame: FrameSample, gapS: TimeInterval)? {
+        guard !frames.isEmpty else { return nil }
+        var low = 0, high = frames.count   // the first frame at or after t
+        while low < high {
+            let mid = (low + high) / 2
+            if frames[mid].t < t { low = mid + 1 } else { high = mid }
+        }
+        let index = [low - 1, low].filter(frames.indices.contains).min { abs(frames[$0].t - t) < abs(frames[$1].t - t) }!
+        return (frames[index], abs(frames[index].t - t))
+    }
+
+    /// One compass reading tied to the pose nearest to it in time.
+    private struct CompassSample {
+        let heading: HeadingSample
+        let frame: FrameSample
+        let gapS: TimeInterval
+
+        var yawDeg: Double { NorthResolver.mod360(heading.trueHeading - frame.cameraAzimuthAR) }
+        /// Sigma rule from docs/05 §2: max(headingAccuracy, prior). The spread across samples is added by the merge.
+        var sigmaDeg: Double { max(heading.headingAccuracy, SceneRecordBuilder.magneticPriorSigmaDeg) }
+        /// Steeper than this the compass axis is ambiguous (docs/04 §11); the reading is kept but not merged.
+        var isLevelEnough: Bool { abs(frame.cameraPitchDeg) <= LiveYaw.maximumPitchDeg }
+    }
+
+    /// What NorthResolver makes of the candidates. A direction that still needs a confirmation is not written as
+    /// resolved: `resolved` stays null until the light is at least `warn` (docs/05 §3 steps 4 and 5).
+    private static func resolvedNorth(_ candidates: [JSONValue], time: (Date) -> JSONValue, at date: Date) -> (value: JSONValue, gate: QualityGate) {
+        let readings: [NorthReading] = candidates.compactMap { item in
+            guard case .object(let c) = item, c["valid"] == .bool(true), case .string(let name)? = c["group"],
+                  let group = NorthGroup(rawValue: name), case .number(let yaw)? = c["yaw_deg"],
+                  case .number(let sigma)? = c["sigma_deg"] else { return nil }
+            return NorthReading(group: group, yawDeg: yaw, sigmaDeg: sigma)
+        }
+        let resolution = NorthResolver.resolve(readings)
+        var resolved = JSONValue.null
+        if resolution.gate != .blocked, let yaw = resolution.yawDeg, let sigma = resolution.sigmaDeg {
+            let detail = resolution.disagreements.map {
+                "\($0.a.rawValue) and \($0.b.rawValue) differ by \(String(format: "%.1f", $0.differenceDeg)) (limit \(String(format: "%.1f", $0.limitDeg)))"
+            }.joined(separator: "; ")
+            resolved = .object([
+                "yaw_deg": .number(yaw), "sigma_deg": .number(sigma), "method": .string(NorthResolver.method),
+                "groups_used": .array(resolution.groupsUsed.map { .string($0.rawValue) }),
+                "groups_rejected": .array(resolution.groupsRejected.map { .string($0.rawValue) }),
+                "conflict": .bool(resolution.conflict),
+                "conflict_detail": detail.isEmpty ? .null : .string(detail),
+                "resolved_at": time(date)
+            ])
+        }
+        return (.object(["candidates": .array(candidates), "resolved": resolved]), resolution.gate)
     }
 
     /// `PR-YYYYMMDD-NN` (field/README.md). `sequence` is the caller's per-day counter.

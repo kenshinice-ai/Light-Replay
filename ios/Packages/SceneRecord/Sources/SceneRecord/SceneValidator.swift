@@ -196,6 +196,8 @@ internal enum SceneValidator {
         for key in ["include_hero", "precise_address", "revoked"] { try boolean(sharing.value(key), "$.sharing." + key) }
         try require(sharing.value("revoked") != .bool(true) || sharing.value("revoked_at") != .null, "$.sharing.revoked_at", "revocation requires timestamp")
         _ = try object(r.value("context"), "$.context", "address_estimate")
+        // Last, once the shape is known to be sound: the stated lights must be the ones the evidence gives (R08).
+        try QualityEvaluator.check(fields)
     }
 
     private static func capture(_ value: JSONValue) throws {

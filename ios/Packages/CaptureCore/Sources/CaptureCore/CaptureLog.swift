@@ -42,6 +42,11 @@ public struct FrameSample: Sendable, Equatable {
         let degrees = atan2(forward.x, -forward.z) * 180 / .pi
         return (degrees < 0 ? degrees + 360 : degrees).truncatingRemainder(dividingBy: 360)
     }
+
+    /// Elevation of the camera's forward axis above the horizontal, degrees: `asin(d_y)` (docs/02 §3).
+    public var cameraPitchDeg: Double {
+        asin(max(-1, min(1, -cameraTransform[9]))) * 180 / .pi
+    }
 }
 
 /// One magnetometer reading (NorthResolver candidate in the `magnetic` group, docs/05 §2).
@@ -157,6 +162,7 @@ public struct CaptureLog: Sendable, Equatable {
 
     /// First valid heading reading of the session (session-start heading, docs/05 §4).
     public var firstValidHeading: HeadingSample? { headings.first(where: \.isValid) }
+
 
     public func frameDate(_ frame: FrameSample) -> Date? { firstFrameAt?.addingTimeInterval(frame.t) }
 }

@@ -71,6 +71,10 @@
 }
 ```
 
+`magnetometer` 候选的 `raw` 另有两项（review R08）：`samples[]` 保留本次采集里每一条能与姿态对上的罗盘读数（`sampled_at`、`true_heading`、`magnetic_heading`、`heading_accuracy`、对上的 `frame_id`、`camera_az_ar_deg`、`camera_pitch_deg`、`pose_gap_s`、该条读数给出的 `yaw_deg`、是否参与合并 `used`），`merged` 记合并方法与统计（`method`、`readings_seen` 收到的全部读数、`readings_valid` 其中有效的、`samples_total` 能与姿态对上的、`samples_used` 参与合并的、`spread_deg`、`prior_sigma_deg`、`max_pitch_deg`）。候选的 `yaw_deg` 是参与合并读数的圆周中位数，`sigma_deg` 取读数 σ 的中位数与读数分散（RMS）的较大者；`raw` 顶层的四个字段仍是第一条参与合并的读数。
+
+`resolved` 只在方向灯不是阻断时写入；需要确认的方向（冲突、或只有一组且 σ > 6°）保持 `null`。
+
 `yaw_deg` 即 `Δ`：AR 世界 −Z 轴的真方位角（俯视顺时针），`az_true = (az_ar + Δ) mod 360`，见 `05-north-resolver.md` 第 4 节。示例中 solar 取 359°，刻意跨 0°/360°：实现必须用圆周运算，否则会误判冲突。三组两两一致，全部参与加权圆周均值（磁罗盘 σ 取 `heading_accuracy` 12.0，结果 359.78° / σ 1.77，四舍五入见上）。
 
 ## 5. visibility
@@ -109,7 +113,7 @@
   "assist": { "coach": "fm-ondevice", "copy": "fm-ondevice", "glass_flag": "fm-keyframe", "pcc_used": false, "degraded": [] } }
 ```
 
-`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。`gates` 含五盏灯：`level`、`coverage`、`north`、`segmentation`、`lens`。`assist.degraded` 记录每次降级（如 `fm_unavailable`、`seg_assets_missing`、`pcc_quota`），见 ADR-0010。
+`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。`gates` 含五盏灯：`level`、`coverage`、`north`、`segmentation`、`lens`。其中 `coverage`、`north`、`segmentation` 三盏由校验器按记录里的证据重算（QualityEvaluator，规则见 `04-capture-protocol.md` 第 6 节），写入值必须与重算结果一致，R0 记录也一样；`north.resolved` 若存在，必须是候选融合得到的那个结果（允许一位小数的舍入）。高于 R0 的记录另须物理自洽：目标锚点与视点锁定锚点是同一点，并入可见域的帧追踪正常且在漂移上限内。`assist.degraded` 记录每次降级（如 `fm_unavailable`、`seg_assets_missing`、`pcc_quota`），见 ADR-0010。
 
 ## 9. 文件布局
 

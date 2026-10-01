@@ -108,6 +108,119 @@ final class SceneRecordBuilderTests: XCTestCase {
         XCTAssertEqual(object(first)["valid"], .bool(false))
     }
 
+    // MARK: Compass samples (review R08)
+
+    /// A frame looking along AR azimuth `azimuth`, tilted `pitch` degrees above the horizontal, `t` seconds in.
+    private func pose(_ i: Int, t: Double, azimuth: Double, pitch: Double = 0, state: String = "normal") -> FrameSample {
+        var transform = identity
+        let a = azimuth * .pi / 180, p = pitch * .pi / 180
+        // forward = (sin a cos p, sin p, −cos a cos p) and the transform's third column is −forward.
+        transform[8] = -sin(a) * cos(p); transform[9] = -sin(p); transform[10] = cos(a) * cos(p)
+        return FrameSample(frameID: String(format: "f%05d", i), t: t, cameraTransform: transform, intrinsics: intrinsics,
+                           trackingState: state, lensOffsetM: 0, hasSceneDepth: false, exposureOffset: 0)
+    }
+
+    private func heading(_ value: Double, accuracy: Double = 5, at seconds: Double) -> HeadingSample {
+        HeadingSample(trueHeading: value, magneticHeading: value, headingAccuracy: accuracy, sampledAt: start.addingTimeInterval(0.5 + seconds))
+    }
+
+    private func magnetic(_ document: SceneRecordDocument) -> [String: JSONValue] {
+        guard case .array(let list) = object(document.fields["north"])["candidates"] ?? .null else { return [:] }
+        return object(list.first)
+    }
+
+    private func number(_ value: JSONValue?) -> Double {
+        if case .number(let n) = value ?? .null { return n }
+        return .nan
+    }
+
+    func testEveryCompassReadingIsKeptAndTheCandidateIsTheirMedian() throws {
+        // The phone turns through five azimuths; the true azimuth of −Z is 30 throughout, read as 28, 29, 30, 31, 47.
+        let azimuths: [Double] = [0, 40, 80, 320, 280], deltas: [Double] = [28, 29, 30, 31, 47]
+        let frames = azimuths.enumerated().map { pose($0.offset, t: Double($0.offset), azimuth: $0.element) }
+        let headings = zip(azimuths, deltas).enumerated().map { heading(($0.element.0 + $0.element.1).truncatingRemainder(dividingBy: 360), at: Double($0.offset)) }
+        let document = try SceneRecordBuilder.build(sampleLog(frames: frames, headings: headings), sceneID: "PR-20261001-01")
+        let candidate = magnetic(document), raw = object(candidate["raw"])
+        XCTAssertEqual(candidate["valid"], .bool(true))
+        XCTAssertEqual(number(candidate["yaw_deg"]), 30, accuracy: 1e-9, "the median, not the first reading and not pulled by the outlier")
+        guard case .array(let samples) = raw["samples"] ?? .null else { return XCTFail("samples missing") }
+        XCTAssertEqual(samples.count, 5, "every reading is kept")
+        XCTAssertEqual(samples.map { number(object($0)["yaw_deg"]).rounded() }, deltas)
+        XCTAssertEqual(object(raw["merged"])["samples_used"], .number(5))
+        let spread = ((4 + 1 + 0 + 1 + 289) / 5.0).squareRoot()   // offsets −2, −1, 0, 1, 17 about the median
+        XCTAssertEqual(number(object(raw["merged"])["spread_deg"]), spread, accuracy: 1e-9)
+        XCTAssertEqual(number(candidate["sigma_deg"]), 8, accuracy: 1e-9, "the 8 degree prior is larger than this spread")
+        XCTAssertEqual(number(raw["true_heading"]), 28, accuracy: 1e-9, "the session-start reading stays where readers expect it")
+    }
+
+    func testAWanderingCompassSaysSoInItsSigma() throws {
+        // Reported accuracy 5, but the readings disagree by tens of degrees as the phone turns.
+        let azimuths: [Double] = [0, 60, 120, 180, 240], deltas: [Double] = [10, 35, 60, 85, 110]
+        let frames = azimuths.enumerated().map { pose($0.offset, t: Double($0.offset), azimuth: $0.element) }
+        let headings = zip(azimuths, deltas).enumerated().map { heading(($0.element.0 + $0.element.1).truncatingRemainder(dividingBy: 360), at: Double($0.offset)) }
+        let candidate = magnetic(try SceneRecordBuilder.build(sampleLog(frames: frames, headings: headings), sceneID: "PR-20261001-02"))
+        XCTAssertEqual(number(candidate["yaw_deg"]), 60, accuracy: 1e-9)
+        XCTAssertEqual(number(candidate["sigma_deg"]), (2500.0 / 2).squareRoot(), accuracy: 1e-9)   // RMS of −50, −25, 0, 25, 50
+    }
+
+    func testReadingsTakenLookingSteeplyUpAreKeptButNotMerged() throws {
+        let frames = [pose(0, t: 0, azimuth: 10), pose(1, t: 1, azimuth: 10, pitch: 70), pose(2, t: 2, azimuth: 10)]
+        let headings = [heading(40, at: 0), heading(200, at: 1), heading(42, at: 2)]
+        let candidate = magnetic(try SceneRecordBuilder.build(sampleLog(frames: frames, headings: headings), sceneID: "PR-20261001-03"))
+        XCTAssertEqual(number(candidate["yaw_deg"]), 31, accuracy: 1e-9, "median of 30 and 32; the reading at 70 degrees of pitch is left out")
+        let raw = object(candidate["raw"])
+        guard case .array(let samples) = raw["samples"] ?? .null else { return XCTFail("samples missing") }
+        XCTAssertEqual(samples.map { object($0)["used"] }, [.bool(true), .bool(false), .bool(true)])
+        XCTAssertEqual(number(object(samples[1])["camera_pitch_deg"]), 70, accuracy: 1e-9)
+        XCTAssertEqual(object(raw["merged"])["samples_used"], .number(2))
+        XCTAssertEqual(object(raw["merged"])["samples_total"], .number(3))
+        XCTAssertEqual(object(raw["merged"])["readings_seen"], .number(3))
+
+        let steep = [pose(0, t: 0, azimuth: 10, pitch: 65)]
+        let none = magnetic(try SceneRecordBuilder.build(sampleLog(frames: steep, headings: [heading(40, at: 0)]), sceneID: "PR-20261001-04"))
+        XCTAssertEqual(none["valid"], .bool(false))
+        XCTAssertEqual(none["yaw_deg"], .null)
+        guard case .array(let kept) = object(none["raw"])["samples"] ?? .null else { return XCTFail("samples missing") }
+        XCTAssertEqual(kept.count, 1, "the reading is still on record")
+    }
+
+    func testReadingsAreTiedToTrackedPosesOnly() throws {
+        // The pose nearest the second reading has limited tracking; the next tracked pose is over a second away.
+        let frames = [pose(0, t: 0, azimuth: 0), pose(1, t: 3, azimuth: 90, state: "limited:excessive_motion"), pose(2, t: 6, azimuth: 180)]
+        let headings = [heading(20, at: 0.2), heading(110, at: 3), heading(200, at: 5.6)]
+        let raw = object(magnetic(try SceneRecordBuilder.build(sampleLog(frames: frames, headings: headings), sceneID: "PR-20261001-05"))["raw"])
+        guard case .array(let samples) = raw["samples"] ?? .null else { return XCTFail("samples missing") }
+        XCTAssertEqual(samples.map { object($0)["frame_id"] }, [.string("f00000"), .string("f00002")])
+        XCTAssertEqual(number(object(samples[1])["pose_gap_s"]), 0.4, accuracy: 1e-6)   // wall-clock dates carry about 1e-7 s
+        XCTAssertEqual(object(raw["merged"])["readings_seen"], .number(3), "the reading with no tracked pose is counted, not hidden")
+        XCTAssertEqual(object(raw["merged"])["samples_total"], .number(2))
+    }
+
+    func testALongSweepIsMergedQuickly() throws {
+        // 60 s at 60 frames a second with a heading every 30 ms: the size of a slow real scan.
+        let frames = (0..<3600).map { pose($0, t: Double($0) / 60, azimuth: Double($0) * 0.1) }
+        let headings = (0..<2000).map { i -> HeadingSample in
+            let t = Double(i) * 0.03
+            return heading((t * 6 + 45).truncatingRemainder(dividingBy: 360), at: t)   // azimuth is 6 degrees a second
+        }
+        var log = sampleLog(frames: frames, headings: headings)
+        log.endedAt = start.addingTimeInterval(61)
+        let started = Date()
+        let candidate = magnetic(try SceneRecordBuilder.build(log, sceneID: "PR-20261001-07"))
+        XCTAssertLessThan(Date().timeIntervalSince(started), 5, "building a record must not make saving feel stuck")
+        XCTAssertEqual(number(candidate["yaw_deg"]), 45, accuracy: 0.11, "each heading meets the frame within 1/120 s of it")
+        XCTAssertEqual(object(object(candidate["raw"])["merged"])["samples_total"], .number(2000))
+    }
+
+    func testTheNorthLightIsStatedAsTheEvidenceGivesIt() throws {
+        let document = try SceneRecordBuilder.build(sampleLog(), sceneID: "PR-20261001-06")
+        let reparsed = try SceneRecordDocument(data: try document.encoded())   // the validator recomputes the light
+        XCTAssertEqual(object(object(reparsed.fields["quality"])["gates"])["north"], .string("blocked"), "one compass group, sigma 12")
+        XCTAssertEqual(object(reparsed.fields["north"])["resolved"], .null, "a direction that needs confirming is not written as resolved")
+        XCTAssertEqual(object(object(reparsed.fields["app"])["algorithms"])["north"], .string("northresolver-0.1"))
+        XCTAssertEqual(QualityEvaluator.evaluate(reparsed.fields).north.needsConfirmation, true)
+    }
+
     func testNoFramesStillValidates() throws {
         var log = sampleLog(frames: [], anchor: nil, anchorFrameID: nil, headings: [])
         log.location = nil

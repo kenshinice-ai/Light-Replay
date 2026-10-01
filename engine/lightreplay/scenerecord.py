@@ -385,6 +385,9 @@ def validate(record):
         _bool(sh[key], "$.sharing." + key)
     _require(not sh["revoked"] or sh["revoked_at"] is not None, "$.sharing.revoked_at", "revocation requires timestamp")
     _object(r["context"], "$.context", "address_estimate")
+    # Last, once the shape is known to be sound: the stated lights must be the ones the evidence gives (R08).
+    from . import quality   # imported here because quality builds on this module's error type
+    quality.check(r)
 
 
 def _pairs(pairs):

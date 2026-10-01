@@ -52,6 +52,17 @@
 
 任一阻断只出 R0。五盏灯的状态与降级原因都写入 `quality`。
 
+**谁来判（quality-0.1）。** 灯是结论，不是输入：QualityEvaluator 按记录里的证据重算，校验器拒绝写入值与证据不符的记录，说高了说低了都拒绝（`ios/Packages/SceneRecord` 的 `QualityEvaluator`，Python 对照 `engine/lightreplay/quality.py`，共用 `engine/tests/fixtures/quality-cases.json` 的 29 个用例）。
+
+| 灯 | 用什么证据重算 | 边界 |
+|---|---|---|
+| 走廊覆盖 | `visibility.coverage` 的单元计数 | 用整数比较，不做除法：63 / 90 恰好是 70%，算警告；没有走廊证据算阻断 |
+| 方向 | `north.candidates` 经 NorthResolver 融合（`05` 第 3 节） | 无有效来源算阻断 |
+| 分割 | `glass_cells / corridor_cells`，以及有没有分割来源 | 恰好 10% 与恰好 25% 都算警告；没有分割来源算阻断。**"反射未识别"在 schema 0.1.0 里没有可重算的证据，尚未判** |
+| 水平与追踪、镜头 | schema 0.1.0 不带检测器的证据，按写入值 | 只查能查的部分：并入可见域的帧必须追踪正常，且离锚点不超过漂移上限（第 4 节，候选 0.40 m） |
+
+证据不足一律是阻断，不是默认通过。
+
 ## 7. 方向确认（详见 05）
 
 - 自动：磁罗盘始终记录；墙面对齐在检测到竖直平面且有轮廓数据时自动出候选，用户只需点"我面对的是这面墙"；VPS 在户外可用时自动。

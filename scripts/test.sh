@@ -6,7 +6,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRATCH="${PROPERTYREPLAY_BUILD_ROOT:-$HOME/Library/Caches/propertyreplay}"
 mkdir -p "$SCRATCH"
 
-echo "== SceneRecord (Swift)"
+echo "== NorthResolver (Swift, parity with engine/tests/fixtures/north-cases.json)"
+swift test --package-path "$ROOT/ios/Packages/NorthResolver" --scratch-path "$SCRATCH/NorthResolver-build" 2>&1 | grep -E "Executed|error:" | tail -1
+
+echo "== SceneRecord (Swift, incl. QualityEvaluator against engine/tests/fixtures/quality-cases.json)"
 swift test --package-path "$ROOT/ios/Packages/SceneRecord" --scratch-path "$SCRATCH/SceneRecord-build" 2>&1 | grep -E "Executed|error:" | tail -1
 
 echo "== SunEngine (Swift, parity with engine/tests/fixtures/sun-positions.json)"

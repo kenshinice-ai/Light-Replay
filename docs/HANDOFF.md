@@ -94,9 +94,12 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 按住说话的辅助入口：VoiceOver 双击开始 / 结束、⌘D、`.startsMediaSession` | ✓ | — | — | 需真机开 VoiceOver / Switch Control 验收（U05） |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；Swift / Python 1e-7° | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
-| 天空分割（相机帧 → 可见域网格）、QualityEvaluator、日照结果页与回放 | — | — | — | 第三批剩余；扫描界面与 SunEngine 已就位，分割接上后结果卡换成时段 |
+| NorthResolver 融合（组内中位数、两两一致性、最大一致组合、方向灯；ADR-0009） | ✓ | ✓ 19 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`；候选目前只有罗盘一组，所以真机上方向灯恒为阻断，这是对的 |
+| QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
+| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | 待下次真机扫描后看一份记录 | 俯仰超过 50° 的读数保留但不参与合并 |
+| 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；扫描界面、SunEngine、NorthResolver、QualityEvaluator 已就位，分割接上后结果卡换成时段 |
 
-跑测试：`./scripts/test.sh`（纯算法，Mac）；`./scripts/ios-test.sh [unit|ui]`（模拟器；自建专用设备 "Property Replay iPhone"，跑完关机；关掉了 xcodebuild 失败后长达十分钟的诊断收集）。默认的 iPhone 17 / 18 Pro 模拟器会被别的项目会话占用，不要用。
+跑测试：`./scripts/test.sh`（纯算法，Mac：NorthResolver、SceneRecord 含 QualityEvaluator、SunEngine、Python 参考）；`./scripts/ios-test.sh [unit|ui]`（模拟器；自建专用设备 "Property Replay iPhone"，跑完关机；关掉了 xcodebuild 失败后长达十分钟的诊断收集）。默认的 iPhone 17 / 18 Pro 模拟器会被别的项目会话占用，不要用。
 
 UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
 
@@ -105,7 +108,9 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- R08 QualityEvaluator 与 heading 原始样本保留（光线链路，第三批）。
+- QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
+- 方向融合的已知盲区（σ 很宽的组无法与任何组冲突，`05` 第 7 节）：解锁 R1 前要定是否给佐证组加 σ 上限。
+- 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
 - SunEngine 的走廊与时段分级还没有 Python 对照实现（太阳位置已有）。
 - `installTap` 在 iOS 27 标为弃用，替代 API 未确认，暂留。
 - CloudKit production schema 部署（上架前）；跨设备同日 `scene_id` 冲突（ADR-0017 后果）。
