@@ -22,6 +22,8 @@ struct RootView: View {
             Tab("Compare", systemImage: "rectangle.split.2x1") { CompareView() }
             Tab("You", systemImage: "person.crop.circle") { YouView() }
         }
+        // iPhone: the tab bar. iPad: a tab bar that can become a sidebar, as the window allows (UI/UX review U07).
+        .tabViewStyle(.sidebarAdaptable)
     }
 }
 

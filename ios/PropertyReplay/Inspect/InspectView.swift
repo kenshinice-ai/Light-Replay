@@ -92,7 +92,7 @@ struct InspectView: View {
     private var viewfinder: some View {
         Group {
             if camera.isRunning {
-                CameraPreview(session: camera.session)
+                CameraPreview(service: camera)
             } else {
                 ZStack {
                     Color(.systemGray6)

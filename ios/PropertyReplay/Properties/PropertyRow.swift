@@ -5,6 +5,7 @@ struct PropertyRow: View {
     let property: Property
     var showsInspection = false
     var distanceText: String? = nil
+    var activityText: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -17,6 +18,7 @@ struct PropertyRow: View {
                     Text(property.suburb ?? property.status.displayName)
                     if showsInspection, let at = property.inspectionAt { Text("· \(Formatting.inspectionDate.string(from: at))") }
                     if let distanceText { Text("· \(distanceText)") }
+                    if let activityText { Text("· \(activityText)") }
                 }
                 .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
             }

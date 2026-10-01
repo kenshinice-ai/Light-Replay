@@ -57,6 +57,21 @@ class UITestCase: XCTestCase {
         allowSystemPrompts()
     }
 
+    /// Back out of the screen on top. On a wide window there are two navigation bars, so "the first button of the
+    /// first bar" is not the back button; ask for it by what it is.
+    func goBack() {
+        let back = app.navigationBars.buttons.matching(NSPredicate(format: "label == 'Back' OR identifier == 'BackButton'")).firstMatch
+        if back.waitForExistence(timeout: 3) { back.tap() } else { app.navigationBars.buttons.firstMatch.tap() }
+    }
+
+    /// A button whose words were dropped is only as wide as its icon. Accessibility still finds it by label, so the
+    /// width is what shows the words are really drawn (the unlabelled action buttons of 2026-10-01).
+    func assertShowsItsWords(_ button: XCUIElement, _ name: String, minimumWidth: CGFloat = 110, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(button.waitForExistence(timeout: 8), "missing \(name)", file: file, line: line)
+        XCTAssertGreaterThan(button.staticTexts.count, 0, "\(name) draws no text", file: file, line: line)
+        XCTAssertGreaterThan(button.frame.width, minimumWidth, "\(name) is only \(Int(button.frame.width)) pt wide", file: file, line: line)
+    }
+
     /// Existing is not enough: the whole element has to sit inside the window's width (review U01, U02).
     func assertInsideWindow(_ element: XCUIElement, _ name: String, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.waitForExistence(timeout: 8), "missing \(name)", file: file, line: line)

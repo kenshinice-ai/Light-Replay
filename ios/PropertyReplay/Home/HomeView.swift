@@ -2,13 +2,29 @@ import PropertyModel
 import SwiftData
 import SwiftUI
 
-/// Before: what is coming up, what was recent, add a property. No feature menu (docs/14 §1).
+/// Before: the next inspection with its way in, and the homes you were last busy with (UI/UX review U08).
+/// No feature menu (docs/14 §1).
 struct HomeView: View {
     @Query(sort: \Property.createdAt, order: .reverse) private var properties: [Property]
     @State private var showingAdd = false
+    @State private var inspecting: Property?
 
-    private var nextInspection: Property? {
-        properties.filter { ($0.inspectionAt ?? .distantPast) > Date() }.min { ($0.inspectionAt ?? .distantFuture) < ($1.inspectionAt ?? .distantFuture) }
+    /// The soonest booked inspection that has not passed.
+    private var next: Property? {
+        properties.filter { ($0.inspectionAt ?? .distantPast) > Date() }
+            .min { ($0.inspectionAt ?? .distantFuture) < ($1.inspectionAt ?? .distantFuture) }
+    }
+
+    /// Other homes, most recently recorded or added first. The next inspection is not repeated here.
+    private var recent: [Property] {
+        properties.filter { $0.persistentModelID != next?.persistentModelID }
+            .sorted { Self.lastActivity($0) > Self.lastActivity($1) }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    private static func lastActivity(_ property: Property) -> Date {
+        property.allObservations.first?.capturedAt ?? property.createdAt
     }
 
     var body: some View {
@@ -25,17 +41,27 @@ struct HomeView: View {
                     }
                 } else {
                     Section("Next inspection") {
-                        if let next = nextInspection {
+                        if let next {
                             NavigationLink { PropertyDetailView(property: next) } label: {
                                 PropertyRow(property: next, showsInspection: true)
                             }
+                            Button { inspecting = next } label: {
+                                Label("Start inspecting", systemImage: "camera.viewfinder").font(.headline)
+                                    .frame(maxWidth: .infinity, minHeight: 28)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
                         } else {
-                            Text("No inspection booked. Add a time on a property to get a Prep here.").foregroundStyle(.secondary)
+                            Text("No inspection booked. Add a time to a home and it shows here.").foregroundStyle(.secondary)
                         }
                     }
-                    Section("Recent") {
-                        ForEach(properties.prefix(3)) { property in
-                            NavigationLink { PropertyDetailView(property: property) } label: { PropertyRow(property: property) }
+                    if !recent.isEmpty {
+                        Section("Recent") {
+                            ForEach(recent) { property in
+                                NavigationLink { PropertyDetailView(property: property) } label: {
+                                    PropertyRow(property: property, activityText: Self.activityText(property))
+                                }
+                            }
                         }
                     }
                 }
@@ -47,6 +73,15 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showingAdd) { AddPropertyView() }
+            .fullScreenCover(item: $inspecting) { property in
+                NavigationStack { InspectView(property: property) }
+            }
         }
+    }
+
+    /// "5 recorded" for a home with records, nothing otherwise.
+    private static func activityText(_ property: Property) -> String? {
+        let count = property.allObservations.count
+        return count == 0 ? nil : "\(count) recorded"
     }
 }

@@ -79,42 +79,59 @@ struct PropertyDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) { Button("Edit") { editing = true } }
         }
-        .navigationDestination(isPresented: $inspecting) { InspectView(property: property) }
+        // Inspect is camera-style: full screen on every device, not squeezed into the detail column of a split view.
+        .fullScreenCover(isPresented: $inspecting) { NavigationStack { InspectView(property: property) } }
         .fullScreenCover(isPresented: $scanningLight) { LightScanView(property: property, roomLabel: nil) }
         .sheet(isPresented: $editing, onDismiss: removeIfRequested) {
             EditPropertyView(property: property, removeRequested: $removeRequested)
         }
     }
 
-    /// The two things to do at this home, side by side when they fit and stacked at large text sizes.
+    /// The two things to do at this home. Side by side only when both labels fit on one line with their icons;
+    /// otherwise stacked, where a label may wrap at large text sizes.
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
-                inspectButton
-                lightButton
+                inspectButton(singleLine: true)
+                lightButton(singleLine: true)
             }
             VStack(spacing: 10) {
-                inspectButton
-                lightButton
+                inspectButton(singleLine: false)
+                lightButton(singleLine: false)
             }
         }
         .padding(.vertical, 4)
     }
 
-    private var inspectButton: some View {
+    private func inspectButton(singleLine: Bool) -> some View {
         Button { inspecting = true } label: {
-            Label("Inspect now", systemImage: "camera.viewfinder").font(.headline).frame(maxWidth: .infinity, minHeight: 28)
+            actionLabel("Inspect now", systemImage: "camera.viewfinder", singleLine: singleLine)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
     }
 
-    private var lightButton: some View {
+    private func lightButton(singleLine: Bool) -> some View {
         Button { scanningLight = true } label: {
-            Label("Scan light", systemImage: "sun.max.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 28)
+            actionLabel("Scan light", systemImage: "sun.max.fill", singleLine: singleLine)
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
+    }
+
+    /// Icon and words as an explicit pair. A `Label` here drops its title when it is told not to wrap (seen on
+    /// iPhone and iPad, 2026-10-01), which left two unlabelled buttons.
+    private func actionLabel(_ title: String, systemImage: String, singleLine: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+            if singleLine {
+                Text(title).lineLimit(1).fixedSize(horizontal: true, vertical: false)
+            } else {
+                Text(title).multilineTextAlignment(.center)
+            }
+        }
+        .font(.headline)
+        .frame(maxWidth: .infinity, minHeight: 28)
     }
 
     /// The booked time, or plainly that there is none. Never today's date standing in for a booking.

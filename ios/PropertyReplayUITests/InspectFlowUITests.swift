@@ -47,7 +47,7 @@ final class InspectFlowUITests: UITestCase {
         XCTAssertTrue(element(containing: "You corrected this").waitForExistence(timeout: 5), "the first version is kept and said so")
         XCTAssertTrue(element(containing: "You said this on site, then corrected the words").exists)
         snapshot("note-detail")
-        app.navigationBars.buttons.firstMatch.tap()
+        goBack()
 
         tap(app.staticTexts["Photo"].firstMatch)
         tap(element(containing: "Photo, Living"))

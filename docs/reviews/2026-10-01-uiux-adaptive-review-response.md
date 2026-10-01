@@ -22,17 +22,32 @@
 
 同时修掉的自己的问题：模拟扫动的启动参数按 `Double` 读取，而命令行传入的是字符串，`-syntheticSweepSpeed 0` 实际没生效（上一轮"覆盖不足"的测试只是点得够快才通过）。已改为 `double(forKey:)`。
 
-## 2. 排在后面
+## 2. 第二轮（iPad 与复看）
+
+| 编号 | 做了什么 | 验证 |
+|---|---|---|
+| U07 iPad 分栏 | tab 用 `.sidebarAdaptable`（iPhone 仍是底部 tab，iPad 是可切侧栏的 tab）；Properties 改为 `NavigationSplitView`：宽窗口左边列表或地图、右边详情，窄窗口自动折成单列并保留选中；Inspect 一律全屏呈现，不挤在详情栏里 | UI `BrowseAndCompareUITests.testAHomeOpensBesideTheListOnAWideWindow`（iPad 模拟器：列表与详情同时可点，换一套房详情就地切换）；iPhone 同一测试走单列 |
+| U09 共用状态 | 搜索（地址 / 区名）、状态筛选、选中的房产、地图镜头都放在 `PropertiesView`，List 与 Map 只是同一批房的两种视图；筛选后显示 "Showing N of M"，地图显示 "N of M homes match" | UI `testSearchNarrowsListAndMapTogether` |
+| U10 地图卡片 | 手机上选中 pin 出卡片，整卡可点进详情，另有系统地图导航按钮；卡片与计数放在地图的安全区内，不遮 pin 和地图的法律信息；宽窗口不出卡片，详情栏直接显示；没有 pin 的房产数写明并可一键回列表 | 源码 + 截图 |
+| U11 Inspect 选房 | 已授权时进入和回到前台都自动刷新位置、最近的排前面，另有手动刷新；未询问时一个按钮说明用途；被拒绝时说明当前顺序并给"打开设置"；定位精度从 100 m 改为 10 m 级（相邻两套房只差几十米）。距离只排序，不替用户选房 | 源码；定位行为需真机 |
+| U14 Compare | 行是关注维度、列是房产，房产名固定在顶部；格子来自买家自己的标签与扫描（`CompareSummary`），四种"没有"分开写：Not recorded / Scanned, sunlight not calculated / Not in the app yet，另有 Measured 留给以后；有记录的格子点进去是原始照片与原话；选满三套时写明上限；没选偏好时直达选择页；大字号或窄屏三列时改为逐套竖排 | 单元 `CompareSummaryTests`；UI `testCompareNamesEveryNothingAndOpensWhatWasRecorded` |
+| U08 Home | Next inspection 卡下面直接 "Start inspecting"；Recent 不再重复 Next 那一套，按最近记录排序并显示记录数 | 源码 + 截图 |
+| U03 相机旋转 | `AVCaptureDevice.RotationCoordinator`：预览角度跟随屏幕上的预览层，拍照角度跟随重力，各用各的；不再写死 90° | 源码。**模拟器没有相机，方向未验证**：要 Lee 用 iPhone 竖持 / 横持、iPad 四向各拍一张带"上"标记的东西，看预览、缩略图、大图是否一致 |
+
+第二轮里自己发现并修掉的两处：
+
+- 搜索时 iOS 用搜索框替换了导航栏，原先放在导航栏里的 List / Map 切换随之消失，带着搜索词切不到地图。切换控件挪到了内容区顶部。
+- 给两个主按钮加"不换行"后，系统 `Label` 把标题收掉了，按钮只剩图标（蓝色那个连图标都看不清）。测试按无障碍标签找按钮所以没拦住，是看截图发现的。改用明确的"图标 + 文字"，并在测试里加了"按钮里真的画了文字、宽度明显大于图标"的断言。
+
+验证：iPhone 模拟器 55 个单元 + 13 个 UI，iPad Pro 13 模拟器 13 个 UI，全部通过；iPad 截图人工看过分栏、比较表、笔记详情、大字号各屏。
+
+## 2b. 排在后面
 
 | 编号 | 计划 |
 |---|---|
-| U03 相机旋转 | 第二轮：`AVCaptureDevice.RotationCoordinator` 分别驱动预览与拍照角度。模拟器没有相机，方向要 Lee 用真机拍"上 / 右"标记验收 |
-| U07 iPad 分栏 | 第二轮：tab 用 `.sidebarAdaptable`；Properties 用 `NavigationSplitView` |
-| U09 / U10 / U11 | 第二轮：List / Map 共用搜索、筛选与选中；地图卡片整卡可点、带 Inspect 与系统地图导航；Inspect tab 有授权时自动按距离排并可刷新 |
-| U14 Compare | 第二轮：行是关注维度、列是房产；格子来自买家自己的标签与扫描，区分"没记录 / 已扫描未计算 / 没有资料来源" |
-| U08 Home | 第二轮：Next 卡直接开始看房；Recent 排除 Next |
-| U15 / U16 / U21 / U24 | 第三轮：调试项只在 DEBUG；同步状态用 CloudKit 事件的真实结果；地址输入焦点与 iPad 快捷键；消费者界面去掉 R0 / σ 等术语 |
+| U15 / U16 / U21 / U24 | 第三轮：调试项只在 DEBUG；同步状态用 CloudKit 事件的真实结果；地址输入焦点与解析状态、iPad 快捷键；消费者界面去掉 R0 / σ 等术语 |
 | U13 其余 | 房间 / 日期筛选、Question 独立模型：等 Compare 与详情稳定后再做 |
+| Compare 的三个维度没有资料来源 | School、Commute、Price comfort 目前没有对应的记录类别，格子写 "Not in the app yet"。要不要给它们加记录入口是产品决定，不在这轮 |
 
 ## 3. 与建议不同的地方，和要 Lee 决定的
 
