@@ -111,8 +111,10 @@ public final class InspectionObservation {
     public var sentimentRaw: String = Sentiment.neutral.rawValue
     public var levelRaw: String = EvidenceLevel.unknown.rawValue
     public var sourceRaw: String = EvidenceSource.userPhoto.rawValue
-    /// The buyer's words: transcript for voice, caption for photo.
+    /// The buyer's words: transcript for voice, caption for photo. The buyer may correct them.
     public var text: String?
+    /// What `text` was before the buyer first corrected it (the raw transcript). Nil while `text` is untouched.
+    public var originalText: String?
     /// One-sentence model summary of a voice note (Indicative), kept apart from the transcript.
     public var summary: String?
     /// The photo (JPEG). Kept by the store beside the row and mirrored to iCloud as an asset (ADR-0017), so a row and its
@@ -180,6 +182,20 @@ public final class InspectionObservation {
         set { sentimentRaw = newValue.rawValue; if newValue == .ask { followUp = true } }
     }
     public var level: EvidenceLevel { EvidenceLevel(rawValue: levelRaw) ?? .unknown }
+
+    /// Replaces the buyer's words, remembering the first version. Correcting a transcript does not change who said it,
+    /// so source and level stay as they are (ADR-0013). Restoring the original clears the memory of the edit.
+    public func correctText(to newValue: String) {
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = text ?? ""
+        guard trimmed != current else { return }
+        if let original = originalText {
+            if trimmed == original { originalText = nil }
+        } else if !current.isEmpty {
+            originalText = current
+        }
+        text = trimmed.isEmpty ? nil : trimmed
+    }
     public var source: EvidenceSource { EvidenceSource(rawValue: sourceRaw) ?? .userPhoto }
 
     /// What to show first: the buyer's own words, else the model summary, else the kind.

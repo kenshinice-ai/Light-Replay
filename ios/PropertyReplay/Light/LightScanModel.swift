@@ -49,14 +49,22 @@ final class SunPathOverlayState {
     var horizon: [CGPoint?] = []
 }
 
-struct LightScanResult: Equatable {
+struct LightScanResult: Equatable, Identifiable {
+    let id = UUID()
+    /// Share of the question's sun path the camera pointed at. Not a measure of sky or sunlight (review U06).
     var coveragePct: Int
-    var pathTitle: String
+    /// "winter sun" or "all-year sun".
+    var questionName: String
     var direction: String
     var place: String
     /// Set when the record is safe on disk but not yet on the property.
     var pendingNote: String?
     var failure: String?
+    /// True when the failed scan is still in memory and saving it can be tried again without rescanning (review U22).
+    var canRetrySave = false
+
+    /// What the saved observation says about itself.
+    var note: String { "Light scan · camera covered \(coveragePct)% of the \(questionName) path · sunlight not calculated" }
 }
 
 /// The Light scan (docs/04 OneTake): camera, the question's sun path over it, one instruction at a time, and a record
@@ -116,6 +124,8 @@ final class LightScanModel {
     @ObservationIgnored private var coordinate: CLLocationCoordinate2D?
     @ObservationIgnored private var sunTask: Task<Void, Never>?
     @ObservationIgnored private var pendingCapture: PendingCapture?
+    /// A finished scan whose save failed; kept so it can be saved again instead of scanned again.
+    @ObservationIgnored private var unsavedLog: CaptureLog?
     #if DEBUG
     @ObservationIgnored private var synthetic: SyntheticSweep?
     @ObservationIgnored private var syntheticTask: Task<Void, Never>?
@@ -192,7 +202,11 @@ final class LightScanModel {
     func scanAgain() {
         guard case .saved = phase else { return }
         phase = .ready
+        unsavedLog = nil
+        coverage = 0
+        reachedTarget = false
         status = ScanStatus()
+        status.pathReady = progress != nil
         anchorLocked = false
         driftDot = .zero
         // A new session resets the AR world frame, so the old Δ and everything measured against it no longer apply.
@@ -231,26 +245,51 @@ final class LightScanModel {
             synthetic?.reset()
         }
         #endif
-        let pct = Int((coverage * 100).rounded())
-        var result = LightScanResult(coveragePct: pct, pathTitle: "\(question.title) path", direction: directionText,
-                                     place: place, pendingNote: nil, failure: nil)
+        var result = LightScanResult(coveragePct: Int((coverage * 100).rounded()), questionName: question.title.lowercased(),
+                                     direction: directionText, place: place)
         guard let log else {
             result.failure = "Nothing was recorded. Try the scan again."
             phase = .saved(result)
             return
         }
-        let note = "Light scan · \(question.title.lowercased()) path \(pct)% seen · analysis pending"
+        unsavedLog = log
+        persist(log, result: result, in: context)
+    }
+
+    /// Saves the scan that failed to save, without scanning again.
+    func retrySave(in context: ModelContext) {
+        guard let log = unsavedLog, case .saved(let result) = phase else { return }
+        persist(log, result: result, in: context)
+    }
+
+    private func persist(_ log: CaptureLog, result: LightScanResult, in context: ModelContext) {
+        var result = result
+        result.failure = nil
+        result.canRetrySave = false
+        result.pendingNote = nil
         do {
-            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, note: note, in: context)
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-failFirstLightSave"), !Self.failedOnce {
+                Self.failedOnce = true
+                throw CocoaError(.fileWriteOutOfSpace)   // UI tests: the first save fails, the retry succeeds
+            }
+            #endif
+            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, note: result.note, in: context)
+            unsavedLog = nil
             pendingCapture = outcome.pending
             if let error = outcome.attachError {
                 result.pendingNote = "Couldn't add it to the property yet (\(error)). It's kept on this device and is added the next time the app opens."
             }
         } catch {
             result.failure = "Couldn't save the scan: \(error.localizedDescription)"
+            result.canRetrySave = true
         }
         phase = .saved(result)
     }
+
+    #if DEBUG
+    private static var failedOnce = false
+    #endif
 
     func retryAttach(in context: ModelContext) {
         guard let capture = pendingCapture, let property, case .saved(var result) = phase else { return }
@@ -267,6 +306,11 @@ final class LightScanModel {
     // MARK: - Sun
 
     private func prepareSun() {
+        // Until the new question's path exists nothing may look covered or done (review U23).
+        progress = nil
+        arcs = []
+        status.pathReady = false
+        refreshStatus()
         guard let coordinate else { return }
         let question = question, lat = coordinate.latitude, lon = coordinate.longitude
         sunTask?.cancel()
@@ -278,6 +322,7 @@ final class LightScanModel {
             self.progress = built.progress
             self.arcs = built.arcs
             self.sunNow = built.sunNow
+            self.status.pathReady = true
             self.refreshStatus()
             #if DEBUG
             if self.isSimulated { self.syntheticTick(Date().timeIntervalSince(self.syntheticOpened)) }
@@ -425,7 +470,10 @@ final class LightScanModel {
         s.toleranceM = toleranceM
         s.targetCoverage = Self.targetCoverage
         s.questionName = question.title.lowercased()
-        s.directionKnown = currentYaw != nil && progress != nil
+        s.directionKnown = currentYaw != nil
+        s.locationKnown = coordinate != nil
+        s.coverage = 0
+        s.gap = nil
         if let progress, let yaw = currentYaw {
             s.coverage = progress.coverage(of: sweep, yawDeg: yaw)
             if let camera = lastCamera {
@@ -437,7 +485,9 @@ final class LightScanModel {
         let next = ScanCoach.prompt(for: s)
         if next != prompt { prompt = next }
         if abs(s.coverage - coverage) >= 0.005 || (s.coverage == 0 && coverage != 0) { coverage = s.coverage }
-        if phase == .scanning, s.coverage >= Self.targetCoverage, !reachedTarget { reachedTarget = true }
+        // Recomputed every time, so switching question (or a better Δ) can take "covered" away again (review U23).
+        let reached = phase == .scanning && s.pathReady && s.coverage >= Self.targetCoverage
+        if reached != reachedTarget { reachedTarget = reached }
         let text: String
         if fixedYaw != nil {
             text = "Simulated north"

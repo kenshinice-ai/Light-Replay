@@ -66,3 +66,23 @@ final class ObservationTests: XCTestCase {
         XCTAssertEqual(voice.headline, "Darker than photos")
     }
 }
+
+extension ObservationTests {
+    func testCorrectingATranscriptKeepsTheOriginalOnce() {
+        let note = InspectionObservation(kind: .voice, source: .userVoice, text: "The living room felt dimmer than the fotos")
+        XCTAssertNil(note.originalText)
+        note.correctText(to: "The living room felt dimmer than the photos")
+        XCTAssertEqual(note.originalText, "The living room felt dimmer than the fotos")
+        note.correctText(to: "The living room felt darker than the photos ")
+        XCTAssertEqual(note.text, "The living room felt darker than the photos")
+        XCTAssertEqual(note.originalText, "The living room felt dimmer than the fotos", "only the first version is the original")
+        XCTAssertEqual(note.level, .observedNoted, "still the buyer's own words")
+        note.correctText(to: "The living room felt dimmer than the fotos")
+        XCTAssertNil(note.originalText, "back to the original: nothing was corrected")
+
+        let photo = InspectionObservation(kind: .photo, source: .userPhoto)
+        photo.correctText(to: "North window")
+        XCTAssertEqual(photo.text, "North window")
+        XCTAssertNil(photo.originalText, "a first caption has no original")
+    }
+}

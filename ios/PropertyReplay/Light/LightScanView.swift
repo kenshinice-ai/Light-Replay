@@ -4,12 +4,14 @@ import SunEngine
 import SwiftData
 import SwiftUI
 
-/// The Light scan screen (docs/04 OneTake, apple-design review 2026-09-30): full-screen camera, the sun path for the
-/// chosen question drawn into it, one instruction at a time, a coverage ring and one primary button.
+/// The Light scan screen (docs/04 §11): full-screen camera, the sun path for the chosen question drawn into it, one
+/// instruction at a time, a coverage ring and one primary button. Every part re-flows at large text sizes instead of
+/// truncating (review U02), and the wording keeps "the camera covered this" apart from "sunlight" (review U06).
 struct LightScanView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @AppStorage("lightScanQuestion") private var questionRaw = LightQuestion.winter.rawValue
     @State private var model: LightScanModel
@@ -19,6 +21,8 @@ struct LightScanView: View {
     init(property: Property?, roomLabel: String?) {
         _model = State(initialValue: LightScanModel(property: property, roomLabel: roomLabel))
     }
+
+    private var isLive: Bool { model.phase == .ready || model.phase == .scanning }
 
     var body: some View {
         ZStack {
@@ -35,21 +39,19 @@ struct LightScanView: View {
             if case .unsupported(let reason) = model.phase {
                 unsupported(reason)
             } else {
-                if model.phase == .ready || model.phase == .scanning { reticle }
-                VStack(spacing: 14) {
+                if isLive { reticle }
+                VStack(spacing: 12) {
                     topBar
-                    Spacer()
-                    if model.phase == .ready || model.phase == .scanning {
-                        promptView
-                        bottomBar
-                    }
+                    if model.phase == .ready { legend }
+                    Spacer(minLength: 0)
+                    if isLive { promptView }
+                    if isLive || model.phase == .saving { bottomBar }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
-            }
-            if case .saved(let result) = model.phase {
-                resultCard(result)
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                // Controls that sit on the live picture stop growing at accessibility2 so the camera stays visible,
+                // as the system Camera's do; the result sheet and every editor scale all the way (review U02).
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             }
         }
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 1), value: model.phase)
@@ -74,6 +76,18 @@ struct LightScanView: View {
             guard case .saved(let result) = phase else { return nil }
             return result.failure == nil ? .success : .error
         }
+        // The result is a system sheet: it scrolls at any text size and reads on a steady surface (review U02, U17).
+        .sheet(item: Binding(get: { if case .saved(let result) = model.phase { result } else { nil } }, set: { _ in })) { result in
+            LightResultSheet(result: result,
+                             onRetrySave: { model.retrySave(in: context) },
+                             onRetryAttach: { model.retryAttach(in: context) },
+                             onScanAgain: { model.scanAgain() },
+                             onDone: { dismiss() })
+                .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.thickMaterial)   // long text reads on a steady surface, not on the camera (review U17)
+                .interactiveDismissDisabled()
+        }
         .confirmationDialog("Discard this scan?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
             Button("Discard", role: .destructive) {
                 model.discard()
@@ -81,12 +95,12 @@ struct LightScanView: View {
             }
             Button("Keep scanning", role: .cancel) {}
         }
-        .alert("Only \(Int((model.coverage * 100).rounded()))% of the \(model.question.title.lowercased()) path was seen",
+        .alert("The camera covered only \(Int((model.coverage * 100).rounded()))% of the \(model.question.title.lowercased()) path",
                isPresented: $confirmingLowCoverage) {
             Button("Save anyway") { model.save(in: context) }
             Button("Keep scanning", role: .cancel) {}
         } message: {
-            Text("Parts of the path the camera didn't see stay unknown in the result.")
+            Text("The parts the camera didn't cover will stay unknown.")
         }
     }
 
@@ -105,41 +119,98 @@ struct LightScanView: View {
         }
     }
 
+    /// One row when it fits; at large text sizes the question gets a row of its own.
     private var topBar: some View {
-        HStack {
-            Button(action: close) {
-                Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 30, height: 30)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                closeButton
+                Spacer(minLength: 0)
+                questionMenu
+                Spacer(minLength: 0)
+                directionChip
             }
-            .buttonStyle(.glass)
-            .buttonBorderShape(.circle)
-            .accessibilityLabel("Close")
-            Spacer()
-            Menu {
-                Picker("Question", selection: Bindable(model).question) {
-                    ForEach(LightQuestion.allCases) { Text($0.title).tag($0) }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    closeButton
+                    Spacer(minLength: 0)
+                    directionChip
                 }
-            } label: {
-                HStack(spacing: 5) {
-                    Text(model.question.title).font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.down").font(.caption2.weight(.bold))
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .glassEffect(in: Capsule())
+                questionMenu
             }
-            .disabled(model.phase == .saving)
-            Spacer()
-            Label(model.directionText, systemImage: "location.north.line")
-                .font(.caption.weight(.medium))
-                .labelStyle(.titleAndIcon)
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .glassEffect(in: Capsule())
-                .accessibilityLabel("Direction: \(model.directionText)")
         }
         .padding(.top, 4)
+    }
+
+    private var closeButton: some View {
+        Button(action: close) {
+            Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 30, height: 30)
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .accessibilityLabel("Close")
+    }
+
+    private var questionMenu: some View {
+        Menu {
+            Picker("Question", selection: Bindable(model).question) {
+                ForEach(LightQuestion.allCases) { Text($0.title).tag($0) }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(model.question.title).font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 44)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 22))
+        }
+        .disabled(model.phase == .saving)
+        .accessibilityLabel("Question")
+        .accessibilityValue(model.question.title)
+    }
+
+    private var directionChip: some View {
+        Label(model.directionText, systemImage: "location.north.line")
+            .font(.caption.weight(.medium))
+            .labelStyle(.titleAndIcon)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(minHeight: 36)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 18))
+            .accessibilityLabel("Direction: \(model.directionText)")
+    }
+
+    /// What the two line styles mean, before the scan starts (review U06). Shape differs as well as colour.
+    private var legend: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) { legendCovered; legendNotYet }
+            VStack(alignment: .leading, spacing: 6) { legendCovered; legendNotYet }
+        }
+        .font(.caption.weight(.medium))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("On the sun path, a solid line is where the camera has looked, a dashed line is where it hasn't yet.")
+    }
+
+    private var legendCovered: some View {
+        HStack(spacing: 6) {
+            Capsule().fill(SunPathOverlay.sun).frame(width: 22, height: 4)
+            Text("Camera has looked here").fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var legendNotYet: some View {
+        HStack(spacing: 6) {
+            HStack(spacing: 3) { ForEach(0..<3, id: \.self) { _ in Capsule().fill(.primary.opacity(0.8)).frame(width: 5, height: 3) } }
+                .frame(width: 22)
+            Text("Not yet")
+        }
     }
 
     /// The viewpoint circle: the dot is the lens relative to where the scan started (docs/04 §8).
@@ -180,16 +251,41 @@ struct LightScanView: View {
         }
     }
 
+    /// Ring, primary button, and a spacer that keeps the button centred. When the text is too large for one row the
+    /// button takes the full width and the ring sits under it.
     private var bottomBar: some View {
-        HStack {
-            CoverageRing(coverage: model.coverage, reached: model.reachedTarget, animate: !reduceMotion)
-                .frame(width: 58, height: 58)
-                .opacity(model.phase == .scanning ? 1 : 0.4)
-            Spacer()
-            primaryButton
-            Spacer()
-            Color.clear.frame(width: 58, height: 58)
+        ViewThatFits(in: .horizontal) {
+            HStack {
+                coverage
+                Spacer(minLength: 8)
+                primaryButton
+                Spacer(minLength: 8)
+                coverage.hidden().accessibilityHidden(true)
+            }
+            VStack(spacing: 10) {
+                primaryButton
+                coverage
+            }
         }
+    }
+
+    /// The ring is a graphic; the number moves beside it when the text is too large to sit inside (review U02).
+    private var coverage: some View {
+        let percent = "\(Int((model.coverage * 100).rounded()))%"
+        return HStack(spacing: 8) {
+            CoverageRing(coverage: model.coverage, reached: model.reachedTarget, label: typeSize.isAccessibilitySize ? nil : percent,
+                         animate: !reduceMotion)
+                .frame(width: 58, height: 58)
+            if typeSize.isAccessibilitySize {
+                Text(percent).font(.headline.monospacedDigit()).foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .glassEffect(in: Capsule())
+            }
+        }
+        .opacity(model.phase == .scanning ? 1 : 0.45)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Sun path the camera has covered")
+        .accessibilityValue("\(Int((model.coverage * 100).rounded())) percent")
     }
 
     @ViewBuilder
@@ -222,51 +318,6 @@ struct LightScanView: View {
         }
     }
 
-    private func resultCard(_ result: LightScanResult) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let failure = result.failure {
-                Label("Scan not saved", systemImage: "exclamationmark.triangle.fill")
-                    .font(.title3.weight(.bold)).foregroundStyle(.orange)
-                Text(failure).font(.callout)
-            } else {
-                Label {
-                    Text("Scan saved")
-                } icon: {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                }
-                .font(.title3.weight(.bold))
-                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
-                    GridRow { Text(result.pathTitle).foregroundStyle(.secondary); Text("\(result.coveragePct)% seen") }
-                    GridRow { Text("Direction").foregroundStyle(.secondary); Text("\(result.direction), approximate") }
-                    GridRow { Text("Place").foregroundStyle(.secondary); Text(result.place) }
-                }
-                .font(.callout)
-                Text("Sunlight hours come from the sky analysis, which isn't ready yet. This scan is kept with the property and will be analysed then.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let pending = result.pendingNote {
-                    Text(pending).font(.footnote).foregroundStyle(.orange)
-                    Button("Try again") { model.retryAttach(in: context) }.font(.footnote.weight(.semibold))
-                }
-            }
-            HStack {
-                Button("Scan again") { model.scanAgain() }
-                    .buttonStyle(.glass)
-                Spacer()
-                Button("Done") { dismiss() }
-                    .buttonStyle(.glassProminent)
-                    .accessibilityIdentifier("lightScanDone")
-            }
-            .controlSize(.large)
-        }
-        .padding(20)
-        .frame(maxWidth: 520)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 30))
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-    }
-
     private func unsupported(_ reason: String) -> some View {
         VStack(spacing: 20) {
             ContentUnavailableView("Light scan needs a camera", systemImage: "camera.metering.unknown", description: Text(reason))
@@ -282,14 +333,16 @@ struct LightScanView: View {
     }
 
     private func requestSave() {
-        if model.coverage >= LightScanModel.targetCoverage { model.save(in: context) } else { confirmingLowCoverage = true }
+        if model.reachedTarget { model.save(in: context) } else { confirmingLowCoverage = true }
     }
 }
 
-/// How much of the question's sun path the camera has looked at. Turns green at the target.
+/// How much of the question's sun path the camera has pointed at. Turns green at the target.
 struct CoverageRing: View {
     let coverage: Double
     let reached: Bool
+    /// The percentage inside the ring, or nil when it is shown beside it.
+    let label: String?
     let animate: Bool
 
     var body: some View {
@@ -299,15 +352,119 @@ struct CoverageRing: View {
                 .trim(from: 0, to: max(0.001, coverage))
                 .stroke(reached ? Color.green : SunPathOverlay.sun, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            Text("\(Int((coverage * 100).rounded()))%")
-                .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(.white)
+            if let label {
+                Text(label).font(.caption.weight(.semibold).monospacedDigit()).foregroundStyle(.white)
+            } else if reached {
+                Image(systemName: "checkmark").font(.footnote.weight(.bold)).foregroundStyle(.green)
+            }
         }
         .padding(5)
         .glassEffect(in: Circle())
         .animation(animate ? .spring(response: 0.35, dampingFraction: 1) : nil, value: coverage)
-        .accessibilityElement()
-        .accessibilityLabel("Sun path seen")
-        .accessibilityValue("\(Int((coverage * 100).rounded())) percent")
+    }
+}
+
+/// What was saved, and plainly what was not worked out (review U06): a saved scan is not a sunlight result.
+struct LightResultSheet: View {
+    let result: LightScanResult
+    let onRetrySave: () -> Void
+    let onRetryAttach: () -> Void
+    let onScanAgain: () -> Void
+    let onDone: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if let failure = result.failure { failed(failure) } else { saved }
+            }
+            .padding(24)
+            .frame(maxWidth: 560, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .bottom) { buttons }
+    }
+
+    @ViewBuilder
+    private var saved: some View {
+        Label {
+            Text("Scan saved")
+        } icon: {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        }
+        .font(.title2.weight(.bold))
+        VStack(spacing: 10) {
+            AdaptiveRow(title: "Camera covered", value: "\(result.coveragePct)% of the \(result.questionName) path")
+            AdaptiveRow(title: "Direction", value: "\(result.direction), approximate")
+            AdaptiveRow(title: "Place", value: result.place)
+        }
+        .font(.callout)
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Sunlight not calculated yet", systemImage: "hourglass").font(.headline)
+            Text("This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours. When that analysis is ready, this spot may need a new scan.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
+        if let pending = result.pendingNote {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(pending).font(.footnote).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                Button("Try adding it again", action: onRetryAttach).font(.footnote.weight(.semibold))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func failed(_ failure: String) -> some View {
+        Label("Scan not saved", systemImage: "exclamationmark.triangle.fill")
+            .font(.title2.weight(.bold)).foregroundStyle(.orange)
+        Text(failure).font(.callout).fixedSize(horizontal: false, vertical: true)
+        if result.canRetrySave {
+            Text("The scan itself is still here. You can try saving it again; you don't need to scan again.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var buttons: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                secondaryButton
+                primaryButton
+            }
+            VStack(spacing: 10) {
+                primaryButton
+                secondaryButton
+            }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
+        .background(.bar)
+    }
+
+    @ViewBuilder
+    private var primaryButton: some View {
+        if result.failure != nil && result.canRetrySave {
+            Button(action: onRetrySave) { Text("Try saving again").font(.headline).frame(maxWidth: .infinity, minHeight: 28) }
+                .buttonStyle(.borderedProminent)
+        } else {
+            Button(action: onDone) { Text("Done").font(.headline).frame(maxWidth: .infinity, minHeight: 28) }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("lightScanDone")
+        }
+    }
+
+    @ViewBuilder
+    private var secondaryButton: some View {
+        if result.failure != nil && result.canRetrySave {
+            Button(action: onDone) { Text("Close without saving").frame(minHeight: 28) }
+                .buttonStyle(.bordered)
+        } else {
+            Button(action: onScanAgain) { Text("Scan again").frame(minHeight: 28) }
+                .buttonStyle(.bordered)
+        }
     }
 }

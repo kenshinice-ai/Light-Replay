@@ -14,7 +14,7 @@ struct InspectionSummaryView: View {
         List {
             group("You liked", .like, "hand.thumbsup")
             group("You were unsure about", .concern, "exclamationmark.triangle")
-            group("Ask next", .ask, "questionmark.circle")
+            group("You want to confirm", .ask, "questionmark.circle")
             group("Notes", .neutral, "note.text")
             if observations.isEmpty {
                 ContentUnavailableView("Nothing recorded yet", systemImage: "camera", description: Text("Use Inspect when you are at the property."))
@@ -31,7 +31,9 @@ struct InspectionSummaryView: View {
         let items = observations.filter { $0.sentiment == sentiment }
         if !items.isEmpty {
             Section {
-                ForEach(items) { ObservationRow(observation: $0) }
+                ForEach(items) { item in
+                    NavigationLink { ObservationDetailView(observation: item) } label: { ObservationRow(observation: item) }
+                }
                     .onDelete { offsets in
                         do {
                             for index in offsets { try PropertyStore.delete(items[index], in: context) }

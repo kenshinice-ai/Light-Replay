@@ -1,0 +1,67 @@
+import XCTest
+
+/// Shared rig for the simulator UI tests. The app runs with `-uitest`: an in-memory library with the fictional
+/// samples, DEBUG stand-ins for camera and microphone, and a scripted pretend camera for the Light scan.
+class UITestCase: XCTestCase {
+    var app: XCUIApplication!
+
+    /// The largest accessibility text size, the way the system passes it to an app.
+    static let largestText = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+    }
+
+    func launch(_ extra: [String] = []) {
+        app.launchArguments = ["-uitest"] + extra
+        app.launch()
+    }
+
+    /// Location and similar prompts belong to SpringBoard; accept them so they do not cover the controls.
+    func allowSystemPrompts() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for label in ["Allow While Using App", "Allow Once", "Allow", "OK"] {
+            let button = springboard.buttons[label]
+            if button.waitForExistence(timeout: 1) { button.tap() }
+        }
+    }
+
+    func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(element.waitForExistence(timeout: 8), "missing \(element)", file: file, line: line)
+        element.tap()
+    }
+
+    func element(containing text: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    func snapshot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func openProperty(_ shortAddress: String = "12 Example Street") {
+        tap(app.buttons["Properties"].firstMatch)
+        tap(app.staticTexts[shortAddress].firstMatch)
+    }
+
+    func openInspect() {
+        openProperty()
+        let inspect = app.buttons["Inspect now"].firstMatch
+        XCTAssertTrue(inspect.waitForExistence(timeout: 8))
+        for _ in 0..<4 where !inspect.isHittable { app.swipeUp() }
+        inspect.tap()
+        allowSystemPrompts()
+    }
+
+    /// Existing is not enough: the whole element has to sit inside the window's width (review U01, U02).
+    func assertInsideWindow(_ element: XCUIElement, _ name: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(element.waitForExistence(timeout: 8), "missing \(name)", file: file, line: line)
+        let window = app.windows.firstMatch.frame, frame = element.frame
+        XCTAssertTrue(frame.minX >= window.minX - 1 && frame.maxX <= window.maxX + 1,
+                      "\(name) spans x \(Int(frame.minX))…\(Int(frame.maxX)), outside the \(Int(window.width)) pt window", file: file, line: line)
+    }
+}

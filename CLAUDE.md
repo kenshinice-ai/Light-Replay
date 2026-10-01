@@ -20,7 +20,7 @@
 
 ## 构建与验证
 
-- `./scripts/test.sh` 跑全部纯算法测试。构建产物必须在 iCloud 之外（`~/Library/Caches/propertyreplay/`）；手跑 `swift build` / `swift test` 加 `--scratch-path`。原因：codesign 拒绝带 iCloud FinderInfo 的 bundle。
+- `./scripts/test.sh` 跑全部纯算法测试；`./scripts/ios-test.sh [unit|ui]` 在专用模拟器上跑 iOS 单元与 UI 测试（跑完关机）。改界面必须跑 UI 测试并看最大字号截图。构建产物必须在 iCloud 之外（`~/Library/Caches/propertyreplay/`）；手跑 `swift build` / `swift test` 加 `--scratch-path`。原因：codesign 拒绝带 iCloud FinderInfo 的 bundle。
 - ARKit、LiDAR、RoomPlan、Foundation Models、Speech 只能在真机上跑；模拟器只能跑纯算法（SunEngine、NorthResolver 融合、可见域累积、SceneRecord 编解码）与界面。
 - 纯算法必须有 Swift 单元测试，并与 `engine/` 的 Python 参考实现交叉核对（同一输入，输出差异要有容差说明）。
 - 涉及现场的结论，引用 `field/` 中的采集编号与延时记录编号。

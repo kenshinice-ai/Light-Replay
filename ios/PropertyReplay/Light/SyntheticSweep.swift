@@ -13,11 +13,16 @@ struct SyntheticSweep {
     /// Turning speed along the path, well under `ScanCoach.fastTurnDegPerSec`. UI tests can set it with the launch
     /// argument `-syntheticSweepSpeed <deg/s>` (0 keeps the pretend camera still).
     static var speedDegPerSec: Double {
-        UserDefaults.standard.object(forKey: "syntheticSweepSpeed") as? Double ?? 32
+        // Launch arguments arrive as strings; `double(forKey:)` converts them.
+        UserDefaults.standard.object(forKey: "syntheticSweepSpeed") == nil ? 32 : UserDefaults.standard.double(forKey: "syntheticSweepSpeed")
     }
     /// Low across the winter path, high across summer noon, low again across summer mornings and evenings.
-    /// Azimuths are unwrapped (−125 is 235°) so the path never jumps.
-    static let waypoints: [(az: Double, alt: Double)] = [(-85, 14), (85, 14), (125, 48), (-125, 48), (-125, 22), (125, 22)]
+    /// Azimuths are unwrapped (−125 is 235°) so the path never jumps. `-syntheticSweepPasses 1` stops after the
+    /// first pass: the winter path is covered, the all-year path is not.
+    static var waypoints: [(az: Double, alt: Double)] {
+        let all: [(az: Double, alt: Double)] = [(-85, 14), (85, 14), (125, 48), (-125, 48), (-125, 22), (125, 22)]
+        return UserDefaults.standard.integer(forKey: "syntheticSweepPasses") == 1 ? Array(all.prefix(2)) : all
+    }
 
     private(set) var recordingStart: TimeInterval?
     private var frames: [FrameSample] = []

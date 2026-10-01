@@ -28,6 +28,12 @@ final class ScanCoachTests: XCTestCase {
 
         s.directionKnown = false
         XCTAssertEqual(ScanCoach.prompt(for: s).symbol, "location.north.line")
+        s.pathReady = false
+        XCTAssertEqual(ScanCoach.prompt(for: s).text, "Working out the sun path…")
+        s.locationKnown = false
+        XCTAssertEqual(ScanCoach.prompt(for: s).symbol, "location", "no place, no sun path")
+        s.locationKnown = true
+        s.pathReady = true
         s.turnRateDegPerSec = 90
         XCTAssertEqual(ScanCoach.prompt(for: s).text, "Slower. Let the camera see the sky.")
         s.driftM = 0.3
@@ -44,6 +50,10 @@ final class ScanCoachTests: XCTestCase {
         var s = scanning()
         s.coverage = 0.93
         XCTAssertEqual(ScanCoach.prompt(for: s).tone, .done)
+        XCTAssertEqual(ScanCoach.prompt(for: s).text, "Sun path covered. Tap Save.", "covered, not a claim about sky or sunlight")
+        s.pathReady = false
+        XCTAssertNotEqual(ScanCoach.prompt(for: s).tone, .done, "no done while the path is being worked out")
+        s.pathReady = true
         s.driftM = 0.5
         XCTAssertNotEqual(ScanCoach.prompt(for: s).tone, .done, "a viewpoint problem outranks done")
     }

@@ -55,6 +55,7 @@ light_replay/
 │   ├── lightreplay/          Python 参考实现（scenerecord.py）
 │   └── tests/                含 Swift 跨语言一致性测试
 ├── scripts/test.sh           跑全部纯算法测试（构建目录在 iCloud 之外）
+├── scripts/ios-test.sh       在专用模拟器上跑 iOS 单元与 UI 测试
 ├── report/                   分享页（待建）
 └── field/                    现场模板；数据不入库
 ```
@@ -62,7 +63,9 @@ light_replay/
 ## 跑测试
 
 ```bash
-./scripts/test.sh
+./scripts/test.sh            # 纯算法：SceneRecord、SunEngine、Python 参考
+./scripts/ios-test.sh unit   # iOS 单元测试（专用模拟器）
+./scripts/ios-test.sh ui     # UI 测试，约 6 分钟
 ```
 
 ## 团队

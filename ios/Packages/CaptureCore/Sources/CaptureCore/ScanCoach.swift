@@ -13,6 +13,10 @@ public struct ScanStatus: Sendable, Equatable {
     public var turnRateDegPerSec = 0.0
     /// True once a direction estimate (Δ) exists, so the sun path can be placed.
     public var directionKnown = false
+    /// False while the question's sun path is still being worked out (first load, or after switching question).
+    public var pathReady = true
+    /// False until there is a place to compute the sun for (the property's pin or a location fix).
+    public var locationKnown = true
     /// Share of the question's sun corridor the camera has looked at, 0…1.
     public var coverage = 0.0
     public var targetCoverage = 0.9
@@ -44,8 +48,8 @@ public struct ScanPrompt: Sendable, Equatable {
     }
 }
 
-/// Picks the single most useful instruction. Order: tracking, viewpoint, speed, direction, then coverage — each earlier
-/// problem would make the later advice pointless.
+/// Picks the single most useful instruction. Order: tracking, viewpoint, speed, sun path, direction, then coverage —
+/// each earlier problem would make the later advice pointless.
 public enum ScanCoach {
     /// Faster than this the frames blur and the anchor drifts (candidate, docs/04 §4).
     public static let fastTurnDegPerSec = 60.0
@@ -76,11 +80,18 @@ public enum ScanCoach {
         if s.turnRateDegPerSec > fastTurnDegPerSec {
             return ScanPrompt("Slower. Let the camera see the sky.", symbol: "tortoise", tone: .caution)
         }
+        guard s.locationKnown else {
+            return ScanPrompt("Finding where you are, to place the sun…", symbol: "location")
+        }
+        guard s.pathReady else {
+            return ScanPrompt("Working out the sun path…", symbol: "sun.max")
+        }
         guard s.directionKnown else {
             return ScanPrompt("Finding north. Keep the phone upright.", symbol: "location.north.line")
         }
         if s.coverage >= s.targetCoverage {
-            return ScanPrompt("That's enough sky. Tap Save.", symbol: "checkmark.circle.fill", tone: .done)
+            // "Covered" is about where the camera looked, not about what it saw there (review U06).
+            return ScanPrompt("Sun path covered. Tap Save.", symbol: "checkmark.circle.fill", tone: .done)
         }
         guard let gap = s.gap, max(abs(gap.x), abs(gap.y)) > onScreenDeg else {
             return ScanPrompt("Sweep slowly along the sun path.", symbol: "arrow.left.and.right")
