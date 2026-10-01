@@ -67,7 +67,9 @@ struct PropertiesView: View {
             ContentUnavailableView {
                 Label("No properties yet", systemImage: "house")
             } description: {
-                Text("Add the homes you plan to inspect. They stay on this device and in your iCloud.")
+                Text(StoreHealth.shared.mode == .iCloud
+                     ? "Add the homes you plan to inspect. If you already use Property Replay on another device, your homes arrive here once iCloud catches up; that can take a few minutes."
+                     : "Add the homes you plan to inspect. They stay on this device.")
             } actions: {
                 Button("Add a property") { showingAdd = true }.buttonStyle(.borderedProminent)
                 #if DEBUG
@@ -137,8 +139,10 @@ struct PropertiesView: View {
                             .listRowBackground(sizeClass != .compact && selectedID == property.persistentModelID
                                                ? Color.accentColor.opacity(0.14) : nil)
                             .accessibilityAddTraits(selectedID == property.persistentModelID ? .isSelected : [])
+                            .deleteWithConfirmation("Remove \(property.shortAddress) and everything recorded for it?", actionLabel: "Remove") {
+                                remove([property])
+                            }
                         }
-                        .onDelete { offsets in remove(offsets.map { group[$0] }) }
                     }
                 }
             }

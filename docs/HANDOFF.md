@@ -79,9 +79,14 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
 | PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
 | iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ iPhone → iPad：两台真机数据库逐表计数一致，照片与测量记录字节已同步 | 离线再上线、删除传播待测 |
+| 同步状态只报告真实发生的收发与失败（`SyncMonitor` / `SyncStatus`） | ✓ | ✓ 单元 `SyncStatusTests` | 待 Lee 在 iPhone / iPad 的 You › Privacy & data 看一眼 | UI/UX 评审 U16；登录了不等于同步了 |
 | 照片与测量记录存在行上；旧文件启动时迁移 | ✓ | ✓ | 装机即迁移，待 Lee 确认旧照片仍在 | |
 | 测量先落待关联文件，存库失败可重试、重启补关联 | ✓ | ✓ 幂等 / 串房 / 孤儿 | — | |
 | 保存 / 删除失败：不崩溃、不留半个改动 | ✓ | ✓ 磁盘存储上的 5 个故障注入（`FailureInjectionTests`） | — | 从不调用 `rollback()`（删过带外部存储的行后它会崩，见组记忆）：失败的插入手动撤销并解除关联；失败的删除保持待删，下次保存完成。全部删除逐行删，批量 `delete(model:)` 与待删行叠加会崩 |
+| 删除前确认：左滑 / 长按删除、详情页删除、删除房产、删除全部都先问，问题挂在触发它的行或按钮上并写明对象 | ✓ | ✓ UI | — | iOS 26 起确认框是锚定的气泡（组记忆 confirmation-dialog-anchors-to-its-view） |
+| 地址补全与解析限制在澳洲：区域 + 文字过滤 + 坐标范围校验 | ✓ | ✓ 单元 `AddressScopeTests` | — | Apple Maps 在区域内无匹配时会退回全球结果 |
+| 添加房产：选中建议保留其 pin、整行可点、找不到时在地址栏下说明、存的是地址栏里的字 | ✓ | ✓ UI（Apple Maps 由 `AddressCompleter.StandIn` 的两套虚构房子顶替，不联网） | 待 Lee 用真实地址走一遍 | 10-01 用真实 Maps 复现过"选中后被清掉"；修复后的真实 Maps 路径未在真机复验 |
+| 提示文字对比度：橙 / 红小字用系统高对比变体（`TextColors.swift`） | ✓ | ✓ 单元 `TextColorTests`：浅 / 深、页面 / 列表行，全部 ≥ 4.5:1 | — | 相机画面上的材质底未量 |
 | 草稿编辑面板（系统 sheet）：单一来源、AI 晚到不覆盖买家修改、只能经 Save / Discard 离开、原话可改且保留原文 | ✓ | ✓ UI `InspectFlowUITests`（拍照 / 笔记 / 保存 / 丢弃 / 纠正原话 / Done） | 待 Lee 复测（9-30 的保存即崩已修并有测试守住） | 面板取代了压在取景器上的卡片（UI/UX 评审 U01 / U20）；因为面板是模态的，"Done 时还有未保存草稿"这条路径不再存在 |
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 观察详情：照片全屏缩放、原话完整可改（保留原文）、标签可改、来源白话说明 | ✓ | ✓ 单元 + UI | — | UI/UX 评审 U04；iPad 复看的核心 |
@@ -93,9 +98,9 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 
 跑测试：`./scripts/test.sh`（纯算法，Mac）；`./scripts/ios-test.sh [unit|ui]`（模拟器；自建专用设备 "Property Replay iPhone"，跑完关机；关掉了 xcodebuild 失败后长达十分钟的诊断收集）。默认的 iPhone 17 / 18 Pro 模拟器会被别的项目会话占用，不要用。
 
-UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
+UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
 
-界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：第一轮（P1：U01 / U02 / U04 / U05 / U06，加 U12、U23、U22 部分）已做，iPad 分栏、相机旋转、Compare、同步状态排在后面。
+界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。回应文档 §2c 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。
 
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 

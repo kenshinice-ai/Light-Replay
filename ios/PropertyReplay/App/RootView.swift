@@ -6,9 +6,9 @@ struct RootView: View {
     var body: some View {
         VStack(spacing: 0) {
             if !StoreHealth.shared.isPersistent {
-                Text("Storage problem: nothing you add will survive quitting the app. See You › About.")
+                Text("Storage problem: nothing you add will survive quitting the app. See You › Privacy & data.")
                     .font(.footnote.weight(.medium)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(8).background(Color.red)
+                    .frame(maxWidth: .infinity).padding(8).background(Color.problemFill)
             }
             tabs
         }

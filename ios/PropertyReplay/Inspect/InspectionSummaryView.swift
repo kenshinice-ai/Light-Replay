@@ -33,17 +33,26 @@ struct InspectionSummaryView: View {
             Section {
                 ForEach(items) { item in
                     NavigationLink { ObservationDetailView(observation: item) } label: { ObservationRow(observation: item) }
-                }
-                    .onDelete { offsets in
-                        do {
-                            for index in offsets { try PropertyStore.delete(items[index], in: context) }
-                        } catch {
-                            deleteError = "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves."
+                        .deleteWithConfirmation("Delete this \(Self.name(item.kind))?") {
+                            do { try PropertyStore.delete(item, in: context) } catch {
+                                deleteError = "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves."
+                            }
                         }
-                    }
+                }
             } header: {
                 Label(title, systemImage: symbol)
             }
+        }
+    }
+}
+
+extension InspectionSummaryView {
+    static func name(_ kind: ObservationKind) -> String {
+        switch kind {
+        case .photo: "photo"
+        case .voice: "note"
+        case .tag: "tag"
+        case .light: "light scan"
         }
     }
 }

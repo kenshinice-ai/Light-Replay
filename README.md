@@ -78,4 +78,4 @@ Lee：决定、现场、渠道。Paradise Production：采集、真值、Light P
 
 ## 下一步
 
-Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）按第二轮复审补齐；下一步是最小日照测量闭环：保存测量所需的图像 / 深度 / 姿态，天空分割与走廊覆盖率，SunEngine，QualityEvaluator，再到庭院单点白卡延时验收（`docs/12-roadmap.md`、`docs/HANDOFF.md` §7）。
+Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）、Light 扫描界面、SunEngine 与太阳走廊覆盖率、界面评审的三轮修改（大字号、iPad 分栏、复看、同步状态）已在源码与模拟器测试里；相机方向、AR 轨迹对齐、VoiceOver 仍待真机验收。下一步是把日照测量闭环接完：天空分割（相机帧 → 可见域）、QualityEvaluator、日照结果页，再到庭院单点白卡延时验收（`docs/12-roadmap.md`、`docs/HANDOFF.md` §7）。

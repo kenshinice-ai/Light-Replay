@@ -37,13 +37,24 @@ struct ObservationDetailView: View {
                 if observation.kind != .light { tagsSection }
                 detailsSection
                 if let saveError {
-                    Label(saveError, systemImage: "exclamationmark.triangle.fill").font(.footnote).foregroundStyle(.red)
+                    Label(saveError, systemImage: "exclamationmark.triangle.fill").font(.footnote).foregroundStyle(Color.problemText)
                 }
                 Button(role: .destructive) { confirmingDelete = true } label: {
                     Label("Delete", systemImage: "trash").frame(maxWidth: .infinity, minHeight: 28)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                // Attached to the button that asks, and saying what goes.
+                .confirmationDialog("Delete this \(title.lowercased())?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                    Button("Delete", role: .destructive) {
+                        editingWords = false
+                        deleted = true
+                        do { try PropertyStore.delete(observation, in: context) } catch {
+                            StoreHealth.shared.note("Deleting didn't finish saving (\(error.localizedDescription)); it completes with the next save.")
+                        }
+                        dismiss()
+                    }
+                }
             }
             .padding(20)
             .frame(maxWidth: 720, alignment: .leading)
@@ -61,16 +72,6 @@ struct ObservationDetailView: View {
         .onDisappear { commitWords() }
         .fullScreenCover(isPresented: $showingPhoto) {
             if let image { PhotoViewer(image: image) }
-        }
-        .confirmationDialog("Delete this from the inspection?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                editingWords = false
-                deleted = true
-                do { try PropertyStore.delete(observation, in: context) } catch {
-                    StoreHealth.shared.note("Deleting didn't finish saving (\(error.localizedDescription)); it completes with the next save.")
-                }
-                dismiss()
-            }
         }
     }
 

@@ -64,6 +64,16 @@ class UITestCase: XCTestCase {
         if back.waitForExistence(timeout: 3) { back.tap() } else { app.navigationBars.buttons.firstMatch.tap() }
     }
 
+    /// The button inside a confirmation dialog. Since iOS 26 the dialog is a popover anchored to its trigger, which
+    /// usually carries the same label, so "the button called Delete" is ambiguous: prefer the one in the popover.
+    func confirmButton(_ label: String) -> XCUIElement {
+        for container in [app.popovers, app.sheets, app.alerts] {
+            let button = container.buttons[label].firstMatch
+            if button.waitForExistence(timeout: 2) { return button }
+        }
+        return app.buttons[label].firstMatch
+    }
+
     /// A button whose words were dropped is only as wide as its icon. Accessibility still finds it by label, so the
     /// width is what shows the words are really drawn (the unlabelled action buttons of 2026-10-01).
     func assertShowsItsWords(_ button: XCUIElement, _ name: String, minimumWidth: CGFloat = 110, file: StaticString = #filePath, line: UInt = #line) {

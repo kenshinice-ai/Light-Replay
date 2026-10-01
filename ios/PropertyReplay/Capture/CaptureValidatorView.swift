@@ -36,14 +36,14 @@ struct CaptureValidatorView: View {
                     LabeledContent("Lens drift", value: driftText)
                     LabeledContent("Heading", value: headingText)
                     LabeledContent("Location", value: locationText)
-                    if let reason = recorder.failureReason { Text("ARSession: \(reason)").foregroundStyle(.orange).font(.footnote) }
+                    if let reason = recorder.failureReason { Text("ARSession: \(reason)").foregroundStyle(Color.cautionText).font(.footnote) }
                 }
                 Section {
                     Button(recorder.isRunning ? "Stop and export" : "Start OneTake") {
                         if recorder.isRunning { finish() } else { begin() }
                     }
                     .font(.headline)
-                    if stoppedWithoutExport { Text("Stopped when you left the screen; nothing exported.").font(.footnote).foregroundStyle(.orange) }
+                    if stoppedWithoutExport { Text("Stopped when you left the screen; nothing exported.").font(.footnote).foregroundStyle(Color.cautionText) }
                 }
             case .unsupported(let reason):
                 Section {
@@ -52,7 +52,7 @@ struct CaptureValidatorView: View {
             }
             if let pending {
                 Section("Not added to the property yet") {
-                    Text(attachError ?? "Saving…").font(.footnote).foregroundStyle(.orange)
+                    Text(attachError ?? "Saving…").font(.footnote).foregroundStyle(Color.cautionText)
                     Text("The record \(pending.sceneID) is kept on this phone and is added automatically the next time the app opens.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Button("Try again") { attach() }
@@ -65,7 +65,7 @@ struct CaptureValidatorView: View {
                 }
             }
             if let lastError {
-                Section("Validation") { Text(lastError).foregroundStyle(.red).font(.footnote.monospaced()) }
+                Section("Validation") { Text(lastError).foregroundStyle(Color.problemText).font(.footnote.monospaced()) }
             }
             Section {
                 Text("Records every pose, the heading readings and one location fix into a capture-only (R0) SceneRecord. No sky, no north, no sun yet.")

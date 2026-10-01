@@ -42,7 +42,7 @@ struct PropertyDetailView: View {
                     if property.coordinate == nil {
                         Label(property.isPinStale ? "The pin was for the previous address. Edit to place it again." : "Not on the map yet. Edit to place the pin.",
                               systemImage: "mappin.slash")
-                            .font(.footnote).foregroundStyle(.orange)
+                            .font(.footnote).foregroundStyle(Color.cautionText)
                     }
                 }
                 .padding(.vertical, 2)
@@ -183,7 +183,7 @@ struct EditPropertyView: View {
                         .onChange(of: address) { _, _ in pinFailed = false }
                     if pinFailed {
                         Text("Couldn't find this address on the map. Check the spelling or add the suburb, or save it without a pin.")
-                            .font(.footnote).foregroundStyle(.orange)
+                            .font(.footnote).foregroundStyle(Color.cautionText)
                     } else if property.coordinate == nil && !addressChanged {
                         Button("Place the pin") { Task { await save() } }
                     }
@@ -195,25 +195,30 @@ struct EditPropertyView: View {
                     }
                 }
                 if let saveError {
-                    Section { Text(saveError).font(.footnote).foregroundStyle(.red) }
+                    Section { Text(saveError).font(.footnote).foregroundStyle(Color.problemText) }
                 }
                 Section {
+                    // The question is attached to the button that asks it, and names the home.
                     Button("Remove property", role: .destructive) { confirmingRemove = true }
+                        .confirmationDialog("Remove \(property.shortAddress) and everything recorded for it?",
+                                            isPresented: $confirmingRemove, titleVisibility: .visible) {
+                            Button("Remove", role: .destructive) {
+                                removeRequested = true
+                                dismiss()
+                            }
+                        }
                 }
             }
             .navigationTitle("Edit property")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(pinFailed ? "Save without pin" : "Save") { Task { await save() } }
                         .disabled(trimmedAddress.isEmpty || isSaving)
-                }
-            }
-            .confirmationDialog("Remove this property and everything recorded for it?", isPresented: $confirmingRemove, titleVisibility: .visible) {
-                Button("Remove", role: .destructive) {
-                    removeRequested = true
-                    dismiss()
+                        .keyboardShortcut(.defaultAction)
                 }
             }
             .onAppear {

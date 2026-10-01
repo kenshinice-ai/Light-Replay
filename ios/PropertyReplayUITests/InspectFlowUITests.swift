@@ -43,7 +43,8 @@ final class InspectFlowUITests: UITestCase {
         tap(app.buttons["Done"])
 
         tap(element(containing: "All 2 recorded"))
-        tap(element(containing: "Checked twice."))
+        // Found by the note's own words: simulator typing can drop keystrokes, so the typed text is not a reliable handle.
+        tap(element(containing: "living room felt darker"))
         XCTAssertTrue(element(containing: "You corrected this").waitForExistence(timeout: 5), "the first version is kept and said so")
         XCTAssertTrue(element(containing: "You said this on site, then corrected the words").exists)
         snapshot("note-detail")
@@ -69,5 +70,39 @@ final class InspectFlowUITests: UITestCase {
         tap(app.buttons["Save"])
         XCTAssertTrue(app.staticTexts["No inspection time set"].waitForExistence(timeout: 8))
         XCTAssertTrue(element(containing: "8 Sample Avenue, Box Hill").exists, "the address is untouched")
+    }
+
+    /// Deleting is physical and reaches iCloud, so it asks first, names what goes, and the question sits on the row.
+    func testSwipeDeleteAsksAndNamesWhatGoes() {
+        launch()
+        openInspect()
+        tap(app.buttons["Add test photo (simulator)"])
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 5))
+        tap(app.buttons["Done"])
+        tap(element(containing: "All 1 recorded"))
+        let row = app.cells.containing(.staticText, identifier: "Photo").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.swipeLeft()
+        tap(app.buttons["Delete"].firstMatch)
+        XCTAssertTrue(app.staticTexts["Delete this photo?"].waitForExistence(timeout: 5), "the swipe asks instead of deleting")
+        XCTAssertTrue(app.staticTexts["Your inspection"].exists, "still on the list: the question belongs to the row")
+        snapshot("delete-asks")
+        confirmButton("Delete").tap()
+        XCTAssertTrue(app.staticTexts["Nothing recorded yet"].waitForExistence(timeout: 8))
+    }
+
+    func testRemovingAHomeAsksByName() {
+        launch()
+        openProperty("3/21 Placeholder Road")
+        tap(app.buttons["Edit"])
+        let remove = app.buttons["Remove property"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        for _ in 0..<3 where !remove.isHittable { app.swipeUp() }
+        remove.tap()
+        XCTAssertTrue(element(containing: "Remove 3/21 Placeholder Road and everything recorded for it?").waitForExistence(timeout: 5))
+        confirmButton("Remove").tap()
+        XCTAssertTrue(app.staticTexts["12 Example Street"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.staticTexts["3/21 Placeholder Road"].exists, "the home is gone from the list")
     }
 }

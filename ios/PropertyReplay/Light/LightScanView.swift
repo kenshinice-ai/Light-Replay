@@ -23,6 +23,8 @@ struct LightScanView: View {
     }
 
     private var isLive: Bool { model.phase == .ready || model.phase == .scanning }
+    /// You › Preferences › Haptics. Every haptic here has a visible twin (the dot, the ring, the result sheet).
+    private var haptics: Bool { preferencesRows.first?.hapticsEnabled ?? true }
 
     var body: some View {
         ZStack {
@@ -70,10 +72,10 @@ struct LightScanView: View {
             model.disappear()
         }
         .onChange(of: model.question) { _, question in questionRaw = question.rawValue }
-        .sensoryFeedback(.impact(weight: .light), trigger: model.anchorLocked) { _, locked in locked }
-        .sensoryFeedback(.success, trigger: model.reachedTarget) { _, reached in reached }
+        .sensoryFeedback(.impact(weight: .light), trigger: model.anchorLocked) { _, locked in locked && haptics }
+        .sensoryFeedback(.success, trigger: model.reachedTarget) { _, reached in reached && haptics }
         .sensoryFeedback(trigger: model.phase) { _, phase in
-            guard case .saved(let result) = phase else { return nil }
+            guard haptics, case .saved(let result) = phase else { return nil }
             return result.failure == nil ? .success : .error
         }
         // The result is a system sheet: it scrolls at any text size and reads on a steady surface (review U02, U17).
@@ -87,13 +89,6 @@ struct LightScanView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.thickMaterial)   // long text reads on a steady surface, not on the camera (review U17)
                 .interactiveDismissDisabled()
-        }
-        .confirmationDialog("Discard this scan?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
-            Button("Discard", role: .destructive) {
-                model.discard()
-                dismiss()
-            }
-            Button("Keep scanning", role: .cancel) {}
         }
         .alert("The camera covered only \(Int((model.coverage * 100).rounded()))% of the \(model.question.title.lowercased()) path",
                isPresented: $confirmingLowCoverage) {
@@ -148,6 +143,14 @@ struct LightScanView: View {
         .buttonStyle(.glass)
         .buttonBorderShape(.circle)
         .accessibilityLabel("Close")
+        // Attached to the button that asks.
+        .confirmationDialog("Discard this scan?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+            Button("Discard", role: .destructive) {
+                model.discard()
+                dismiss()
+            }
+            Button("Keep scanning", role: .cancel) {}
+        }
     }
 
     private var questionMenu: some View {
@@ -409,7 +412,7 @@ struct LightResultSheet: View {
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
         if let pending = result.pendingNote {
             VStack(alignment: .leading, spacing: 8) {
-                Text(pending).font(.footnote).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                Text(pending).font(.footnote).foregroundStyle(Color.cautionText).fixedSize(horizontal: false, vertical: true)
                 Button("Try adding it again", action: onRetryAttach).font(.footnote.weight(.semibold))
             }
         }
@@ -418,7 +421,7 @@ struct LightResultSheet: View {
     @ViewBuilder
     private func failed(_ failure: String) -> some View {
         Label("Scan not saved", systemImage: "exclamationmark.triangle.fill")
-            .font(.title2.weight(.bold)).foregroundStyle(.orange)
+            .font(.title2.weight(.bold)).foregroundStyle(Color.cautionText)
         Text(failure).font(.callout).fixedSize(horizontal: false, vertical: true)
         if result.canRetrySave {
             Text("The scan itself is still here. You can try saving it again; you don't need to scan again.")

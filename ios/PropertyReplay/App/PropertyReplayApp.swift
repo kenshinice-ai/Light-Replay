@@ -32,8 +32,11 @@ struct PropertyReplayApp: App {
             return container
         }
         #endif
+        SyncSettings.wantedAtLaunch = SyncSettings.isEnabled
         if SyncSettings.isEnabled {
+            SyncSettings.attemptedAtLaunch = true
             do {
+                SyncMonitor.shared.start()   // before the container, so the mirror's first events are not missed
                 let container = try PropertyStore.container(iCloudSync: true)
                 health.mode = .iCloud
                 return container
@@ -75,9 +78,14 @@ enum StartupTasks {
 }
 
 /// Whether the store mirrors to iCloud. Read once at launch, because the container is configured once.
+@MainActor
 enum SyncSettings {
     static let key = "iCloudSyncEnabled"
     static var isEnabled: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+    /// What the switch said when the container was configured; nil in the UI-test rig, which never syncs.
+    static var wantedAtLaunch: Bool?
+    /// True when this launch tried to open the iCloud-mirrored store, whether or not it worked.
+    static var attemptedAtLaunch = false
 }
 
 /// Where the data lives this session, plus diagnostics shown under You.

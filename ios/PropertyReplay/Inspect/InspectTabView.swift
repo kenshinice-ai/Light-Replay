@@ -68,7 +68,7 @@ struct InspectTabView: View {
             HStack {
                 Label(locator.location == nil ? (locator.failed ? "Couldn't find where you are" : "Finding where you are…") : "Nearest first",
                       systemImage: "location.fill")
-                    .foregroundStyle(locator.failed && locator.location == nil ? .orange : .primary)
+                    .foregroundStyle(locator.failed && locator.location == nil ? Color.cautionText : Color.primary)
                 Spacer()
                 Button { locator.request() } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }
                     .buttonStyle(.borderless)

@@ -41,13 +41,38 @@
 
 验证：iPhone 模拟器 55 个单元 + 13 个 UI，iPad Pro 13 模拟器 13 个 UI，全部通过；iPad 截图人工看过分栏、比较表、笔记详情、大字号各屏。
 
-## 2b. 排在后面
+## 2b. 第三轮（同步、设置、输入）
 
-| 编号 | 计划 |
+| 编号 | 做了什么 | 验证 |
+|---|---|---|
+| U16 同步状态 | `SyncMonitor` 监听 SwiftData 底下 CloudKit 镜像的事件（`NSPersistentCloudKitContainer.eventChangedNotification`），`SyncStatus` 只记真正完成的发送 / 接收与失败。You 页一行说现状：仅本机 / 已开但本机未登录 iCloud / 已开但上次失败（写哪一步、几点、原因，并说明记录在本机安全）/ 最近一次发出与收到的时间（并注明"此后记录的可能还在路上"）/ 已开但打开后还没有任何收发。失败按种类（发送 / 接收 / 启动）分开记：接收恢复不会抹掉仍在失败的发送，迟到的旧事件不会把时间往回拨。新设备资料库为空且同步已开时，空态说明"另一台设备上的房产要等 iCloud 跟上，可能几分钟" | 单元 `SyncStatusTests`（5 个）；UI 断言测试库显示 "Kept on this device only"。真实事件要真机，模拟器没有 iCloud 账号 |
+| U15 设置分层 | "Advanced (spike)"、Viewpoint tolerance、Capture validator、Device capabilities 收进只在 DEBUG 构建出现的 Developer 区；去掉 "Partner · Sharing arrives in Phase 3"；"Haptics on the timeline" 改为 "Haptics"，Inspect 与 Light 的触感都听它的（每个触感都有可见的对应反馈）；"Measure height" 改为 "Light scan height" 并说明 1.15 m 是坐姿眼高 | UI `testYouSaysWhereTheRecordsAreAndHidesNothingBehindJargon` |
+| U21 输入 | 添加房产的面板一打开光标就在地址栏；地址栏下一行说明查找状态（正在找 / 还没匹配，可以照输入保存 / 连不上 Apple Maps，可以照输入保存），空列表不再等于"没有这个地址"；Cancel / Save 支持 Esc 与回车（添加、编辑两个面板）；⌘N 添加房产、⌘D 口述、⌘↩ 拍照 | UI `testAddingAHomeStartsInTheAddressField`（不点输入框直接打字，文字落在地址栏）、`testChoosingASuggestionKeepsItsPin`、`testAnAddressTheMapCannotFindIsSavedAsTypedAfterAsking`。UI 测试里 Apple Maps 由两套虚构的房子顶替（`AddressCompleter.StandIn`，仅 DEBUG 且带 `-uitest`），不联网、不向外发任何地址。真实 Maps 的补全与软键盘遮挡仍需真机 |
+| U24（部分） | 消费者界面里不再出现 spike、Phase 3、R0、SceneRecord；这些词只留在 DEBUG 的调试页 | UI 断言 You 页没有 "Phase 3"、"spike" |
+
+第三轮里自己发现并修掉的（评审没有提到；多数是看截图或给新行为补测试时撞出来的）：
+
+- **地址补全退回全球。** 截图里 "12 Exa" 的补全全是日本地址。实验表明 `MKLocalSearchCompleter` 的区域（即使 `regionPriority = .required`）在区域内没有匹配时会退回全球结果。现在三道保护：区域设为全澳洲；建议按文字过滤（要出现 Australia 或州 / 领地缩写，且不是美国 / 加拿大的 WA、SA、NT）；解析出的坐标不在澳洲范围就当作没找到，宁可没有 pin 也不把 pin 放到国外。单元 `AddressScopeTests`。依据：V1 的房产都在澳洲（`01` §1）。
+- **选中一条建议后，选择立刻被清掉。** 地址栏上有一个"文字一变就清掉已选结果"的 `onChange`，而选中建议本身就会改写地址栏，于是刚选的结果被自己清掉：建议列表还在、没有"已定位"的确认，保存时再查一次。用真实 Maps 在模拟器上复现后，改为把"Maps 对哪一段文字给了什么答案"存成一个值（`PinAnswer`），是否已选、是否查找失败都从它与当前文字推出来，不再有需要同步的两份状态。选中后地址栏下写 "Pin placed in <区名>"，键盘收起。
+- **建议行只有文字能点。** 给上一条写测试时点不动：`.buttonStyle(.plain)` 的行命中区只有文字那么宽，短地址右边大半行点了没反应（长地址碰巧能点，所以之前没发现）。现在整行可点；You › Priorities 的行同样处理（名称与对勾之间的空白原来也点不动）。
+- **"地图找不到这个地址"的说明被键盘挡住。** 它原来在表单底部，键盘升起时只看到按钮变成 "Save without pin"，看不到原因。挪到地址栏正下方，措辞与编辑面板统一；测试断言它可点到（在屏幕上），不只是存在。
+- **保存的地址就是地址栏里的字。** 没选建议直接保存时，原来会把 Maps 返回的规范地址替换掉用户输入的文字（用户没看过它）。现在与编辑面板一致：地址栏显示什么就存什么，Maps 只提供 pin 和区名。
+- **橙色 / 红色小字读不清。** 量了一下：系统标准橙在白底约 2.2:1，标准红约 3.6:1，脚注字号要 4.5:1。提示文字改用系统自己的高对比变体（浅色下橙 197,83,0 = 4.55:1，红 233,21,45 = 4.56:1；深色下用标准色，4.96:1 到 9.41:1），存储故障横幅的底色同理（白字 ≥ 4.5:1）。单元 `TextColorTests` 在浅 / 深两种外观、页面与列表行两种底上各量一遍【验，iOS 27 模拟器】。圆环、圆点、pin 这些图形仍用标准色。相机画面上的材质底不是纯白，那里的对比度仍要真机看。
+- **You 页 "The switch takes effect the next time you open the app."** 原来按"开关与当前模式不一致"判断，于是同步启动失败时也会出现，把"没启动成功"说成了"等下次打开"。现在只在本次会话里动过开关时出现；启动失败单独一行，且只在这次启动确实尝试过 iCloud 时出现。
+- **存储故障横幅指向 "You › About"**，而说明早已搬到 Privacy & data。已改。
+- **确认框锚定与删除确认**（来自同组 PWE Receipts 当天记进共享记忆的教训）：iOS 26 起 `confirmationDialog` 是指向所附视图的气泡，挂在整屏上会指到屏幕中间。四个确认框（删除观察、删除房产、丢弃扫描、删除全部）都改为挂在触发它的按钮上，标题写明对象（"Remove 3/21 Placeholder Road and everything recorded for it?"）。列表左滑删除原来是直接删：删一套房会连带删掉全部照片与记录并传到 iCloud，没有撤销，现在房产行和观察行的左滑 / 长按删除都先问，问题挂在那一行上（`DeleteWithConfirmation`）。UI `testSwipeDeleteAsksAndNamesWhatGoes`、`testRemovingAHomeAsksByName`。
+
+验证：iPhone 模拟器全套（单元 + UI）与 iPad 模拟器 UI 全套通过，数字见提交说明。
+
+## 2c. 仍然排在后面
+
+| 编号 | 说明 |
 |---|---|
-| U15 / U16 / U21 / U24 | 第三轮：调试项只在 DEBUG；同步状态用 CloudKit 事件的真实结果；地址输入焦点与解析状态、iPad 快捷键；消费者界面去掉 R0 / σ 等术语 |
-| U13 其余 | 房间 / 日期筛选、Question 独立模型：等 Compare 与详情稳定后再做 |
-| Compare 的三个维度没有资料来源 | School、Commute、Price comfort 目前没有对应的记录类别，格子写 "Not in the app yet"。要不要给它们加记录入口是产品决定，不在这轮 |
+| U13 其余 | 记录页按房间 / 日期筛选、Question 独立模型 |
+| U24 其余 | String Catalog 与中文界面（要 Lee 先定是否做）；证据等级的消费者措辞（ADR-0013 的六个标签是已接受的决定，要改先改 ADR） |
+| U17 / U18 其余 | 真实相机画面下的对比度（白墙、逆光窗）、用 Accessibility Inspector 量真实命中区：要真机 |
+| Compare 的三个维度没有资料来源 | School、Commute、Price comfort 目前没有对应的记录类别，格子写 "Not in the app yet"。要不要给它们加记录入口是产品决定 |
+| 输入地址后直接保存 | Maps 把这段文字匹配到了哪里，保存前没有给用户看（保存后在行里的区名和详情页的小地图上才看得到）。建议下一轮：查到后先显示匹配到的地址与区名，由用户确认再保存 |
 
 ## 3. 与建议不同的地方，和要 Lee 决定的
 

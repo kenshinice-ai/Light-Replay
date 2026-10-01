@@ -30,7 +30,7 @@ struct DraftEditor: View {
                                 setSentiment: { draft.setSentiment($0) })
                     if let errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                            .font(.footnote).foregroundStyle(.red)
+                            .font(.footnote).foregroundStyle(Color.problemText)
                     }
                 }
                 .padding(20)

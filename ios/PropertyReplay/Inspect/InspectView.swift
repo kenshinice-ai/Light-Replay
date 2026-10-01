@@ -29,6 +29,9 @@ struct InspectView: View {
     @State private var captureCount = 0
     @State private var savedCount = 0
 
+    /// You › Preferences › Haptics. The system setting still has the last word.
+    private var haptics: Bool { preferencesRows.first?.hapticsEnabled ?? true }
+
     var body: some View {
         ZStack {
             viewfinder
@@ -69,9 +72,10 @@ struct InspectView: View {
             // Never keep the microphone open in the background; what was said becomes a draft (R05).
             if phase == .background, recorder.isRecording { Task { await endNote() } }
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: captureCount)
-        .sensoryFeedback(.success, trigger: savedCount)
+        .sensoryFeedback(.impact(weight: .medium), trigger: captureCount) { _, _ in haptics }
+        .sensoryFeedback(.success, trigger: savedCount) { _, _ in haptics }
         .sensoryFeedback(trigger: recorder.state) { old, new in
+            guard haptics else { return nil }
             if new == .recording { return .start }
             if old == .recording { return .stop }
             return nil
@@ -187,7 +191,7 @@ struct InspectView: View {
     private var controls: some View {
         VStack(spacing: 6) {
             if let message, draft == nil {
-                Text(message).font(.footnote).foregroundStyle(.orange).multilineTextAlignment(.center).padding(.horizontal)
+                Text(message).font(.footnote).foregroundStyle(Color.cautionText).multilineTextAlignment(.center).padding(.horizontal)
             }
             HStack(alignment: .center, spacing: 0) {
                 noteButton.frame(maxWidth: .infinity)
