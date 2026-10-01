@@ -41,7 +41,9 @@ struct PropertiesView: View {
         NavigationSplitView(preferredCompactColumn: $compactColumn) {
             sidebar
                 .navigationTitle("Properties")
-                .navigationBarTitleDisplayMode(mode == .map ? .inline : .large)
+                // Inline in both views: a large title sits under the List / Map bar's scroll-edge blur and came
+                // out smeared on iPhone at every text size.
+                .navigationBarTitleDisplayMode(.inline)
                 .navigationSplitViewColumnWidth(min: 320, ideal: 400, max: 520)
                 .toolbar { toolbar }
         } detail: {
@@ -98,7 +100,9 @@ struct PropertiesView: View {
                 .frame(maxWidth: .infinity)
                 .background(.bar)
             }
-            .searchable(text: $search, prompt: "Address or suburb")
+            // Always shown: left to collapse with scrolling, the field came up half collapsed at larger text sizes,
+            // an empty grey pill with no icon and no prompt.
+            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "Address or suburb")
         }
     }
 

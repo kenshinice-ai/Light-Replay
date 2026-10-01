@@ -8,6 +8,8 @@ struct HomeView: View {
     @Query(sort: \Property.createdAt, order: .reverse) private var properties: [Property]
     @State private var showingAdd = false
     @State private var inspecting: Property?
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// The soonest booked inspection that has not passed.
     private var next: Property? {
@@ -67,6 +69,9 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Property Replay")
+            // A large title does not wrap: on a phone at accessibility sizes it was cut to "Property Re…". Inline, it
+            // fits. A wide window has room for it, and with tabs along the top an inline title is not shown at all.
+            .navigationBarTitleDisplayMode(typeSize.isAccessibilitySize && sizeClass == .compact ? .inline : .large)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add", systemImage: "plus") { showingAdd = true }

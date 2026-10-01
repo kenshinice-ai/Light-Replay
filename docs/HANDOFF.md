@@ -90,7 +90,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 草稿编辑面板（系统 sheet）：单一来源、AI 晚到不覆盖买家修改、只能经 Save / Discard 离开、原话可改且保留原文 | ✓ | ✓ UI `InspectFlowUITests`（拍照 / 笔记 / 保存 / 丢弃 / 纠正原话 / Done） | 待 Lee 复测（9-30 的保存即崩已修并有测试守住） | 面板取代了压在取景器上的卡片（UI/UX 评审 U01 / U20）；因为面板是模态的，"Done 时还有未保存草稿"这条路径不再存在 |
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 观察详情：照片全屏缩放、原话完整可改（保留原文）、标签可改、来源白话说明 | ✓ | ✓ 单元 + UI | — | UI/UX 评审 U04；iPad 复看的核心 |
-| 最大辅助字号：Inspect、编辑面板、Light、结果面板、房产页不溢出不截断 | ✓ | ✓ UI `AdaptiveLayoutUITests`（元素必须在窗口宽度内）+ 人工看截图 | — | 相机上的悬浮文字在 accessibility2 封顶（否则挡住取景器），底栏三个动作在 xxxLarge 封顶并支持 Large Content Viewer；面板与正文完全跟随 |
+| 最大辅助字号：Inspect、编辑面板、Light、结果面板、房产页、四个列表屏（Home / Properties / Inspect / Compare）不溢出不截断 | ✓ | ✓ UI `AdaptiveLayoutUITests`（元素必须在窗口宽度内；标题完整；搜索框在）+ 人工看截图（iPhone 默认 / XXXL / AX1 / AX5，iPad AX5） | — | 相机上的悬浮文字在 accessibility2 封顶（否则挡住取景器），底栏三个动作在 xxxLarge 封顶并支持 Large Content Viewer；面板与正文完全跟随 |
 | 按住说话的辅助入口：VoiceOver 双击开始 / 结束、⌘D、`.startsMediaSession` | ✓ | — | — | 需真机开 VoiceOver / Switch Control 验收（U05） |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；Swift / Python 1e-7° | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
@@ -103,7 +103,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 
 UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
 
-界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。回应文档 §2c 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。
+界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。§2c 是第三轮提交后补看各档字号截图修掉的四处；§2d 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。改界面后要看的不只是改到的那一屏：四个列表屏在默认、XXXL、最大辅助字号下各看一眼。
 
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 

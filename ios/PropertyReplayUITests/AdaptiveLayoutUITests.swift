@@ -49,8 +49,31 @@ final class AdaptiveLayoutUITests: UITestCase {
         XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 8))
     }
 
+    /// The four list screens at the largest text: titles whole, rows inside the window, search still offered.
+    func testTabsAtTheLargestText() {
+        launch(Self.largestText)
+        XCTAssertTrue(app.staticTexts["Property Replay"].firstMatch.waitForExistence(timeout: 8), "the Home title is whole, not cut to an ellipsis")
+        snapshot("large-home")
+        tap(app.buttons["Properties"].firstMatch)
+        XCTAssertTrue(app.searchFields["Address or suburb"].waitForExistence(timeout: 8), "search is offered without having to find it")
+        tap(app.buttons["Inspect"].firstMatch)
+        allowSystemPrompts()
+        assertInsideWindow(app.staticTexts["Which home are you at?"].firstMatch, "the Inspect question")
+        snapshot("large-inspect-tab")
+        tap(app.buttons["Compare"].firstMatch)
+        assertInsideWindow(app.staticTexts["Choose up to three."].firstMatch, "the Compare hint")
+        snapshot("large-compare")
+    }
+
     func testPropertyPageAtTheLargestText() {
         launch(Self.largestText)
+        // The list first: in the iPad sidebar the row is narrow, and the badge used to break into "SAM-PLE".
+        tap(app.buttons["Properties"].firstMatch)
+        let badge = app.staticTexts["Sample property, fictional"].firstMatch
+        XCTAssertTrue(badge.waitForExistence(timeout: 8))
+        XCTAssertGreaterThan(badge.frame.width, badge.frame.height * 1.5, "the badge stays on one line")
+        assertInsideWindow(app.staticTexts["12 Example Street"].firstMatch, "the address in the list")
+        snapshot("large-list")
         openProperty()
         assertInsideWindow(app.buttons["Inspect now"], "Inspect now")
         assertInsideWindow(app.buttons["Scan light"], "Scan light")
