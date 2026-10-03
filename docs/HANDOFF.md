@@ -73,7 +73,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | R0 采集验证器（每帧姿态、全部罗盘读数、一次定位） | ✓ | ✓ | ✓ 首跑 167 帧、漂移 0.14 m、罗盘 ±13°、定位 ±8 m | 北向候选依赖"竖持时 CLHeading = 后摄方位"假设，待日晷验证 |
 | 五个 tab（iPad 上可切侧栏）、Properties List / Map 共用搜索 / 筛选 / 选中、宽窗口分栏、地址补全 | ✓ | ✓ UI `BrowseAndCompareUITests`（iPhone 与 iPad 模拟器） | ✓ iPhone 旧版；分栏待 Lee 在 iPad 上看 | UI/UX 评审 U07 / U09 / U10 |
 | Compare：关注维度 × 房产，格子来自买家自己的标签与扫描，各种"没有"分开写，不打分 | ✓ | ✓ 单元 `CompareSummaryTests` + UI | — | U14；School / Commute / Price comfort 的来源是回家补记的笔记（见下） |
-| 相机方向：预览与拍照角度由 RotationCoordinator 分别给出 | ✓ | — | 待 Lee 验证（竖持 / 横持 / iPad 四向） | U03；模拟器无相机 |
+| 相机方向：预览与拍照角度由 RotationCoordinator 分别给出 | ✓ | — | ✓ 10-03 Lee 横持拍的照片存成 2048×1536，像素方向正确；iPad 四向待看 | U03；模拟器无相机 |
 | Inspect：拍照、按住说话、Like / Concern / Ask、Light 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | Measure 在界面上改名 Light（ADR-0015 修订） |
 | Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | 已装 iPhone / iPad，待 Lee 实测 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。真机上要看：弧线是否落在天空对的位置、罗盘 σ、转一圈后覆盖率能否到 90% |
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
@@ -90,7 +90,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 草稿编辑面板（系统 sheet）：单一来源、AI 晚到不覆盖买家修改、只能经 Save / Discard 离开、原话可改且保留原文 | ✓ | ✓ UI `InspectFlowUITests`（拍照 / 笔记 / 保存 / 丢弃 / 纠正原话 / Done） | 待 Lee 复测（9-30 的保存即崩已修并有测试守住） | 面板取代了压在取景器上的卡片（UI/UX 评审 U01 / U20）；因为面板是模态的，"Done 时还有未保存草稿"这条路径不再存在 |
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 观察详情：照片全屏缩放、原话完整可改（保留原文）、标签可改、来源白话说明 | ✓ | ✓ 单元 + UI | — | UI/UX 评审 U04；iPad 复看的核心 |
-| iPhone 横屏（含拍摄与 Light，Lee 2026-10-03）：方向支持、罗盘参考边随界面方向、每条读数带设备方向 | ✓ | ✓ UI `testInspectAndLightInLandscape`：横屏下 Inspect 三个动作、编辑面板、Light 控件在窗口内且可点 | 待 Lee 横持拍一张、横持扫一次 | 相机预览与照片方向靠 `RotationCoordinator`（U03），模拟器看不到；罗盘参考边错 90° 也只有真机能看出 |
+| iPhone 横屏（含拍摄与 Light，Lee 2026-10-03）：方向支持、罗盘参考边随界面方向、每条读数带设备方向；编辑面板横屏时照片在左、标签在右（10-03 Lee 发现竖排要拖才见标签） | ✓ | ✓ UI `testInspectAndLightInLandscape`：横屏下 Inspect 三个动作、编辑面板（Like / Concern / Ask 不滚动就在窗口内）、Light 控件在窗口内且可点 | 横持拍 ✓；10-03 三次扫描的罗盘样本 `device_orientation` 全是 portrait——横持扫一次还没有 | 相机预览与照片方向靠 `RotationCoordinator`（U03），模拟器看不到；罗盘参考边错 90° 也只有真机能看出 |
 | 双语界面（Lee 2026-10-03）：英文 + 简体中文，跟随系统 / 每 App 语言；App 的 String Catalog 由编译器抽取（345 键，314 译，31 项开发者页标为不译），PropertyModel 与 CaptureCore 各一份手写目录 | ✓ | ✓ UI `ChineseInterfaceUITests`：中文启动后五个 tab、列表、房产页、Inspect、Light 指引都是中文 | 待 Lee 看中文措辞（截图见评审回应 §2f） | 存进记录里的生成文本（光线扫描状态行）按保存时的语言写入；`./scripts/strings-sync.sh` 抽取新字符串并列出没有中文的键 |
 | 回家补记：房产页与 Compare 空格里 Add a note；School / Commute / Price comfort 三个类别；笔记挂在房产上不算一次看房 | ✓ | ✓ 单元 + 故障注入 + UI `NotesUITests` | — | Compare 九个维度都有来源，"Not in the app yet" 状态删除 |
 | 最大辅助字号：Inspect、编辑面板、Light、结果面板、房产页、四个列表屏（Home / Properties / Inspect / Compare）不溢出不截断 | ✓ | ✓ UI `AdaptiveLayoutUITests`（元素必须在窗口宽度内；标题完整；搜索框在）+ 人工看截图（iPhone 默认 / XXXL / AX1 / AX5，iPad AX5） | — | 相机上的悬浮文字在 accessibility2 封顶（否则挡住取景器），底栏三个动作在 xxxLarge 封顶并支持 Large Content Viewer；面板与正文完全跟随 |
@@ -99,10 +99,11 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；太阳位置 Swift / Python 1e-7°；走廊、时段与随机数流 Swift / Python 逐分钟、逐比特一致（`sun-bands.json`，2026-10-03） | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
 | NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组，罗盘按 8° 先验永远不能佐证，所以真机上方向灯最多黄灯，这是对的 |
 | QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
-| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | 待下次真机扫描后看一份记录 | 俯仰超过 50° 的读数保留但不参与合并 |
+| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | ✓ 10-03 三份记录（`PR-20261003-01…03`，Lee 家客厅）：σ 10° / 17° / 11°，CLHeading 精度 10–22°，三份都过 Python 校验器且重算的灯与写入值一致；方向灯黄灯是对的 | 俯仰超过 50° 的读数保留但不参与合并 |
 | 照片缩略图存在行上、字节数守卫：列表不再为画缩略图加载照片；外部存储文件丢了（SwiftData 回 38 字节引用而非 nil）详情页写"照片还没到这台设备"而不是坏图；旧行启动时分批补缩略图 | ✓ | ✓ 单元 `ObservationTests` 两例（丢字节识别、谓词只找没缩略图的照片） | 待 Lee 装新版后看旧照片列表 | 组记忆 swiftdata-external-storage-original-bytes |
 | ⌘D 口述改为场景命令（iPad 菜单栏可见，不进辅助树）；`-uitestEmpty` 空库启动；UI 测试启动关 UIKit 动画 | ✓ | ✓ UI `testEveryTabAnswersInLandscape`：空库横屏五个 tab 15 s 内应答，地图横屏搜索有结果 | — | 组记忆 swiftui-keyboard-shortcuts-as-commands、swiftui-searchable-empty-state-landscape-freeze |
 | 发版脚手架（10-03 接入 pwe-tools 组）：`scripts/preflight.sh`（占位文件、冲突副本、干净工作区；接进 `test.sh`）、`scripts/testflight.sh`、`PrivacyInfo.xcprivacy`、版本 / 构建号来自构建设置、`AGENTS.md` | ✓ | 预检 ✓；`testflight.sh --no-upload` 走到归档一次 | — | 上传要 Lee 对构建号的 go，且 CloudKit production schema 先部署 |
+| CloudKit 开发 schema 补全器（`PropertyStore.initializeCloudKitSchema`，DEBUG 参数 `-initializeCloudKitSchema`，真机上跑） | ✓ | — | 待跑（10-03 iPad 锁屏没启动成） | 控制台里开发环境缺 `CD_originalText`、`CD_property`、`CD_mediaPath`、`CD_notes`：CloudKit 只在字段第一次有值时才建；补全后才能部署 Production |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
 加了或改了界面文字：`./scripts/strings-sync.sh` 把编译器抽到的键并进 `ios/PropertyReplay/Localizable.xcstrings`，并列出还没有中文的键，然后把中文写进目录（`zh-Hans` → `stringUnit.value`）。包里的字符串（显示名、扫描指引）用 `String(localized:bundle:.module)`，目录手写在包目录下。中文启动看界面：`-AppleLanguages (zh-Hans) -AppleLocale zh_CN`。
@@ -125,6 +126,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
+- 扫描记录太大：10-03 一次 6.5 分钟的扫描写了 23 031 帧姿态，记录 25 MB，整份同步进 iCloud（`03` §3 现在规定「姿态每帧」）。建议改成姿态 ≤ 10 Hz【估】+ 关键帧，需要 ADR 改 `03`；等 Lee 定。
 - iOS 27 SDK 标记弃用、Release 归档时报出的四处（10-03 `testflight.sh --no-upload`），都不影响现在的行为：`CLLocationManager.headingOrientation`（横屏罗盘参考边靠它）→ `headingBody: CLBodyIdentifiable`，SDK 里只有 `UIView` 采纳——把取景器那个 view（或 `InterfaceOrientationReader` 的 view）交给它，罗盘就按那个 view 在屏幕上的朝向参考，手动的 `UIInterfaceOrientation → CLDeviceOrientation` 映射可以整段删掉，真机验过横屏后再换；`UIWindowScene.interfaceOrientation` → `effectiveGeometry.interfaceOrientation`；`installTap(onBus:bufferSize:format:block:)` → 带 `error:` 的同名方法（会抛）；`String(localized:)` 里插入非本地化的 `reason` 得到的是调试描述。
 - `installTap` 在 iOS 27 标为弃用，替代 API 未确认，暂留。
 - CloudKit production schema 部署（上架前）；跨设备同日 `scene_id` 冲突（ADR-0017 后果）。
@@ -132,7 +134,9 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
-- **[动手] 真机横持拍一张、横持扫一次 Light** — 推荐：下次看房前，在家里拍竖横各一张看预览与照片方向，再横着扫一次看罗盘 ±σ 有没有跳 90° · 不做：横屏链路只在模拟器验过，真机方向错了只有你能看出 · 自 2026-10-03
+- **[动手] 横持扫一次 Light** — 横持拍已验（10-03）；横着扫一次，我从记录里看 `device_orientation` 和罗盘有没有跳 90° · 不做：横屏罗盘参考边只在模拟器验过 · 自 2026-10-03
+- **[动手] 解锁 iPad 让我跑 schema 补全** — 跑完我部署 Production；或者你自己在 Xcode 里用 `-initializeCloudKitSchema` 启动一次 · 不做：第一次 TestFlight 前部署不了完整的 schema · 自 2026-10-03
+- **[决定] 扫描记录的姿态频率** — 推荐：≤ 10 Hz【估】+ 关键帧，写 ADR 改 `03` §3 · 不定：每次扫描十几到几十 MB 进 iCloud · 自 2026-10-03
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
 - **[动手] CloudKit production schema 部署** — 上架前在 CloudKit Console 做一次，只有开发者账号能做 · 不做：`scripts/testflight.sh` 不上传（要看到 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1`），TestFlight 用户也同步不了 · 自 2026-10-01
