@@ -109,7 +109,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 
 跑测试：`./scripts/test.sh`（纯算法，Mac：NorthResolver、SceneRecord 含 QualityEvaluator、SunEngine、Python 参考）；`./scripts/ios-test.sh [unit|ui]`（模拟器；自建专用设备 "Property Replay iPhone"，跑完关机；关掉了 xcodebuild 失败后长达十分钟的诊断收集）。默认的 iPhone 17 / 18 Pro 模拟器会被别的项目会话占用，不要用。
 
-UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
+UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`（两套可以并行，给 iPad 那套单独的 `PROPERTYREPLAY_BUILD_ROOT`，否则抢同一个 DerivedData）。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
 
 发版（TestFlight）：`scripts/testflight.sh --no-upload` 走完预检（iCloud 占位文件、冲突副本、干净工作区）、纯算法测试、模拟器单元测试、每个字符串都有中文、归档；去掉 `--no-upload` 才上传并打 `testflight/<版本>-<构建号>` 标签。上传要 Lee 对这个构建号的一句"可以"（组规矩，每个构建都要），且第一次之前要在 CloudKit Console 把 schema 部署到 Production（脚本没看到 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1` 就停）。签名用 Xcode 里登录的 Apple ID 或 ASC API key 三个环境变量（在 Lee 的 `~/.zshrc`，只加载不打印）。构建号是 git 提交数，版本号在 `ios/project.yml` 的 `MARKETING_VERSION`。隐私清单 `ios/PropertyReplay/PrivacyInfo.xcprivacy`（目前只有 UserDefaults CA92.1；加了新 API 要补）。
 
@@ -117,7 +117,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 将来加 Share Extension（ADR-0014）时：**数据库不进 App Group**（`groupContainer: .none`），扩展只往收件箱写文件——同组 PWE Receipts 的 1.0 因为 CloudKit 镜像在挂起时持有共享容器里的 SQLite 锁被 0xdead10cc 杀掉（组记忆 swiftdata-app-group-store-dead10cc）。
 
-界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。§2c 是第三轮提交后补看各档字号截图修掉的四处；§2d 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。改界面后要看的不只是改到的那一屏：四个列表屏在默认、XXXL、最大辅助字号下各看一眼。
+界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。§2c 是第三轮提交后补看各档字号截图修掉的四处；§2d 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。改界面后要看的不只是改到的那一屏：四个列表屏在默认、XXXL、最大辅助字号下各看一眼；暗色也跑一遍（`PR_APPEARANCE=dark ./scripts/ios-test.sh ui -resultBundlePath …`，10-03 全套 24/24，16 屏人工看过没有要改的，列表行的缩略图走的是新存的 `thumbnailData`）。
 
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
@@ -125,12 +125,14 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
+- iOS 27 SDK 标记弃用、Release 归档时报出的四处（10-03 `testflight.sh --no-upload`），都不影响现在的行为：`CLLocationManager.headingOrientation`（横屏罗盘参考边靠它）→ `headingBody: CLBodyIdentifiable`，SDK 里只有 `UIView` 采纳——把取景器那个 view（或 `InterfaceOrientationReader` 的 view）交给它，罗盘就按那个 view 在屏幕上的朝向参考，手动的 `UIInterfaceOrientation → CLDeviceOrientation` 映射可以整段删掉，真机验过横屏后再换；`UIWindowScene.interfaceOrientation` → `effectiveGeometry.interfaceOrientation`；`installTap(onBus:bufferSize:format:block:)` → 带 `error:` 的同名方法（会抛）；`String(localized:)` 里插入非本地化的 `reason` 得到的是调试描述。
 - `installTap` 在 iOS 27 标为弃用，替代 API 未确认，暂留。
 - CloudKit production schema 部署（上架前）；跨设备同日 `scene_id` 冲突（ADR-0017 后果）。
 - Room 仍是字符串标签（L0），`Question` 模型未拆出。
 
 ## 等 Lee
 
+- **[动手] iPhone 装 10-03 晚的版本** — Mac 上 `xcrun devicectl device install app --device <iPhone 的 identifier，`xcrun devicectl list devices` 里看> ~/Library/Caches/propertyreplay/DerivedData-device/Build/Products/Debug-iphoneos/PropertyReplay.app`（iPad 已装；iPhone 锁屏时对 Mac 是 unavailable，只有你解锁后能装） · 不装：iPhone 上缺照片缩略图、丢照片提示、⌘D 场景命令 · 自 2026-10-03
 - **[动手] 真机横持拍一张、横持扫一次 Light** — 推荐：下次看房前，在家里拍竖横各一张看预览与照片方向，再横着扫一次看罗盘 ±σ 有没有跳 90° · 不做：横屏链路只在模拟器验过，真机方向错了只有你能看出 · 自 2026-10-03
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
