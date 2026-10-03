@@ -19,7 +19,8 @@ struct ObservationDetailView: View {
     @State private var deleted = false
     @FocusState private var editingWords: Bool
 
-    private var image: UIImage? { observation.photoData.flatMap(UIImage.init(data:)) }
+    /// The photo, only when its bytes are really here (a store whose file is missing returns a short reference).
+    private var image: UIImage? { observation.photoIsHere ? observation.photoData.flatMap(UIImage.init(data:)) : nil }
 
     var body: some View {
         if deleted {
@@ -32,7 +33,11 @@ struct ObservationDetailView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                if let image { photo(image) }
+                if let image {
+                    photo(image)
+                } else if observation.kind == .photo {
+                    photoMissing
+                }
                 if observation.kind != .light || observation.text != nil { wordsSection }
                 if observation.kind != .light { tagsSection }
                 detailsSection
@@ -105,6 +110,18 @@ struct ObservationDetailView: View {
         .buttonStyle(PressScaleStyle(scale: 0.98))
         .accessibilityLabel("Photo\(observation.roomLabel.map { ", \($0)" } ?? "")")
         .accessibilityHint("Opens the photo full screen to zoom")
+    }
+
+    /// Said plainly, never a broken picture: with iCloud sync the row can arrive before its photo.
+    private var photoMissing: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "photo.badge.arrow.down").font(.title).foregroundStyle(.secondary)
+            Text("Photo not on this device yet").font(.subheadline.weight(.semibold))
+            Text("It arrives with iCloud sync, or it was lost on the device that took it.").font(.footnote).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 160)
+        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 16))
     }
 
     /// The buyer's words. Light scans show their status line read-only.

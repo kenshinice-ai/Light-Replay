@@ -135,6 +135,12 @@ public final class InspectionObservation {
     /// The photo (JPEG). Kept by the store beside the row and mirrored to iCloud as an asset (ADR-0017), so a row and its
     /// photo are saved and deleted in one transaction.
     @Attribute(.externalStorage) public var photoData: Data?
+    /// A small JPEG of `photoData` for rows and grids, kept on the row itself (not external storage), so a list never
+    /// loads a photo to draw a thumbnail.
+    public var thumbnailData: Data?
+    /// Byte count of `photoData` when it was attached. A store whose external file is gone hands back a short
+    /// reference instead of nil (group memory swiftdata-external-storage-original-bytes); the count tells them apart.
+    public var photoByteCount: Int = 0
     /// Legacy (before ADR-0017): relative path under Documents/observations. `LegacyFiles.migrate` moves it into `photoData`.
     public var mediaPath: String?
     public var roomLabel: String?
@@ -233,4 +239,18 @@ public final class InspectionObservation {
 
     /// The home this belongs to, whichever way it is attached.
     public var owner: Property? { inspection?.property ?? property }
+
+    /// Stores a photo with its size and its thumbnail in one go.
+    public func attachPhoto(_ data: Data, thumbnail: Data?) {
+        photoData = data
+        photoByteCount = data.count
+        thumbnailData = thumbnail
+    }
+
+    /// Whether the photo's bytes are really here: attached, and as long as they were when attached. Rows with no
+    /// recorded count (made before 2026-10-03) are trusted. Reads the blob, so this is for one photo, not a list.
+    public var photoIsHere: Bool {
+        guard let photoData else { return false }
+        return photoByteCount == 0 || photoData.count == photoByteCount
+    }
 }

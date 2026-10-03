@@ -5,6 +5,7 @@
 #   ./scripts/ios-test.sh unit                    unit bundles only
 #   ./scripts/ios-test.sh ui                      UI tests only
 #   ./scripts/ios-test.sh -only-testing:PropertyReplayUITests/LightScanUITests
+#   PR_APPEARANCE=dark ./scripts/ios-test.sh ui         the same device in dark appearance (screenshots for the eye)
 #
 # Why a wrapper: xcodebuild can linger for ten minutes collecting simulator diagnostics after a failure, so they are
 # turned off and there is a hard cap. The default iPhone simulators are shared with other projects' sessions, so the
@@ -25,6 +26,13 @@ if [ -z "$UDID" ]; then
 fi
 WAS_BOOTED=0
 xcrun simctl list devices | grep -F "$UDID" | grep -q Booted && WAS_BOOTED=1
+# The keyboard's first-use introductions stall XCUITest 60 s a step (group memory ui-tests-simulator-without-icloud):
+# mark them seen. Appearance is set here because the app has no launch argument for it.
+xcrun simctl boot "$UDID" 2>/dev/null || true
+for key in DidShowContinuousPathIntroduction DidShowGestureKeyboardIntroduction; do
+  xcrun simctl spawn "$UDID" defaults write com.apple.Preferences "$key" -bool YES 2>/dev/null || true
+done
+xcrun simctl ui "$UDID" appearance "${PR_APPEARANCE:-light}" 2>/dev/null || true
 
 ARGS=()
 case "${1:-}" in

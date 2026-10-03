@@ -6,6 +6,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRATCH="${PROPERTYREPLAY_BUILD_ROOT:-$HOME/Library/Caches/propertyreplay}"
 mkdir -p "$SCRATCH"
 
+# iCloud conflict copies compile fine and ship silently (family rule, 07 TOOLS/HANDOFF.md §0.3): stop here.
+"$ROOT/scripts/preflight.sh" || exit 1
+
 echo "== NorthResolver (Swift, parity with engine/tests/fixtures/north-cases.json)"
 swift test --package-path "$ROOT/ios/Packages/NorthResolver" --scratch-path "$SCRATCH/NorthResolver-build" 2>&1 | grep -E "Executed|error:" | tail -1
 

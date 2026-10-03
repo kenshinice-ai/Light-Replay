@@ -83,6 +83,37 @@ final class AdaptiveLayoutUITests: UITestCase {
         XCTAssertTrue(app.buttons["Capture"].waitForExistence(timeout: 8), "back on Inspect, still in landscape")
     }
 
+    /// Group memory swiftui-searchable-empty-state-landscape-freeze: a search field over a screen that cannot scroll
+    /// froze another family app on its side, main thread at 100%, nothing crashing. Every tab has to come up and
+    /// answer in landscape with an empty library, and the map has to take a search with homes in it.
+    func testEveryTabAnswersInLandscape() {
+        launch(["-uitestEmpty"])
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let landmarks = [("Properties", "No properties yet"), ("Inspect", "Add a property first"),
+                         ("Compare", "Add properties first, in the Properties tab."), ("You", "Priorities"),
+                         ("Home", "See beyond the inspection.")]
+        for (tab, landmark) in landmarks {
+            let started = Date()
+            openTab(tab)
+            XCTAssertTrue(element(containing: landmark).waitForExistence(timeout: 15), "\(tab) in landscape with an empty library")
+            XCTAssertLessThan(Date().timeIntervalSince(started), 30, "\(tab) answered slowly in landscape")
+        }
+        snapshot("landscape-empty-home")
+
+        launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        openTab("Properties")
+        tap(app.buttons["Map"].firstMatch)
+        XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 15), "the map under the search field")
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 15))
+        field.tap()
+        field.typeText("Box")
+        XCTAssertTrue(element(containing: "1 of 3 homes match").waitForExistence(timeout: 15), "the map answers a search on its side")
+        tap(app.buttons["List"].firstMatch)
+        XCTAssertTrue(app.staticTexts["8 Sample Avenue"].waitForExistence(timeout: 15))
+    }
+
     /// The four list screens at the largest text: titles whole, rows inside the window, search still offered.
     func testTabsAtTheLargestText() {
         launch(Self.largestText)

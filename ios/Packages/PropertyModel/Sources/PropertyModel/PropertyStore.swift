@@ -78,6 +78,15 @@ public enum PropertyStore {
         try commit(context)
     }
 
+    /// Photos recorded before thumbnails existed (or migrated from files). The predicate asks the store, so no photo
+    /// is loaded to find them; the caller makes the thumbnails (that loads each photo once) and saves.
+    @MainActor
+    public static func photosWithoutThumbnails(in context: ModelContext, limit: Int = 200) throws -> [InspectionObservation] {
+        var descriptor = FetchDescriptor<InspectionObservation>(predicate: #Predicate { $0.thumbnailData == nil && $0.photoData != nil })
+        descriptor.fetchLimit = limit
+        return try context.fetch(descriptor).filter { !$0.isDeleted }
+    }
+
     /// Deletes one observation and its photo or record.
     @MainActor
     public static func delete(_ observation: InspectionObservation, in context: ModelContext) throws {

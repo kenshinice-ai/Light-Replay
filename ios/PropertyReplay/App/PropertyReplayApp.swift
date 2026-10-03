@@ -1,6 +1,7 @@
 import PropertyModel
 import SwiftData
 import SwiftUI
+import UIKit
 
 @main
 struct PropertyReplayApp: App {
@@ -8,6 +9,12 @@ struct PropertyReplayApp: App {
 
     init() {
         container = Self.makeContainer()
+        #if DEBUG
+        // XCTest counts UIKit animations to decide the app is idle; a keyboard arriving under SwiftUI chrome can leave
+        // that count stuck and every step waits 60 s. UI-test launches run without UIKit animations (SwiftUI's own
+        // still run); nobody using the app is affected (group memory xcuitest-animation-count-leak-keyboard-toolbar).
+        if ProcessInfo.processInfo.arguments.contains("-uitest") { UIView.setAnimationsEnabled(false) }
+        #endif
     }
 
     var body: some Scene {
@@ -16,6 +23,7 @@ struct PropertyReplayApp: App {
                 .task { StartupTasks.run(in: container.mainContext) }
         }
         .modelContainer(container)
+        .commands { InspectCommands() }
     }
 
     /// iCloud when the person wants it (ADR-0017), else this device only, else memory. A failure never takes the app
@@ -27,7 +35,8 @@ struct PropertyReplayApp: App {
         if ProcessInfo.processInfo.arguments.contains("-uitest") {
             // UI tests: a clean in-memory library with the fictional samples on every launch; never touches real data.
             let container = try! PropertyStore.container(inMemory: true)
-            try? SampleData.insert(into: container.mainContext)
+            // -uitestEmpty: the library as a new buyer finds it, for the empty states.
+            if !ProcessInfo.processInfo.arguments.contains("-uitestEmpty") { try? SampleData.insert(into: container.mainContext) }
             health.mode = .deviceOnly
             return container
         }
@@ -69,6 +78,17 @@ enum StartupTasks {
             try LegacyFiles.sweep(in: context)
         } catch {
             StoreHealth.shared.note(String(localized: "Couldn't move older files into the library yet: \(error.localizedDescription)"))
+        }
+        // Photos saved before thumbnails existed get one now, a bounded batch per launch (never the whole library at once).
+        if let photos = try? PropertyStore.photosWithoutThumbnails(in: context), !photos.isEmpty {
+            for observation in photos {
+                guard let data = observation.photoData else { continue }
+                let thumbnail = PhotoScaler.thumbnail(data)
+                observation.thumbnailData = thumbnail ?? Data()   // Data() marks "tried": not an image, so not asked again
+                // The count is only trusted from bytes that decode: a store missing its file hands back a short reference.
+                if thumbnail != nil, observation.photoByteCount == 0 { observation.photoByteCount = data.count }
+            }
+            try? PropertyStore.commit(context)
         }
         let pending = PendingCaptures.recover(in: context)
         if pending.recovered > 0 { StoreHealth.shared.note(String(localized: "Added \(pending.recovered) measurement(s) that weren't saved last time.")) }

@@ -49,6 +49,7 @@ struct InspectView: View {
             }
         }
         .background(InterfaceOrientationReader { sensors.interfaceOrientation = $0 })   // the compass follows the screen
+        .focusedSceneValue(\.dictateNote, { toggleNote() })   // ⌘D, as a scene command (Shared/Commands.swift)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)   // camera-style: the three actions are the only controls (docs/14 §1)
         .navigationBarBackButtonHidden(recorder.isRecording)   // while dictating, leaving goes through Done
@@ -228,10 +229,6 @@ struct InspectView: View {
         .accessibilityHint("Hold to speak and release to finish. With VoiceOver, double tap to start and double tap again to finish.")
         .accessibilityAddTraits([.isButton, .startsMediaSession])
         .accessibilityAction { toggleNote() }
-        .background {
-            // Hidden proxy for the keyboard shortcut; its own name so no test or assistive query finds two "Dictate note".
-            Button("Dictate note shortcut", action: toggleNote).keyboardShortcut("d", modifiers: .command).opacity(0).accessibilityHidden(true)
-        }
     }
 
     private var noteCaption: String {
@@ -367,7 +364,7 @@ struct InspectView: View {
         if let transcript = draft.transcript, text != transcript { observation.originalText = transcript }
         observation.summary = draft.summary
         observation.modelSuggested = draft.modelSuggested
-        observation.photoData = draft.photoData
+        if let photo = draft.photoData { observation.attachPhoto(photo, thumbnail: PhotoScaler.thumbnail(photo)) }
         observation.headingDeg = draft.sensors.headingDeg
         observation.headingAccuracyDeg = draft.sensors.headingAccuracyDeg
         observation.latitude = draft.sensors.latitude

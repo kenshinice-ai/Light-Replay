@@ -1265,6 +1265,16 @@
         }
       }
     },
+    "It arrives with iCloud sync, or it was lost on the device that took it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "它会随 iCloud 同步送到；如果在拍照的那台设备上已经丢失，就不会再来了。"
+          }
+        }
+      }
+    },
     "Its photos, notes and light scans show here.": {
       "localizations": {
         "zh-Hans": {
@@ -1917,6 +1927,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "照片"
+          }
+        }
+      }
+    },
+    "Photo not on this device yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片还没到这台设备"
           }
         }
       }

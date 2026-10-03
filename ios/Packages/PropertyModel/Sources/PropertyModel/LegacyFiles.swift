@@ -24,6 +24,7 @@ public enum LegacyFiles {
                 let url = mediaRoot.appending(path: path)
                 if let data = try? Data(contentsOf: url) {
                     observation.photoData = data
+                    observation.photoByteCount = data.count   // the thumbnail follows in this launch's backfill (StartupTasks)
                     observation.mediaPath = nil
                     migratedFiles.append(url)
                     report.photos += 1

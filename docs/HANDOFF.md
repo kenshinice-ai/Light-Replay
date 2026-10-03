@@ -72,7 +72,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | SceneRecord 格式与校验（Swift / Python 一致） | ✓ | ✓ | — | `scripts/test.sh` |
 | R0 采集验证器（每帧姿态、全部罗盘读数、一次定位） | ✓ | ✓ | ✓ 首跑 167 帧、漂移 0.14 m、罗盘 ±13°、定位 ±8 m | 北向候选依赖"竖持时 CLHeading = 后摄方位"假设，待日晷验证 |
 | 五个 tab（iPad 上可切侧栏）、Properties List / Map 共用搜索 / 筛选 / 选中、宽窗口分栏、地址补全 | ✓ | ✓ UI `BrowseAndCompareUITests`（iPhone 与 iPad 模拟器） | ✓ iPhone 旧版；分栏待 Lee 在 iPad 上看 | UI/UX 评审 U07 / U09 / U10 |
-| Compare：关注维度 × 房产，格子来自买家自己的标签与扫描，各种"没有"分开写，不打分 | ✓ | ✓ 单元 `CompareSummaryTests` + UI | — | U14；School / Commute / Price comfort 目前没有记录来源 |
+| Compare：关注维度 × 房产，格子来自买家自己的标签与扫描，各种"没有"分开写，不打分 | ✓ | ✓ 单元 `CompareSummaryTests` + UI | — | U14；School / Commute / Price comfort 的来源是回家补记的笔记（见下） |
 | 相机方向：预览与拍照角度由 RotationCoordinator 分别给出 | ✓ | — | 待 Lee 验证（竖持 / 横持 / iPad 四向） | U03；模拟器无相机 |
 | Inspect：拍照、按住说话、Like / Concern / Ask、Light 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | Measure 在界面上改名 Light（ADR-0015 修订） |
 | Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | 已装 iPhone / iPad，待 Lee 实测 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。真机上要看：弧线是否落在天空对的位置、罗盘 σ、转一圈后覆盖率能否到 90% |
@@ -91,7 +91,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 录音按代隔离资源、后台停止 | ✓ | — | — | 需要真机手测：快速按-松-再按 |
 | 观察详情：照片全屏缩放、原话完整可改（保留原文）、标签可改、来源白话说明 | ✓ | ✓ 单元 + UI | — | UI/UX 评审 U04；iPad 复看的核心 |
 | iPhone 横屏（含拍摄与 Light，Lee 2026-10-03）：方向支持、罗盘参考边随界面方向、每条读数带设备方向 | ✓ | ✓ UI `testInspectAndLightInLandscape`：横屏下 Inspect 三个动作、编辑面板、Light 控件在窗口内且可点 | 待 Lee 横持拍一张、横持扫一次 | 相机预览与照片方向靠 `RotationCoordinator`（U03），模拟器看不到；罗盘参考边错 90° 也只有真机能看出 |
-| 双语界面（Lee 2026-10-03）：英文 + 简体中文，跟随系统 / 每 App 语言；App 的 String Catalog 由编译器抽取（343 键，312 译，31 项开发者页标为不译），PropertyModel 与 CaptureCore 各一份手写目录 | ✓ | ✓ UI `ChineseInterfaceUITests`：中文启动后五个 tab、列表、房产页、Inspect、Light 指引都是中文 | 待 Lee 看中文措辞（截图见评审回应 §2f） | 存进记录里的生成文本（光线扫描状态行）按保存时的语言写入；`./scripts/strings-sync.sh` 抽取新字符串并列出没有中文的键 |
+| 双语界面（Lee 2026-10-03）：英文 + 简体中文，跟随系统 / 每 App 语言；App 的 String Catalog 由编译器抽取（345 键，314 译，31 项开发者页标为不译），PropertyModel 与 CaptureCore 各一份手写目录 | ✓ | ✓ UI `ChineseInterfaceUITests`：中文启动后五个 tab、列表、房产页、Inspect、Light 指引都是中文 | 待 Lee 看中文措辞（截图见评审回应 §2f） | 存进记录里的生成文本（光线扫描状态行）按保存时的语言写入；`./scripts/strings-sync.sh` 抽取新字符串并列出没有中文的键 |
 | 回家补记：房产页与 Compare 空格里 Add a note；School / Commute / Price comfort 三个类别；笔记挂在房产上不算一次看房 | ✓ | ✓ 单元 + 故障注入 + UI `NotesUITests` | — | Compare 九个维度都有来源，"Not in the app yet" 状态删除 |
 | 最大辅助字号：Inspect、编辑面板、Light、结果面板、房产页、四个列表屏（Home / Properties / Inspect / Compare）不溢出不截断 | ✓ | ✓ UI `AdaptiveLayoutUITests`（元素必须在窗口宽度内；标题完整；搜索框在）+ 人工看截图（iPhone 默认 / XXXL / AX1 / AX5，iPad AX5） | — | 相机上的悬浮文字在 accessibility2 封顶（否则挡住取景器），底栏三个动作在 xxxLarge 封顶并支持 Large Content Viewer；面板与正文完全跟随 |
 | 按住说话的辅助入口：VoiceOver 双击开始 / 结束、⌘D、`.startsMediaSession` | ✓ | — | — | 需真机开 VoiceOver / Switch Control 验收（U05） |
@@ -100,13 +100,22 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组，罗盘按 8° 先验永远不能佐证，所以真机上方向灯最多黄灯，这是对的 |
 | QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
 | 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | 待下次真机扫描后看一份记录 | 俯仰超过 50° 的读数保留但不参与合并 |
-| 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`（三件事等 Lee 定：掩膜存哪、何时算、评估集谁拍）；VisibilityCore 的累积层不等真机就能做 |
+| 照片缩略图存在行上、字节数守卫：列表不再为画缩略图加载照片；外部存储文件丢了（SwiftData 回 38 字节引用而非 nil）详情页写"照片还没到这台设备"而不是坏图；旧行启动时分批补缩略图 | ✓ | ✓ 单元 `ObservationTests` 两例（丢字节识别、谓词只找没缩略图的照片） | 待 Lee 装新版后看旧照片列表 | 组记忆 swiftdata-external-storage-original-bytes |
+| ⌘D 口述改为场景命令（iPad 菜单栏可见，不进辅助树）；`-uitestEmpty` 空库启动；UI 测试启动关 UIKit 动画 | ✓ | ✓ UI `testEveryTabAnswersInLandscape`：空库横屏五个 tab 15 s 内应答，地图横屏搜索有结果 | — | 组记忆 swiftui-keyboard-shortcuts-as-commands、swiftui-searchable-empty-state-landscape-freeze |
+| 发版脚手架（10-03 接入 pwe-tools 组）：`scripts/preflight.sh`（占位文件、冲突副本、干净工作区；接进 `test.sh`）、`scripts/testflight.sh`、`PrivacyInfo.xcprivacy`、版本 / 构建号来自构建设置、`AGENTS.md` | ✓ | 预检 ✓；`testflight.sh --no-upload` 走到归档一次 | — | 上传要 Lee 对构建号的 go，且 CloudKit production schema 先部署 |
+| 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
 加了或改了界面文字：`./scripts/strings-sync.sh` 把编译器抽到的键并进 `ios/PropertyReplay/Localizable.xcstrings`，并列出还没有中文的键，然后把中文写进目录（`zh-Hans` → `stringUnit.value`）。包里的字符串（显示名、扫描指引）用 `String(localized:bundle:.module)`，目录手写在包目录下。中文启动看界面：`-AppleLanguages (zh-Hans) -AppleLocale zh_CN`。
 
 跑测试：`./scripts/test.sh`（纯算法，Mac：NorthResolver、SceneRecord 含 QualityEvaluator、SunEngine、Python 参考）；`./scripts/ios-test.sh [unit|ui]`（模拟器；自建专用设备 "Property Replay iPhone"，跑完关机；关掉了 xcodebuild 失败后长达十分钟的诊断收集）。默认的 iPhone 17 / 18 Pro 模拟器会被别的项目会话占用，不要用。
 
 UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用 DEBUG 的测试照片 / 测试笔记按钮代替相机和麦克风，Light scan 用假相机，地址补全用两套虚构的房子顶替 Apple Maps（不联网，不向外发地址）。可调参数：`-syntheticSweepSpeed <度/秒>`（0 = 不动）、`-syntheticSweepPasses 1`（只扫冬季那一遍）、`-failFirstLightSave`（第一次保存失败）、`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`（最大字号）。全套约 8 分钟，改界面必跑，iPad 另跑一遍：`PR_SIM_NAME="Property Replay iPad" PR_SIM_TYPE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB ./scripts/ios-test.sh ui`。断言只能证明元素在窗口内、按钮里有文字；截断和观感要看截图（`xcresulttool export attachments`）。
+
+发版（TestFlight）：`scripts/testflight.sh --no-upload` 走完预检（iCloud 占位文件、冲突副本、干净工作区）、纯算法测试、模拟器单元测试、每个字符串都有中文、归档；去掉 `--no-upload` 才上传并打 `testflight/<版本>-<构建号>` 标签。上传要 Lee 对这个构建号的一句"可以"（组规矩，每个构建都要），且第一次之前要在 CloudKit Console 把 schema 部署到 Production（脚本没看到 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1` 就停）。签名用 Xcode 里登录的 Apple ID 或 ASC API key 三个环境变量（在 Lee 的 `~/.zshrc`，只加载不打印）。构建号是 git 提交数，版本号在 `ios/project.yml` 的 `MARKETING_VERSION`。隐私清单 `ios/PropertyReplay/PrivacyInfo.xcprivacy`（目前只有 UserDefaults CA92.1；加了新 API 要补）。
+
+真机排错：崩溃报告从配对的设备取 `xcrun devicectl device info files --device <id> --domain-type systemCrashLogs` / `device copy from`；App 容器文件 `--domain-type appDataContainer --domain-identifier com.pwegroup.propertyreplay`；看 `os.Logger` 输出用 `device process launch --console --environment-variables '{"OS_ACTIVITY_DT_MODE": "YES"}' … -- -参数`（参数放 `--` 后）。CloudKit 在模拟器上不可用（Lee 的账户开了高级数据保护），同步只能真机验。
+
+将来加 Share Extension（ADR-0014）时：**数据库不进 App Group**（`groupContainer: .none`），扩展只往收件箱写文件——同组 PWE Receipts 的 1.0 因为 CloudKit 镜像在挂起时持有共享容器里的 SQLite 锁被 0xdead10cc 杀掉（组记忆 swiftdata-app-group-store-dead10cc）。
 
 界面评审：`reviews/2026-09-30-apple-design-review.md`（Claude）；`reviews/2026-10-01-uiux-adaptive-review.md`（Codex，24 条）与回应 `…-response.md`：三轮都已做完并各自提交（第一轮 P1 与大字号；第二轮 iPad 分栏、共用状态、Compare、相机旋转；第三轮同步状态、设置分层、输入、删除确认、提示文字对比度）。§2c 是第三轮提交后补看各档字号截图修掉的四处；§2d 是仍然排在后面的，§3 是要 Lee 决定的，§4 是只能在真机验收的。改界面后要看的不只是改到的那一屏：四个列表屏在默认、XXXL、最大辅助字号下各看一眼。
 
@@ -123,8 +132,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 ## 等 Lee
 
 - **[动手] 真机横持拍一张、横持扫一次 Light** — 推荐：下次看房前，在家里拍竖横各一张看预览与照片方向，再横着扫一次看罗盘 ±σ 有没有跳 90° · 不做：横屏链路只在模拟器验过，真机方向错了只有你能看出 · 自 2026-10-03
-- **[决定] 中文措辞** — 推荐：按评审回应 §2f 的中文截图过一遍，改词直接改 `Localizable.xcstrings` 或告诉我 · 不定不卡功能，但"看房 / 学区 / 价格承受度 / 现场记录"这些词定下来，后面的文案才好写 · 自 2026-10-03
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
-- **[动手] CloudKit production schema 部署** — 上架前在 CloudKit Console 做一次，只有开发者账号能做 · 不做：TestFlight 以外的用户同步不了 · 自 2026-10-01
+- **[动手] CloudKit production schema 部署** — 上架前在 CloudKit Console 做一次，只有开发者账号能做 · 不做：`scripts/testflight.sh` 不上传（要看到 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1`），TestFlight 用户也同步不了 · 自 2026-10-01
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

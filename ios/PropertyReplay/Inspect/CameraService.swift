@@ -148,4 +148,13 @@ enum PhotoScaler {
         let scaled = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
         return scaled.jpegData(compressionQuality: quality) ?? data
     }
+
+    /// A row-sized JPEG (longest side `maxPixels`), made once when the photo is saved; nil when the data is not an image.
+    static func thumbnail(_ data: Data, maxPixels: CGFloat = 320, quality: CGFloat = 0.7) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let longest = max(image.size.width, image.size.height) * image.scale
+        let factor = min(1, maxPixels / max(longest, 1))
+        let size = CGSize(width: image.size.width * image.scale * factor, height: image.size.height * image.scale * factor)
+        return image.preparingThumbnail(of: size)?.jpegData(compressionQuality: quality)
+    }
 }

@@ -41,7 +41,9 @@
 		9E1936EA4815A57D934AA757 /* ARCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6128603BC47159E6EBB355CA /* ARCameraView.swift */; };
 		9E3A89B66085A4C3F26396F3 /* ObservationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D03E4DB03864F1CB1F6C14B /* ObservationDetailView.swift */; };
 		A1202766B6DDACB14EE483CE /* AdaptiveLayoutUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4463673D4ADDC31ED02D398C /* AdaptiveLayoutUITests.swift */; };
+		A27437C895CBBDED4458FACA /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B1830A573DEADACEC96EE1 /* Commands.swift */; };
 		A2D8D4172D63CAEFF3DC4C3E /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FECAC15F959E4604B7FAB7 /* CameraPreview.swift */; };
+		A74D93499E926CD365B7DD2A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BFA4909BFB1862F1CDE6C9A6 /* PrivacyInfo.xcprivacy */; };
 		AA229D4FA9D0A3B94BC2C345 /* CapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461BC9634B827B56DD4D17F7 /* CapabilitiesView.swift */; };
 		B120201FA882F4571FDE3A10 /* SceneRecord in Frameworks */ = {isa = PBXBuildFile; productRef = D8B964529E5CA08E021EA05F /* SceneRecord */; };
 		B427E1DD4071416C584EBF8D /* CaptureValidatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D70CE8B87C522C85E41685 /* CaptureValidatorView.swift */; };
@@ -94,6 +96,7 @@
 		1FF1F9613A1BCC6AE0119C7D /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		2DF2F63DEA547278E3954CB6 /* LightQuestion+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LightQuestion+Text.swift"; sourceTree = "<group>"; };
 		3768FD260FC5F5BAF417CC7A /* UITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestCase.swift; sourceTree = "<group>"; };
+		37B1830A573DEADACEC96EE1 /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
 		3FD44AE2D932E26335EA457B /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		40FE22733933A9B661B22466 /* LightScanModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightScanModel.swift; sourceTree = "<group>"; };
 		43937B8CCFECD332E5455D50 /* PropertyReplay.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PropertyReplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -125,6 +128,7 @@
 		B0625708C3417156B5D39B98 /* AddPropertyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPropertyView.swift; sourceTree = "<group>"; };
 		B32583E442822AE331F28FD7 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B65DD1BF81713D8CD1044CF3 /* PropertyReplayTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PropertyReplayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFA4909BFB1862F1CDE6C9A6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C2DCCB9B4BF56A4C8FB64575 /* PropertiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertiesView.swift; sourceTree = "<group>"; };
 		C3F00ADF8C7B2AC24BBF6545 /* DraftEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftEditor.swift; sourceTree = "<group>"; };
 		C5511DAD7BF2E177A9815AFA /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
@@ -177,6 +181,7 @@
 				0D6A61D6EB235514A1E4481C /* Info.plist */,
 				8C28B5569545458279550D86 /* InfoPlist.xcstrings */,
 				45BD7946184438412BAB0894 /* Localizable.xcstrings */,
+				BFA4909BFB1862F1CDE6C9A6 /* PrivacyInfo.xcprivacy */,
 				8D0D54AB3D2A110EE2B718B9 /* PropertyReplay.entitlements */,
 			);
 			path = PropertyReplay;
@@ -251,6 +256,7 @@
 			isa = PBXGroup;
 			children = (
 				E320474CE937439660000747 /* Chips.swift */,
+				37B1830A573DEADACEC96EE1 /* Commands.swift */,
 				74A2C7D1ECE8F599DD27DE97 /* DeleteWithConfirmation.swift */,
 				5230EFD46BE275528A3893DA /* FlowLayout.swift */,
 				7A689DFC82674D0655CB37E7 /* InterfaceOrientation.swift */,
@@ -460,6 +466,7 @@
 			files = (
 				6E658B58908C17F9DC24AF2E /* InfoPlist.xcstrings in Resources */,
 				D4F6F1BAE329E17EA519D1E1 /* Localizable.xcstrings in Resources */,
+				A74D93499E926CD365B7DD2A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,6 +492,7 @@
 				AA229D4FA9D0A3B94BC2C345 /* CapabilitiesView.swift in Sources */,
 				B427E1DD4071416C584EBF8D /* CaptureValidatorView.swift in Sources */,
 				2BA915DB229B1ADFDBA8A9BB /* Chips.swift in Sources */,
+				A27437C895CBBDED4458FACA /* Commands.swift in Sources */,
 				FF2BB062AEBB8C6346D6F6BD /* CompareView.swift in Sources */,
 				1EC280BE6E104DD15D126F6D /* DeleteWithConfirmation.swift in Sources */,
 				46AFB0B3FDD6F64860637AC2 /* DraftEditor.swift in Sources */,
@@ -702,11 +710,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PropertyReplay/PropertyReplay.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = PropertyReplay/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pwegroup.propertyreplay;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -771,11 +781,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PropertyReplay/PropertyReplay.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = PropertyReplay/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pwegroup.propertyreplay;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;

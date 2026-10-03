@@ -60,16 +60,16 @@ extension InspectionSummaryView {
 struct ObservationRow: View {
     let observation: InspectionObservation
 
-    private var thumbnail: UIImage? {
-        observation.photoData.flatMap(UIImage.init(data:))?.preparingThumbnail(of: CGSize(width: 168, height: 168))
-    }
+    /// The row-sized copy kept on the row; never the photo itself, which would load every photo to draw a list.
+    private var thumbnail: UIImage? { observation.thumbnailData.flatMap(UIImage.init(data:)) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             if let image = thumbnail {
                 Image(uiImage: image).resizable().scaledToFill().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
-                Image(systemName: observation.kind == .voice ? "waveform" : observation.category.systemImage)
+                // A photo without its thumbnail yet (older row, or a photo still on its way through iCloud) shows as a photo.
+                Image(systemName: observation.kind == .voice ? "waveform" : (observation.kind == .photo ? "photo" : observation.category.systemImage))
                     .frame(width: 56, height: 56).background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 8))
             }
             VStack(alignment: .leading, spacing: 3) {

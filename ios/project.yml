@@ -43,8 +43,9 @@ targets:
       path: PropertyReplay/Info.plist
       properties:
         CFBundleDisplayName: Property Replay
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        # From the build settings below, so scripts/testflight.sh can stamp the build number (git commit count).
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         # iPhone: portrait and both landscapes (Lee, 2026-10-03: people shoot landscape). No upside-down on a phone.
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
@@ -70,6 +71,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: "NO"
   PropertyReplayUITests:

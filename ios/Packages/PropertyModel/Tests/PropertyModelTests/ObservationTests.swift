@@ -68,6 +68,44 @@ final class ObservationTests: XCTestCase {
 }
 
 extension ObservationTests {
+    func testAPhotoKeepsItsSizeAndThumbnailAndNoticesLostBytes() {
+        let photo = InspectionObservation(kind: .photo, source: .userPhoto)
+        XCTAssertFalse(photo.photoIsHere)
+        let bytes = Data(repeating: 0xAB, count: 50_000)
+        photo.attachPhoto(bytes, thumbnail: Data(repeating: 0x01, count: 900))
+        XCTAssertTrue(photo.photoIsHere)
+        XCTAssertEqual(photo.photoByteCount, 50_000)
+        XCTAssertEqual(photo.thumbnailData?.count, 900)
+        // What a store with a missing external file hands back: a short reference, not nil (group memory).
+        photo.photoData = Data(repeating: 0x00, count: 38)
+        XCTAssertFalse(photo.photoIsHere, "38 bytes are not a 50,000-byte photo")
+        let old = InspectionObservation(kind: .photo, source: .userPhoto)
+        old.photoData = bytes   // a row from before counts were kept
+        XCTAssertTrue(old.photoIsHere, "rows without a recorded count are trusted")
+    }
+
+    @MainActor
+    func testPhotosWithoutThumbnailsAreFoundWithoutLoadingThem() throws {
+        let container = try PropertyStore.container(inMemory: true)
+        let context = container.mainContext
+        let property = Property(address: "20 Test Lane, Nowhere VIC 3000")
+        context.insert(property)
+        let legacy = InspectionObservation(kind: .photo, source: .userPhoto)
+        legacy.photoData = Data(repeating: 0xCD, count: 10_000)   // migrated from a file: no thumbnail yet
+        try PropertyStore.record(legacy, for: property, in: context)
+        let fresh = InspectionObservation(kind: .photo, source: .userPhoto)
+        fresh.attachPhoto(Data(repeating: 0xEF, count: 10_000), thumbnail: Data(repeating: 0x02, count: 500))
+        try PropertyStore.record(fresh, for: property, in: context)
+        let note = InspectionObservation(kind: .voice, source: .userVoice, text: "no photo at all")
+        try PropertyStore.record(note, for: property, in: context)
+
+        let pending = try PropertyStore.photosWithoutThumbnails(in: context)
+        XCTAssertEqual(pending.map(\.uuid), [legacy.uuid], "only the photo with no thumbnail, never the note")
+        legacy.thumbnailData = Data()
+        try PropertyStore.commit(context)
+        XCTAssertTrue(try PropertyStore.photosWithoutThumbnails(in: context).isEmpty)
+    }
+
     func testCorrectingATranscriptKeepsTheOriginalOnce() {
         let note = InspectionObservation(kind: .voice, source: .userVoice, text: "The living room felt dimmer than the fotos")
         XCTAssertNil(note.originalText)
