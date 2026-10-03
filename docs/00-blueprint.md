@@ -10,7 +10,7 @@
 
 - **Property 是产品对象。** 一套房是一个持续生长的记录：Prep、Inspection、Room、Observation、Question、Priority、Comparison（ADR-0012、`15-product-model.md`）。
 - **TargetPoint 是物理分析单位。** 结果只对应一个点和一个高度；换座位就是另一次采集（ADR-0001）。
-- **OneTake 是英雄采集。** 它是 Inspect 模式里的 Measure 动作，不是另一个模式（ADR-0015）。
+- **OneTake 是英雄采集。** 它是 Inspect 模式里的 Light 动作（文档旧称 Measure），不是另一个模式（ADR-0015）。
 - **SceneRecord 是证据底座。** 每个测量结果都能回溯到采集会话、姿态、掩膜、方向来源与算法版本；它作为 LightObservation 挂进 Property 图。
 - **证据分级对外统一。** Verified / Observed·measured / Observed·noted / Strong indication / Indicative / Unknown，每条带来源标签（ADR-0013）。R0–R3 只在测量链内部。
 - **输出按等级解锁。** 更大、更漂亮的结果只在输入等级足够时出现；视觉不能比证据更确定。
@@ -39,6 +39,10 @@
 | 14 | 数据入口：用户分享优先；Domain API 不进首发 | Domain 条款 7.6(d) 禁止向第三方展示；REA 无开放 API | [ADR-0014](decisions/ADR-0014-data-entry-tiers.md) |
 | 15 | Inspect 模式 = Capture / Note / Measure；push-to-talk；不做 Sound lens | 看房只有 20 分钟；连续录音撞监控设备法 | [ADR-0015](decisions/ADR-0015-inspect-mode-contract.md) |
 | 16 | 产品名 Property Replay | Property Lens 有四家近似；Property Replay 商标检索 0 条 | [ADR-0016](decisions/ADR-0016-product-name.md) |
+| 17 | 资料库同步到用户自己的 iCloud 私有库；照片和记录跟着行走 | 回家在 iPad 上复看；删除与保存变成一个事务 | [ADR-0017](decisions/ADR-0017-icloud-private-sync.md) |
+| 18 | 一致不等于佐证 | 两组一致只在 `3·sqrt(σ_i² + σ_j²) ≤ 15°` 时点绿灯，否则按一组处理；罗盘按 8° 先验永远不能佐证 | [ADR-0018](decisions/ADR-0018-corroboration-must-detect-an-hour.md) |
+| 19 | 可见域只存累积网格 + 3–5 张关键帧掩膜；Save 之后计算 | 掩膜是过程不是证据，每帧存会把几十 MB 送进 iCloud；实时分割等 spike 结论 | [ADR-0019](decisions/ADR-0019-visibility-storage-and-timing.md) |
+| 20 | 姿态记录 ≤ 10 Hz + 第一帧、锚定帧、追踪状态变化帧 | 每帧 60 fps 记姿态让一次扫描写出 25 MB；姿态的三个用途都不需要 16 ms 分辨率 | [ADR-0020](decisions/ADR-0020-pose-log-rate.md) |
 
 ## 3. 首发范围（V1 = MVP v0，`12-roadmap.md` Phase 2）
 
@@ -46,7 +50,7 @@
 - 系统：iOS 27 及以上（ADR-0011）。
 - Property：地址、hero 图、来源、用户分享的 listing 内容；Share Extension（URL / 截图 / PDF）+ 手动地址（ADR-0014）。
 - Prep：3 things worth noticing（Indicative）+ 建议 OneTake 的点。
-- Inspect：相机式界面，Capture / Note / Measure；Like / Concern / Ask；五盏质量灯（含镜头脏污）（ADR-0015）。
+- Inspect：相机式界面，Capture / Note / Light；Like / Concern / Ask；五盏质量灯（含镜头脏污）（ADR-0015）。
 - Your inspection：liked / unsure / ask next / replay。
 - Replay · Light：R1 结果页，Why / Confidence / Verify 三段式，时段 haptics；参考模式 R0 只画太阳弧。
 - Compare：用户五个优先级，两到三套，每格带等级与来源，未测显示 Unknown。

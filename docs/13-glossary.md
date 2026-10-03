@@ -18,7 +18,8 @@
 | **Prep / Inspect / Replay / Compare / Ask** | 产品的五个短词，对应 Before / During / After |
 | **五个 tab** | Home / Properties / Inspect / Compare / You（docs/14 §1） |
 | **You** | 优先级、个人信息、偏好、隐私与数据、高级设置、关于 |
-| **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015） |
+| **Capture / Note / Measure** | Inspect 模式的三个动作（ADR-0015）。Measure 在界面上叫 **Light**（2026-10-01 修订） |
+| **Light scan** | Light 动作的界面：全屏相机 + 太阳路径叠加 + 单行指引 + 走廊覆盖率（`04` §11） |
 | **Like / Concern / Ask** | 三个快速标签 |
 | **3 things** | Prep 页只显示的三条提醒 |
 | **Your inspection** | 看房后的记忆页，不是报告 |
@@ -59,6 +60,8 @@
 | **yaw / Δ** | AR 世界 −Z 轴的真方位角（俯视顺时针）；`az_true = az_ar + Δ`。北向修正只改它 |
 | **σ_Δ** | Δ 的不确定性（度） |
 | **NorthResolver** | 收集方向候选、按独立组融合、检测冲突、输出 Δ 与 σ_Δ 的模块 |
+| **佐证（corroboration）** | 两个独立组一致，且这一对的冲突门槛 `3·sqrt(σ_i² + σ_j²) ≤ 15°`：它们的一致本可以暴露一小时量级的方向错误。只有一致、没有佐证的组合按一组处理（ADR-0018） |
+| **QualityEvaluator** | 按 SceneRecord 里的证据重算质量灯的模块；写入值与证据不符的记录不成立 |
 | **独立组** | 物理上独立的方向来源家族：magnetic / map / solar / vps / truth |
 | **墙面对齐** | 用 AR 检测的墙面法线对上建筑轮廓的边方向，得到 Δ |
 | **窗光斑校准** | 用地上光斑的边与窗边的对应关系解出太阳方向，反推 Δ |

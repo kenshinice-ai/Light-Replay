@@ -1,0 +1,73 @@
+window=(0.0, 0.0, 1376.0, 1032.0)
+Optional(Attributes: Application, 0x108dd8280, pid: 52382, label: 'Property Replay'
+Element subtree:
+ →Application, 0x108dd8280, pid: 52382, label: 'Property Replay'
+    Window (Main), 0x108dd83c0, {{0.0, 0.0}, {1376.0, 1032.0}}
+      Other, 0x108dd8000, {{0.0, 0.0}, {1376.0, 1032.0}}
+      Other, 0x108dd8140, {{0.0, 0.0}, {1376.0, 1032.0}}
+        Other, 0x108ddbe80, {{0.0, 0.0}, {1376.0, 1032.0}}
+          Other, 0x108ddbd40, {{0.0, 0.0}, {1376.0, 1032.0}}
+            Other, 0x108dd9400, {{0.0, 0.0}, {1376.0, 1032.0}}
+              Other, 0x108dd92c0, {{0.0, 0.0}, {1376.0, 1032.0}}
+                Other, 0x108ddb0c0, {{0.0, 0.0}, {1376.0, 1032.0}}
+                  Other, 0x108ddb200, {{0.0, 0.0}, {1376.0, 1032.0}}
+                    Other, 0x108dda300, {{0.0, 0.0}, {1376.0, 1032.0}}
+                      Other, 0x108dd9540, {{0.0, 0.0}, {1376.0, 1032.0}}
+                        Other, 0x108dd9180, {{0.0, 0.0}, {1376.0, 1032.0}}
+                          Other, 0x108dda080, {{0.0, 0.0}, {1376.0, 1032.0}}
+                            NavigationBar, 0x108dda1c0, {{0.0, 32.0}, {1376.0, 54.0}}, identifier: '_TtGC7SwiftUI32NavigationStackHosting'
+                              Other, 0x108dd9040, {{1296.0, 36.0}, {66.0, 36.0}}
+                                Other, 0x108dda800, {{1296.0, 36.0}, {66.0, 36.0}}
+                                  Button, 0x108dd9900, {{1296.0, 36.0}, {66.0, 36.0}}, label: 'Done'
+                            Other, 0x108dd9680, {{0.0, 0.0}, {1376.0, 1032.0}}
+                              Other, 0x108dda6c0, {{0.0, 0.0}, {1376.0, 1032.0}}
+                                Other, 0x108dda940, {{0.0, 0.0}, {1376.0, 1032.0}}
+                                  Other, 0x108dda580, {{0.0, 0.0}, {1376.0, 1032.0}}
+                                    StaticText, 0x108dd9e00, {{16.0, 94.0}, {143.5, 20.5}}, label: '12 Example Street'
+                                    Button, 0x108dd8b40, {{1270.0, 95.0}, {90.0, 35.0}}, label: 'Living'
+                                      Button, 0x108dd8c80, {{1270.0, 95.0}, {90.0, 35.0}}
+                                        StaticText, 0x108ddabc0, {{1284.0, 103.5}, {64.0, 18.0}}, label: 'Living'
+                                        Image, 0x108dd8dc0, {{1284.0, 104.5}, {12.0, 16.0}}, identifier: 'door.left.hand.open', label: 'Open Left-Hand Door'
+                                    StaticText, 0x108dd8f00, {{16.0, 116.5}, {62.0, 14.5}}, label: '0 recorded'
+                                    Image, 0x108dd9a40, {{667.5, 464.0}, {41.0, 32.0}}, identifier: 'camera', label: 'Camera'
+                                    StaticText, 0x108dd9b80, {{581.2, 507.0}, {213.5, 16.0}}, label: 'No camera available on this device.'
+                                    Button, 0x108dd9cc0, {{608.5, 531.0}, {159.0, 16.0}}, label: 'Add test photo (simulator)'
+                                    Button, 0x108dd8a00, {{612.5, 555.0}, {151.0, 16.0}}, label: 'Add test note (simulator)', Disabled
+                                    Image, 0x108dd8500, {{28.0, 697.0}, {64.0, 80.0}}
+                                    StaticText, 0x108dd88c0, {{104.0, 704.9}, {98.5, 19.5}}, label: 'Photo · Living'
+                                    Button, 0x108dd8640, {{28.0, 779.0}, {77.0, 28.0}}, label: 'Living'
+                                      Button, 0x108dd97c0, {{28.0, 779.0}, {77.0, 28.0}}
+                                        StaticText, 0x108ddae40, {{39.5, 785.2}, {55.5, 16.0}}, label: 'Living'
+                                        Image, 0x108ddad00, {{39.5, 786.0}, {10.0, 13.5}}, identifier: 'door.left.hand.open', label: 'Open Left-Hand Door'
+                                    Button, 0x108dda440, {{113.0, 779.0}, {79.5, 28.5}}, label: 'Other'
+                                      Button, 0x108ddaf80, {{113.0, 779.0}, {79.5, 28.5}}
+                                        StaticText, 0x108dd8780, {{124.0, 785.0}, {58.5, 16.0}}, label: 'Other'
+                                        Image, 0x108ddb700, {{124.0, 786.0}, {14.5, 14.5}}, identifier: 'tag', label: 'Tag'
+                                    Button, 0x108ddb5c0, {{28.0, 817.5}, {73.0, 32.5}}, label: 'Like'
+                                      StaticText, 0x108ddb480, {{41.0, 826.0}, {48.0, 16.0}}, label: 'Like'
+                                      Image, 0x108ddb340, {{41.0, 826.5}, {13.5, 14.5}}, identifier: 'hand.thumbsup', label: 'Like'
+                                    Button, 0x108ddb840, {{109.0, 817.5}, {101.5, 32.0}}, label: 'Concern'
+                                      StaticText, 0x108ddbac0, {{122.5, 825.7}, {76.0, 16.0}}, label: 'Concern'
+                                      Image, 0x108ddb980, {{122.5, 827.0}, {13.5, 12.5}}, identifier: 'exclamationmark.triangle', label: 'Warning'
+                                    Button, 0x108ddbc00, {{218.5, 817.5}, {71.0, 32.5}}, label: 'Ask'
+                                      StaticText, 0x108ddaa80, {{231.5, 825.8}, {46.0, 16.0}}, label: 'Ask'
+                                      Image, 0x107c66d00, {{231.5, 826.5}, {13.5, 13.5}}, identifier: 'questionmark.circle', label: 'Question Mark In A Circle'
+                                    Button, 0x107c66bc0, {{28.0, 867.0}, {46.5, 16.0}}, label: 'Discard'
+                                    Button, 0x107c65b80, {{1293.5, 860.0}, {54.5, 30.0}}, label: 'Save'
+                                    Button, 0x107c65400, {{651.0, 924.0}, {74.0, 74.0}}, label: 'Capture', Disabled
+                                    Image, 0x107c67340, {{56.5, 941.0}, {15.5, 23.0}}, identifier: 'mic', label: 'Microphone', Disabled
+                                    Button, 0x107c66f80, {{1276.0, 938.5}, {72.0, 45.0}}, label: 'Light'
+                                      Image, 0x107c670c0, {{1300.5, 940.5}, {23.5, 23.5}}, identifier: 'sun.max.fill', label: 'Brightness Higher'
+                                      StaticText, 0x107c67480, {{1298.8, 970.0}, {26.5, 13.5}}, label: 'Light'
+                                    StaticText, 0x107c67ac0, {{31.5, 969.8}, {65.0, 13.5}}, label: 'Hold to note', Disabled
+                            Toolbar, 0x107c66a80, {{0.0, 0.0}, {1376.0, 1032.0}}, identifier: 'Toolbar', label: 'Toolbar'
+                              Other, 0x107c67e80, {{0.0, 0.0}, {1376.0, 1032.0}}
+                Other, 0x107c648c0, {{0.0, 0.0}, {1376.0, 1032.0}}
+Path to element:
+ →Application, 0x108dd8280, pid: 52382, label: 'Property Replay'
+Query chain:
+ →Find: Target Application 'com.pwegroup.propertyreplay.uxreview'
+  Output: {
+    Application, 0x107c67d40, pid: 52382, label: 'Property Replay'
+  }
+)

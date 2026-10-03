@@ -36,4 +36,4 @@ FM 不可用（机型、未开启、资源未下载、语言不支持）→ 模�
 ## 后果
 - `02-architecture.md` 第 1、6、8 节；`04-capture-protocol.md` 第 5、6 节；`03-scene-record.md` 第 5、8 节；`07-spike-plan.md` 第 2、5 节；`01-product-spec.md` 第 8 节；`11-compliance-boundaries.md` 第 5 节；`13-glossary.md`。
 - 需要 provider 抽象（`LLMProvider`），PCC 超限或资格变化时可迁移到自有服务端。
-- PCC entitlement 由项目主账号申请，状态待定；spike 不依赖它。
+- PCC entitlement 已获批（2026-09-30），App ID 与描述文件含 `com.apple.developer.private-cloud-compute`；运行时可用已在真机确认。业务链路尚未调用 PCC：先完成端侧 / 模板闭环，再用全合成输入做一次 PCC smoke（版本、locale、额度、失败降级）。spike 不依赖它。

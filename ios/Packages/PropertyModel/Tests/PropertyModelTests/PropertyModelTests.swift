@@ -5,8 +5,14 @@ import XCTest
 
 @MainActor
 final class PropertyModelTests: XCTestCase {
+    /// The container is held for the whole test: a context does not keep it alive (group memory
+    /// swiftdata-test-container-lifetime).
+    private var container: ModelContainer?
+
     private func makeContext() throws -> ModelContext {
-        ModelContext(try PropertyStore.container(inMemory: true))
+        let container = try PropertyStore.container(inMemory: true)
+        self.container = container
+        return ModelContext(container)
     }
 
     func testInsertAndFetchProperty() throws {

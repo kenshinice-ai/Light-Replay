@@ -7,7 +7,7 @@
 | 阶段 | 用户的问题 | 产品给什么 | 时间预算 |
 |---|---|---|---|
 | **Before · Prep** | 我要去看这套房，该注意什么？ | 3 things worth noticing；建议 OneTake 的点；看房时刻的太阳位置 | 1 分钟 |
-| **During · Inspect** | 我只有 20 分钟，帮我记住真正重要的 | Capture / Note / Measure；Like / Concern / Ask | ≤ 3 分钟额外操作 |
+| **During · Inspect** | 我只有 20 分钟，帮我记住真正重要的 | Capture / Note / Light；Like / Concern / Ask | ≤ 3 分钟额外操作 |
 | **After · Replay · Compare · Ask** | 看了 6 套，哪一套更符合我的生活？ | Your inspection；Replay · Light；Compare；Ask next | 回家后 |
 
 首批用户：正在比较住宅、有明确日照或空间问题的自住买家与租客（墨尔本、悉尼）。以任务招募，不以族裔或"喜欢科技"招募。Paradise Production 的采集员是第二类用户（`09-light-passport.md`）。
@@ -15,29 +15,31 @@
 ## 2. Add：把一套房带进来
 
 - **Share Extension**：在 REA、Domain、Safari、Messages 里 Share → Property Replay。只读取用户明确分享的 URL、截图、PDF；URL 解析地址 slug；截图 / PDF 走端侧 OCR + FM 抽取（Indicative），用户确认后建档（ADR-0014）。
-- **手动**：输入地址（G-NAF 校验）。
+- **手动**：输入地址（G-NAF 校验）。当前实现用 Apple Maps 的地址补全，补全与解析限制在澳洲范围内（V1 的房产都在澳洲）；面板一打开光标就在地址栏，查找状态（正在找 / 没匹配 / 连不上）单独写明，任何状态下都可以照输入保存。存下来的地址就是地址栏里显示的文字：选了建议，地址栏换成那条建议的完整地址并写明 pin 落在哪个区；没选，就存用户输入的原文，Maps 只提供 pin 和区名。
 - 建档后 Property 页出现：hero 图（用户分享的或自己拍的）、地址、来源标签、Prep。
 - 不做：抓取门户；持续 preload；planning / hazard。
 
 ## 2a. Properties：List 与 Map
 
-- 同一批房产，两种视图，分段控件切换。List 按状态分组（To inspect / Inspected / Shortlisted / Dropped），左滑删除。
-- Map 用 Apple Maps：每套有坐标的房一个 pin，按状态着色；点 pin 出卡片进详情；显示当前位置；没有坐标的房在底部计数提示。地图上只有用户自己的东西。
-- 详情页是一条滚动层级：地址与小地图、状态、看房时间 → Prep → Your inspection → Replay → 删除。
+- 同一批房产，两种视图，分段控件切换；搜索（地址 / 区名）、状态筛选、选中的房产、地图镜头是共用的一份状态。List 按状态分组（To inspect / Inspected / Shortlisted / Dropped），左滑删除。
+- Map 用 Apple Maps：每套有坐标的房一个 pin，按状态着色；手机上点 pin 出卡片，整卡进详情，另有系统地图导航；显示当前位置；筛选后与没有坐标的房都有计数说明。地图上只有用户自己的东西。
+- 宽窗口（iPad）：左边列表或地图，右边详情；窄窗口折成单列并保留选中。
+- 详情页：小地图、完整地址、看房时间（没有就写"未安排"）、两个主操作 Inspect now / Scan light、状态 → Your inspection → Light。地址、pin、看房时间、删除在 Edit 面板里，保存时才生效。记录区有 "Add a note"：学区、通勤、价格感受这类镜头拍不到的事，回家也能写下来（Observed · noted），挂在房产上，不算一次看房。
+- 观察详情页（回家复看的核心）：照片全屏可缩放；原话完整、可改，第一版保留；标签可改；来源用白话写。
 
 ## 2b. Inspect tab（During）
 
-- 居中的 tab。列出房产，允许定位后按距离排序（定位在这一步请求）；选中即进入 Inspect 模式（§4）。
+- 居中的 tab。列出房产；定位已允许时自动把最近的排前面并在回到前台时刷新，未询问时一个按钮说明用途，被拒绝时给"打开设置"。距离只排序，不替用户选房；选中即全屏进入 Inspect 模式（§4）。
 - 没有房产时提示先添加；不做"无房产也能开始"。
 
 ## 2c. You tab
 
 - **Priorities**：最多五个维度，Compare 只比这些；不产生分数。
-- **Profile**：名字（可选）；伴侣共享 Phase 3。
-- **Preferences**：时间轴 haptics；默认 Measure 高度（坐姿眼高 1.15 m）。
-- **Advanced（spike）**：Viewpoint 容差（0.10 / 0.15 / 0.25 实验用）；采集验证器入口。
-- **Privacy & data**：一句话说明什么留在设备；房产计数；删除全部（确认后物理删除）。
-- **About**：版本；证据标签说明；存储健康提示。
+- **Profile**：名字（可选）。伴侣共享是 Phase 3，到时再出现。
+- **Preferences**：录音语言；Haptics（Inspect 与 Light 的触感都听它）；Light scan 高度（坐姿眼高 1.15 m）。界面语言不在这里：App 是英文 + 简体中文（Lee，2026-10-03），跟随系统语言或 iOS 设置里的每 App 语言。
+- **Privacy & data**：iCloud sync 开关；一行同步现状，只报告真实发生过的发送 / 接收与失败（ADR-0017）；一句话说明什么留在设备与私有 iCloud；房产计数；删除全部（确认后物理删除）。
+- **About**：版本；证据标签说明。
+- **Developer**（仅 DEBUG 构建）：Viewpoint 容差、采集验证器、设备能力。
 - 原则：只放今天就起作用的控件；不做假开关。
 
 ## 3. Prep：3 things worth noticing
@@ -58,9 +60,13 @@
 |---|---|---|---|
 | **Capture** | 拍一张 | 时刻、位置与精度、朝向候选、设备姿态、可选房间标签 | Observation（user_photo，Observed·noted） |
 | **Note** | 按住说话 | 端侧转写；FM 结构化为 room / category / sentiment / text / followUp；原文保留可编辑；不存音频 | Observation（user_voice，Observed·noted）；followUp → Question |
-| **Measure** | 站到会生活的位置，按 `04-capture-protocol.md` 做 OneTake | SceneRecord | LightObservation（sensor，等级按 R1 结果映射） |
+| **Light**（文档旧称 Measure） | 站到会生活的位置，按 `04-capture-protocol.md` 做 OneTake；界面见 `04` §11 | SceneRecord | LightObservation（sensor，等级按 R1 结果映射） |
 
 - 三个快速标签：Like / Concern / Ask。Ask 自动生成 Question。
+- 拍完或说完，取景器上方滑出系统底部面板：照片或原话（原话可当场改，第一版保留）、房间、类别、三个标签、Save / Discard。面板只能经 Save 或 Discard 离开，任意字号下可滚动。
+- 按住说话的辅助入口：VoiceOver / Switch Control 与键盘不能"按住"，改为激活一次开始、再激活一次结束（⌘D）；准备阶段明说麦克风还没开。
+- 大字号：相机上的悬浮文字在 accessibility2 封顶，底栏三个动作在 xxxLarge 封顶并支持 Large Content Viewer；面板、详情、列表完全跟随。
+- 方向：iPhone 竖屏与两个横屏都可以（Lee，2026-10-03：有人习惯横过来拍），iPad 四向。预览跟随屏幕、照片按重力存正（`RotationCoordinator`）、罗盘的参考边随界面方向；三个动作留在屏幕底边。
 - 五盏质量灯（水平与追踪、走廊覆盖、方向、分割、镜头）只在 Measure 时出现；任一阻断只出 R0，且界面说明原因。
 - 房间标签：可选，来自户型 L0 的手工房间列表或 FM 候选（Indicative，用户确认后 Verified）。
 - 权限按需：相机在 Start inspection；麦克风在第一次 Note；定位在建档或 Measure；相册在导入。
@@ -99,7 +105,7 @@
 ## 8. Compare
 
 - 用户设五个优先级（Natural light、Privacy、Quiet、Space、Backyard、School、Commute、Renovation potential、Price comfort 中选）。
-- 两到三套并排；每格是用户评分或可解释指标，带等级与来源：Light 一格来自 R1 冬至稳定直射小时（Observed·measured），未测显示 Unknown。
+- 两到三套并排：行是关注维度，列是房产，房产名固定在顶部。每格来自买家自己的标签、笔记与扫描，并把两种"没有"分开写：没记录 / 已扫描但日照未计算；九个维度都有来源（School、Commute、Price comfort 靠笔记），没记录的格子点进去可以直接写第一条笔记；Light 一格在 R1 通过后显示冬至稳定直射小时（Observed·measured）。有记录的格子点进去是原始照片与原话。
 - 不做总分、不做排序、不做"AI 推荐"。
 
 ## 9. 分享页

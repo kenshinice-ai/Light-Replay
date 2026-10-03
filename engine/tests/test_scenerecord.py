@@ -47,7 +47,7 @@ def ready_record():
         coverage=dict(corridor_cells=10, unknown_cells=1, glass_cells=0, covered_cells=9, coverage_pct=0.9),
         segmentation=dict(model="synthetic-test-only", glass_detected=False, reflection_flags=[], manual_edits=[]),
         near_field=None)
-    r["quality"].update(level="R1", gates=dict(level="pass", coverage="pass", north="warn", segmentation="pass"),
+    r["quality"].update(level="R1", gates=dict(level="pass", coverage="pass", north="warn", segmentation="pass", lens="pass"),
                         false_valid_guard="passed", blocked_reason=None)
     r["analysis"] = [dict(
         query=dict(date_from="2026-06-21", date_to="2026-06-21", time_window=["10:00", "12:00"], scenario="current"),
@@ -78,7 +78,8 @@ def invalid_mutations():
         ("capture_session.viewpoint_lock.frames_within", 0.5),
         ("north.candidates.0.valid", True), ("north.candidates.0.group", "imaginary"),
         ("north.candidates.0.raw.heading_accuracy", -1),
-        ("quality.gates.coverage", "green"), ("quality.false_valid_guard", "pass"),
+        ("quality.gates.coverage", "green"), ("quality.gates.lens", "green"), ("quality.false_valid_guard", "pass"),
+        ("capture_session.frames.0.t", 999),
         ("quality.level", "R4"), ("quality.flags", "ok"),
         ("sharing.revoked", True), ("context", None),
     ]
