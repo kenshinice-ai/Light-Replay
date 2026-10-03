@@ -69,6 +69,12 @@ final class AdaptiveLayoutUITests: UITestCase {
             assertInsideWindow(app.buttons[name], name)
             XCTAssertTrue(app.buttons[name].isHittable, name)
         }
+        // The photo sits beside the tags on a phone on its side; nothing has to be dragged into view (Lee, 2026-10-03).
+        for name in ["Like", "Concern", "Ask"] {
+            let frame = app.buttons[name].frame
+            XCTAssertTrue(frame.minY >= window.minY && frame.maxY <= window.maxY, "\(name) is below the fold in landscape (y \(Int(frame.minY))…\(Int(frame.maxY)) of \(Int(window.height)))")
+            XCTAssertTrue(app.buttons[name].isHittable, name)
+        }
         snapshot("landscape-editor")
         tap(app.buttons["Discard"])
         tap(app.buttons["Light"])

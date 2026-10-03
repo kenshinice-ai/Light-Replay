@@ -14,6 +14,16 @@ struct PropertyReplayApp: App {
         // that count stuck and every step waits 60 s. UI-test launches run without UIKit animations (SwiftUI's own
         // still run); nobody using the app is affected (group memory xcuitest-animation-count-leak-keyboard-toolbar).
         if ProcessInfo.processInfo.arguments.contains("-uitest") { UIView.setAnimationsEnabled(false) }
+        // Before deploying the CloudKit schema to production: on a device signed into iCloud,
+        // `devicectl device process launch --console … com.pwegroup.propertyreplay -initializeCloudKitSchema`.
+        if ProcessInfo.processInfo.arguments.contains("-initializeCloudKitSchema") {
+            Task.detached {
+                let outcome: String
+                do { outcome = try PropertyStore.initializeCloudKitSchema() } catch { outcome = "CloudKit schema initialisation failed: \(error)" }
+                print("[schema] \(outcome)")
+                await MainActor.run { StoreHealth.shared.note(outcome) }
+            }
+        }
         #endif
     }
 
