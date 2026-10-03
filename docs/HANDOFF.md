@@ -124,6 +124,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
+- Light Replay（回家在照片上拖时间看光）是下一条主线：方案与九条 PR 清单在 `proposals/2026-10-03-light-replay-plan.md`，等 Lee 认可后从 PR 1（Hero 静帧与帧卷）开工。TestFlight 等回放做好再上（Lee 2026-10-03）。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -136,5 +137,5 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
-- **[决定] 构建 44（`a2672be`）上不上 TestFlight** — App Store Connect 记录 10-03 已建（Property Replay，iOS 1.0），CloudKit Production 已部署，归档已通过；一句「44 可以」就跑 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1 scripts/testflight.sh` · 不上：内测只能靠 `devicectl` 直装 · 自 2026-10-03
+- **[决定] Light Replay 方案** — `proposals/2026-10-03-light-replay-plan.md`：路线 A（Save 前强制一次方向确认）、PR 顺序 1→7、回放屏先合成数据还是等真实分割 · 不定：回放这条线不开工；TestFlight 按 Lee 10-03 的决定等回放做好再一步到位 · 自 2026-10-03
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30
