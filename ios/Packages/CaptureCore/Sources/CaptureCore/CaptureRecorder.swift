@@ -52,6 +52,7 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     private var anchor: SIMD3<Double>?
     private var anchorFrameID: String?
     private var frames: [FrameSample] = []
+    private var lastKeptTimestamp: TimeInterval?
     private var headings: [HeadingSample] = []
     private var sessionID = UUID().uuidString
 
@@ -117,6 +118,7 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         startPreview()
         // Fresh record, fresh evidence: nothing from a previous scan may leak into this one.
         frames.removeAll()
+        lastKeptTimestamp = nil
         headings.removeAll()
         anchor = nil
         anchorFrameID = nil
@@ -254,15 +256,20 @@ extension CaptureRecorder: ARSessionDelegate {
         }
         let position = SIMD3(transform[12], transform[13], transform[14])
         let frameID = String(format: "f%05d", frames.count)
-        if anchor == nil, state == "normal" {
+        let locksAnchor = anchor == nil && state == "normal"
+        if locksAnchor {
             anchor = position
             anchorFrameID = frameID
             anchorLocked = true
         }
+        // Drift is followed on every frame; the record keeps a thinned trail (ADR-0020).
         let drift = anchor.map { simd_distance($0, position) }
         currentDriftM = drift
         currentOffset = anchor.map { position - $0 }
         if let drift { maxDriftM = max(maxDriftM ?? 0, drift) }
+        guard Self.keepsFrame(at: timestamp, lastKept: lastKeptTimestamp, stateChanged: frames.last.map { $0.trackingState != state } ?? true,
+                              locksAnchor: locksAnchor) else { return }
+        lastKeptTimestamp = timestamp
         frames.append(FrameSample(
             frameID: frameID,
             t: timestamp - (firstFrameTimestamp ?? timestamp),
@@ -274,6 +281,20 @@ extension CaptureRecorder: ARSessionDelegate {
             exposureOffset: exposure
         ))
         frameCount = frames.count
+    }
+}
+
+extension CaptureRecorder {
+    /// Poses go into the record at most this often (ADR-0020): 60 fps wrote 25 MB for one six-minute scan on
+    /// 2026-10-03, and nothing that reads the poses — heading pairing, the viewpoint lock, keyframe masks — needs more.
+    nonisolated public static let poseLogHz: Double = 10
+
+    /// Whether a frame joins the record: the first, the one that locks the anchor, any change of tracking state, and
+    /// otherwise one per 1/`poseLogHz` seconds. Pure, so it is tested without an ARSession.
+    nonisolated public static func keepsFrame(at timestamp: TimeInterval, lastKept: TimeInterval?, stateChanged: Bool, locksAnchor: Bool) -> Bool {
+        guard let lastKept else { return true }
+        if locksAnchor || stateChanged { return true }
+        return timestamp - lastKept >= 1 / poseLogHz - 1e-6
     }
 }
 

@@ -50,7 +50,7 @@
 | `viewpoint_lock` | object | `anchor_world`、`tolerance_m`、`max_drift_m`、`frames_within`、`frames_beyond`、`handling`（`depth_recentered` / `tolerated` / `rejected`）|
 | `guidance` | object | `question`（`winter_breakfast` / `full_year` / `west_afternoon` / `custom`）、`corridor_ref` |
 
-帧记录频率：姿态每帧；分割按 3–5 fps 取帧【估】，但记录里只保留 3–5 张关键帧的掩膜（ADR-0019），其余帧 `mask_ref: null`。
+帧记录频率：姿态 ≤ 10 Hz【估】，另外总是保留第一帧、锚定帧和追踪状态变化的帧（ADR-0020；漂移逐帧算，`max_drift_m` 不受取样影响，`frames_within / frames_beyond` 按保留帧计）；分割按 3–5 fps 取帧【估】，但记录里只保留 3–5 张关键帧的掩膜（ADR-0019），其余帧 `mask_ref: null`。
 
 ## 4. north
 
