@@ -1,6 +1,6 @@
 # 06 · SunEngine：太阳几何、采样、时段分级
 
-版本 0.2 · 2026-09-30 · 实现：`ios/Packages/SunEngine`（`sun-noaa-0.1`、`sunbands-0.1`），参考：`engine/lightreplay/sun.py`
+版本 0.2 · 2026-09-30 · 实现：`ios/Packages/SunEngine`（`sun-noaa-0.1`、`sunbands-0.1`），参考：`engine/lightreplay/sun.py`（太阳位置）与 `engine/lightreplay/bands.py`（可见域网格、日盘判定、走廊、时段分级；2026-10-03 起由 `engine/tests/fixtures/sun-bands.json` 的 12 组时段、9 组走廊、9 个判定探针与随机数流把两边钉在一起：同一分钟、同一状态、同一比特）
 
 ## 1. 太阳位置
 

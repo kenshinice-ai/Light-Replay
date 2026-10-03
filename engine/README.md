@@ -18,6 +18,9 @@ Python 参考实现与验证脚本。
 | `lightreplay/quality.py` | QualityEvaluator 参考（`04` 第 6 节）：走廊覆盖、方向、分割三盏灯按证据重算；`scenerecord.validate` 最后调用它，写入值与证据不符即拒绝 |
 | `scripts/make_quality_fixture.py` → `tests/fixtures/quality-cases.json` | 31 个用例（两份基准记录 + 每例的改动 + 该接受还是拒绝、拒绝在哪条路径、证据给出的灯）；期望值手写，参考实现不同意就不写出 fixture；Swift 读同一份 |
 | `tests/test_quality.py` | 8 个 unittest：逐例判定、复审 R08 的四个探针、未知保持未知、fixture 是否最新 |
+| `lightreplay/bands.py` | SunEngine 其余部分的参考（`06` 第 3–6 节）：360 × 100 可见域网格、3×3 日盘判定、本地日与采样、太阳走廊与覆盖、SplitMix64、时段分级（64 次 Δ 抽样、整分钟边界） |
+| `scripts/make_bands_fixture.py` → `tests/fixtures/sun-bands.json` | 12 组时段（墨尔本 / 伦敦 / 朗伊尔城，含夏令时切换日、极夜与极昼）、9 组走廊覆盖、9 个判定探针、随机数流；Swift `SunBandsParityTests` 要逐分钟、逐状态、逐比特一致 |
+| `tests/test_bands.py` | 18 个 unittest：与 Swift `SunBandsTests` 同一组按文档手写的期望，另加整分钟细化等价于逐分钟采样、极地日、fixture 是否最新 |
 
 ## 跑
 
@@ -35,7 +38,8 @@ Python 3.12+，标准库即可。SunEngine 的精度对照不依赖第三方包�
 engine/
 ├── lightreplay/
 │   ├── scenerecord.py    已有
-│   ├── sun.py            太阳位置（已有）；走廊与时段分级的 Python 对照待补
+│   ├── sun.py            太阳位置（已有）
+│   ├── bands.py          可见域网格、走廊、时段分级（已有）
 │   ├── visibility.py     可见域网格、状态合并、深度重投影
 │   ├── north.py          方向融合与冲突检测（已有）
 │   ├── quality.py        质量门槛重算（已有）

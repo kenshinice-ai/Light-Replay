@@ -12,7 +12,7 @@ swift test --package-path "$ROOT/ios/Packages/NorthResolver" --scratch-path "$SC
 echo "== SceneRecord (Swift, incl. QualityEvaluator against engine/tests/fixtures/quality-cases.json)"
 swift test --package-path "$ROOT/ios/Packages/SceneRecord" --scratch-path "$SCRATCH/SceneRecord-build" 2>&1 | grep -E "Executed|error:" | tail -1
 
-echo "== SunEngine (Swift, parity with engine/tests/fixtures/sun-positions.json)"
+echo "== SunEngine (Swift, parity with engine/tests/fixtures/sun-positions.json and sun-bands.json)"
 swift test --package-path "$ROOT/ios/Packages/SunEngine" --scratch-path "$SCRATCH/SunEngine-build" 2>&1 | grep -E "Executed|error:" | tail -1
 
 echo "== engine (Python, incl. Swift parity)"
