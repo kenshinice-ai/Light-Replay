@@ -30,6 +30,7 @@ final class NorthResolverTests: XCTestCase {
             let groups_used: [String]
             let groups_rejected: [String]
             let conflict: Bool
+            let corroborated: Bool
             let disagreements: [Disagreement]
             let gate: String
             let needs_confirmation: Bool
@@ -73,6 +74,7 @@ final class NorthResolverTests: XCTestCase {
             XCTAssertEqual(result.groupsUsed.map(\.rawValue), expected.groups_used, item.name)
             XCTAssertEqual(result.groupsRejected.map(\.rawValue), expected.groups_rejected, item.name)
             XCTAssertEqual(result.conflict, expected.conflict, item.name)
+            XCTAssertEqual(result.corroborated, expected.corroborated, item.name)
             XCTAssertEqual(result.needsConfirmation, expected.needs_confirmation, item.name)
             XCTAssertEqual(result.reason, expected.reason, item.name)
             XCTAssertEqual(result.yawDeg == nil, expected.yaw_deg == nil, item.name)
@@ -126,6 +128,26 @@ final class NorthResolverTests: XCTestCase {
         XCTAssertEqual(r.gate, .pass)
         XCTAssertFalse(r.conflict)
         XCTAssertEqual(r.disagreements.count, 2, "the rejected reading's disagreements are still recorded")
+    }
+
+    func testAgreementIsNotCorroboration() {
+        // ADR-0018: wall 4 and compass 8 agree, but 3·sqrt(16 + 64) = 26.8° could not have caught an hour-sized
+        // error. Amber, with the compass still sharpening the fusion.
+        let r = NorthResolver.resolve([reading(.map, 2, 4), reading(.magnetic, 0, 8)])
+        XCTAssertEqual(r.groupsUsed, [.map, .magnetic])
+        XCTAssertEqual(r.gate, .warn)
+        XCTAssertFalse(r.corroborated)
+        XCTAssertEqual(r.sigmaDeg!, (1 / (1 / 16.0 + 1 / 64.0)).squareRoot(), accuracy: 1e-9)
+        XCTAssertEqual(r.reason, "2 groups agree, but none closely enough to corroborate")
+        // Two wide groups: fused σ 7.7°, so one confirmation first.
+        let wide = NorthResolver.resolve([reading(.map, 5, 10), reading(.magnetic, 0, 12)])
+        XCTAssertEqual(wide.gate, .blocked)
+        XCTAssertTrue(wide.needsConfirmation)
+        // Solar 2 and map 4: 13.4°, corroborated; a wide compass riding along changes nothing.
+        let tight = NorthResolver.resolve([reading(.solar, 1, 2), reading(.map, 3, 4), reading(.magnetic, 10, 12)])
+        XCTAssertEqual(tight.gate, .pass)
+        XCTAssertTrue(tight.corroborated)
+        XCTAssertEqual(tight.reason, "3 independent groups agree; solar and map corroborate each other")
     }
 
     func testConfidentWrongReadingDoesNotWin() {

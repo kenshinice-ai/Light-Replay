@@ -45,10 +45,17 @@ NAMED = {
     "scattered_compass_readings_widen_sigma": [c("magnetic", 10, 8), c("magnetic", 40, 8), c("magnetic", 80, 8),
                                                c("magnetic", 120, 8)],
     "two_solar_readings_and_a_wall": [c("solar", 359, 2), c("solar", 1, 1.5, source="sun_disk"), c("map", 2, 4)],
-    # ADR-0009 "known blind spot": a 17 degree error hides inside a compass sigma of 12.
-    "known_blind_spot_wide_compass_hides_an_error": [c("solar", 20, 2), c("magnetic", 3, 12)],
-    # The same blind spot at its limit: opposite compass readings give a sigma that cannot disagree with anything.
-    "known_blind_spot_a_group_too_wide_to_disagree": [c("map", 100, 4), c("magnetic", 0, 8), c("magnetic", 180, 8)],
+    # ADR-0009's blind spot, closed by ADR-0018: a 17 degree error hides inside a compass sigma of 12, so the compass
+    # agreeing says nothing and the light stays amber.
+    "wide_compass_agreeing_is_not_corroboration": [c("solar", 20, 2), c("magnetic", 3, 12)],
+    # Opposite compass readings give a sigma of 90 that cannot disagree with anything: agreement, no corroboration.
+    "a_group_too_wide_to_disagree_does_not_corroborate": [c("map", 100, 4), c("magnetic", 0, 8), c("magnetic", 180, 8)],
+    # Wall and compass agree, but 3·sqrt(16 + 64) = 26.8° > 15°: amber, not green (ADR-0018).
+    "wall_and_compass_agree_without_corroborating": [c("map", 2, 4), c("magnetic", 0, 8)],
+    # Two wide groups agree and their fused sigma is 7.7°: one confirmation before anything beyond R0.
+    "two_wide_groups_agree_above_six": [c("map", 5, 10), c("magnetic", 0, 12)],
+    # Three groups, only solar and vps tight enough to corroborate; the compass rides along in the fusion.
+    "one_corroborating_pair_among_three": [c("solar", 1, 2), c("vps", 3, 3), c("magnetic", 10, 9)],
 }
 
 

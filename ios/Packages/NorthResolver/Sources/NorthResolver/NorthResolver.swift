@@ -52,6 +52,8 @@ public struct NorthResolution: Sendable, Equatable {
     public let groupsRejected: [NorthGroup]
     /// A group other than `magnetic` was rejected (ADR-0009 rule 4).
     public let conflict: Bool
+    /// Two used groups agree closely enough that their agreement would have caught a 15° error (ADR-0018).
+    public let corroborated: Bool
     /// Every pair that disagrees, including a compass that was simply outvoted.
     public let disagreements: [Disagreement]
     public let gate: QualityGate
@@ -60,15 +62,18 @@ public struct NorthResolution: Sendable, Equatable {
     public let reason: String
 }
 
-/// Direction fusion (docs/05 §3, ADR-0009). Mirrors `engine/lightreplay/north.py`; the two are held together by
-/// `engine/tests/fixtures/north-cases.json`. The σ model and every limit are candidates until the sundial spike.
+/// Direction fusion (docs/05 §3, ADR-0009, ADR-0018). Mirrors `engine/lightreplay/north.py`; the two are held together
+/// by `engine/tests/fixtures/north-cases.json`. The σ model and every limit are candidates until the sundial spike.
 public enum NorthResolver {
-    public static let version = "northresolver-0.1"
+    public static let version = "northresolver-0.2"
     public static let method = "robust_circular_v0"
     /// Two groups conflict when their circular difference exceeds K · sqrt(σ_i² + σ_j²) (docs/05 §3 step 3).
     public static let conflictK = 3.0
     /// A single group above this σ needs one confirmation before anything beyond R0 (docs/05 §3 step 5, candidate).
     public static let singleGroupSigmaLimitDeg = 6.0
+    /// Two agreeing groups corroborate each other only when their conflict limit is at most this: their agreement
+    /// would have caught an error of about one sun-hour of azimuth (ADR-0018, candidate until the sundial spike).
+    public static let corroborationDetectableDeg = 15.0
 
     /// `angle` folded into [0, 360).
     public static func mod360(_ angle: Double) -> Double {
@@ -120,7 +125,8 @@ public enum NorthResolver {
         let groups = Dictionary(uniqueKeysWithValues: order.map { ($0, merge(byGroup[$0]!)) })
         guard !order.isEmpty else {
             return .init(yawDeg: nil, sigmaDeg: nil, groups: [:], groupsUsed: [], groupsRejected: [], conflict: false,
-                         disagreements: [], gate: .blocked, needsConfirmation: false, reason: "no valid direction source")
+                         corroborated: false, disagreements: [], gate: .blocked, needsConfirmation: false,
+                         reason: "no valid direction source")
         }
         func limit(_ a: NorthGroup, _ b: NorthGroup) -> Double { conflictK * hypot(groups[a]!.sigmaDeg, groups[b]!.sigmaDeg) }
         func difference(_ a: NorthGroup, _ b: NorthGroup) -> Double { circularDifference(groups[a]!.yawDeg, groups[b]!.yawDeg) }
@@ -141,12 +147,20 @@ public enum NorthResolver {
         let sigma = (1 / weights.reduce(0, +)).squareRoot()
         let rejected = order.filter { !used.contains($0) }
         let conflict = rejected.contains { $0 != .magnetic }
+        // The most trusted pair whose agreement means something: a pair this tight would have disagreed over a 15° error.
+        let corroborating = pairs(used).first { limit($0.0, $0.1) <= corroborationDetectableDeg }
         let gate: QualityGate, needsConfirmation: Bool, reason: String
         if conflict {
             (gate, needsConfirmation) = (.blocked, true)
             reason = "sources disagree: " + rejected.filter { $0 != .magnetic }.map(\.rawValue).joined(separator: ", ") + " rejected"
+        } else if let (a, b) = corroborating {
+            (gate, needsConfirmation) = (.pass, false)
+            reason = "\(used.count) independent groups agree; \(a.rawValue) and \(b.rawValue) corroborate each other"
+        } else if used.count >= 2, sigma <= singleGroupSigmaLimitDeg {
+            (gate, needsConfirmation, reason) = (.warn, false, "\(used.count) groups agree, but none closely enough to corroborate")
         } else if used.count >= 2 {
-            (gate, needsConfirmation, reason) = (.pass, false, "\(used.count) independent groups agree")
+            (gate, needsConfirmation) = (.blocked, true)
+            reason = "\(used.count) groups agree, none closely enough to corroborate, and the fused sigma is above \(formatted(singleGroupSigmaLimitDeg)) degrees"
         } else if sigma <= singleGroupSigmaLimitDeg {
             (gate, needsConfirmation, reason) = (.warn, false, "one group only")
         } else {
@@ -154,8 +168,8 @@ public enum NorthResolver {
             reason = "one group only, and its sigma is above \(formatted(singleGroupSigmaLimitDeg)) degrees"
         }
         return .init(yawDeg: mod360(atan2(s, c) / radians), sigmaDeg: sigma, groups: groups, groupsUsed: used,
-                     groupsRejected: rejected, conflict: conflict, disagreements: disagreements, gate: gate,
-                     needsConfirmation: needsConfirmation, reason: reason)
+                     groupsRejected: rejected, conflict: conflict, corroborated: corroborating != nil,
+                     disagreements: disagreements, gate: gate, needsConfirmation: needsConfirmation, reason: reason)
     }
 
     /// Non-empty subsets, largest first; within one size in the order Python's `itertools.combinations` gives.

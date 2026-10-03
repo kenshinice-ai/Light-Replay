@@ -40,6 +40,7 @@
 | 15 | Inspect 模式 = Capture / Note / Measure；push-to-talk；不做 Sound lens | 看房只有 20 分钟；连续录音撞监控设备法 | [ADR-0015](decisions/ADR-0015-inspect-mode-contract.md) |
 | 16 | 产品名 Property Replay | Property Lens 有四家近似；Property Replay 商标检索 0 条 | [ADR-0016](decisions/ADR-0016-product-name.md) |
 | 17 | 资料库同步到用户自己的 iCloud 私有库；照片和记录跟着行走 | 回家在 iPad 上复看；删除与保存变成一个事务 | [ADR-0017](decisions/ADR-0017-icloud-private-sync.md) |
+| 18 | 一致不等于佐证 | 两组一致只在 `3·sqrt(σ_i² + σ_j²) ≤ 15°` 时点绿灯，否则按一组处理；罗盘按 8° 先验永远不能佐证 | [ADR-0018](decisions/ADR-0018-corroboration-must-detect-an-hour.md) |
 
 ## 3. 首发范围（V1 = MVP v0，`12-roadmap.md` Phase 2）
 

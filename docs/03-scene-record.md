@@ -21,7 +21,7 @@
   "created_at": "2026-09-21T10:42:13+10:00",
   "timezone": "Australia/Melbourne",
   "app": { "version": "0.1.0", "build": "12",
-           "algorithms": { "sun": "sunengine-0.1", "segmentation": "skyseg-0.1", "north": "northresolver-0.1", "visibility": "viscore-0.1" } },
+           "algorithms": { "sun": "sunengine-0.1", "segmentation": "skyseg-0.1", "north": "northresolver-0.2", "visibility": "viscore-0.1" } },
   "device": { "model": "iPhone16,1", "os": "iOS 18.6", "lidar": true, "scene_depth": true, "geo_tracking": "unavailable" },
   "location": { "lat": -37.8136, "lon": 144.9631, "alt_m": 31.0, "h_acc_m": 8.0, "v_acc_m": 5.0,
                 "source": "core_location", "captured_at": "2026-09-21T10:41:58+10:00" },

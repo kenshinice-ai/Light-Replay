@@ -94,7 +94,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 按住说话的辅助入口：VoiceOver 双击开始 / 结束、⌘D、`.startsMediaSession` | ✓ | — | — | 需真机开 VoiceOver / Switch Control 验收（U05） |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；Swift / Python 1e-7° | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
-| NorthResolver 融合（组内中位数、两两一致性、最大一致组合、方向灯；ADR-0009） | ✓ | ✓ 19 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`；候选目前只有罗盘一组，所以真机上方向灯恒为阻断，这是对的 |
+| NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组，罗盘按 8° 先验永远不能佐证，所以真机上方向灯最多黄灯，这是对的 |
 | QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
 | 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | 待下次真机扫描后看一份记录 | 俯仰超过 50° 的读数保留但不参与合并 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；扫描界面、SunEngine、NorthResolver、QualityEvaluator 已就位，分割接上后结果卡换成时段 |
@@ -109,7 +109,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 仍然开着的：
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
-- 方向融合的已知盲区（σ 很宽的组无法与任何组冲突，`05` 第 7 节）：解锁 R1 前要定是否给佐证组加 σ 上限。
+- 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
 - SunEngine 的走廊与时段分级还没有 Python 对照实现（太阳位置已有）。
 - `installTap` 在 iOS 27 标为弃用，替代 API 未确认，暂留。

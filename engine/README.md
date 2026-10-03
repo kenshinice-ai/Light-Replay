@@ -12,11 +12,11 @@ Python 参考实现与验证脚本。
 | `lightreplay/sun.py` | 太阳位置参考：NOAA（Meeus）算法 + SPA 折射，与 Swift `SunEngine` 逐项一致；另含独立的天文年历算法（Michalsky 1988）只作交叉校验 |
 | `scripts/make_sun_fixture.py` → `tests/fixtures/sun-positions.json` | 768 个合成输入点（6 城 × 全年 × 每 3 小时）；Swift 测试读它，容差 1e-7° |
 | `tests/test_sun.py` | NREL SPA 公开算例、冬夏至正午高度、独立算法 < 0.05°、fixture 是否最新、折射与方位约定 |
-| `lightreplay/north.py` | NorthResolver 融合参考（`05` 第 3 节，ADR-0009）：组内圆周中位数、两两一致性、最大一致组合、加权圆周均值、方向灯 |
-| `scripts/make_north_fixture.py` → `tests/fixtures/north-cases.json` | 19 个具名情形 + 200 个随机输入及参考结果；Swift `NorthResolver` 读它，容差 1e-9° |
-| `tests/test_north.py` | 23 个 unittest：期望值按文档手写（`03` 的算例、ADR-0009 的两个反例、九种合成情形），另有旋转不变性、候选顺序无关性、fixture 是否最新 |
+| `lightreplay/north.py` | NorthResolver 融合参考（`05` 第 3 节，ADR-0009、ADR-0018）：组内圆周中位数、两两一致性、最大一致组合、佐证、加权圆周均值、方向灯 |
+| `scripts/make_north_fixture.py` → `tests/fixtures/north-cases.json` | 22 个具名情形 + 200 个随机输入及参考结果；Swift `NorthResolver` 读它，容差 1e-9° |
+| `tests/test_north.py` | 26 个 unittest：期望值按文档手写（`03` 的算例、ADR-0009 的两个反例、九种合成情形），另有旋转不变性、候选顺序无关性、fixture 是否最新 |
 | `lightreplay/quality.py` | QualityEvaluator 参考（`04` 第 6 节）：走廊覆盖、方向、分割三盏灯按证据重算；`scenerecord.validate` 最后调用它，写入值与证据不符即拒绝 |
-| `scripts/make_quality_fixture.py` → `tests/fixtures/quality-cases.json` | 29 个用例（两份基准记录 + 每例的改动 + 该接受还是拒绝、拒绝在哪条路径、证据给出的灯）；期望值手写，参考实现不同意就不写出 fixture；Swift 读同一份 |
+| `scripts/make_quality_fixture.py` → `tests/fixtures/quality-cases.json` | 31 个用例（两份基准记录 + 每例的改动 + 该接受还是拒绝、拒绝在哪条路径、证据给出的灯）；期望值手写，参考实现不同意就不写出 fixture；Swift 读同一份 |
 | `tests/test_quality.py` | 8 个 unittest：逐例判定、复审 R08 的四个探针、未知保持未知、fixture 是否最新 |
 
 ## 跑

@@ -1,8 +1,9 @@
-"""NorthResolver fusion (docs/05 §3, ADR-0009): reference implementation, northresolver-0.1.
+"""NorthResolver fusion (docs/05 §3, ADR-0009, ADR-0018): reference implementation, northresolver-0.2.
 
 A candidate is one source's reading of Δ, the true azimuth of the AR world's −Z axis, with a 1σ in degrees and
 the independent group it belongs to. This module merges readings inside a group, checks the groups against each
-other, fuses the largest set that agrees, and says which light the result earns. It reads no sensors and knows
+other, fuses the largest set that agrees, and says which light the result earns. Agreeing is not corroborating:
+the green light needs one pair whose agreement could have caught an hour-sized error (ADR-0018). It reads no sensors and knows
 nothing about JSON beyond the candidate keys of docs/03 §4.
 
 Synthetic software checks only; the σ model and every limit are candidates until the sundial spike (docs/07).
@@ -11,7 +12,7 @@ Synthetic software checks only; the σ model and every limit are candidates unti
 from itertools import combinations
 import math
 
-VERSION = "northresolver-0.1"
+VERSION = "northresolver-0.2"
 METHOD = "robust_circular_v0"
 #: Most trusted first (docs/05 §3 step 4).
 GROUP_TRUST = ("solar", "vps", "map", "magnetic")
@@ -19,6 +20,9 @@ GROUP_TRUST = ("solar", "vps", "map", "magnetic")
 CONFLICT_K = 3.0
 #: A single group above this σ needs one confirmation before anything beyond R0 (docs/05 §3 step 5, candidate).
 SINGLE_GROUP_SIGMA_LIMIT_DEG = 6.0
+#: Two agreeing groups corroborate each other only when their conflict limit is at most this: their agreement would
+#: have caught an error of about one sun-hour of azimuth (ADR-0018, candidate until the sundial spike).
+CORROBORATION_DETECTABLE_DEG = 15.0
 
 
 def mod360(angle):
@@ -79,6 +83,7 @@ def resolve(candidates):
       `groups`                    per usable group: `yaw_deg`, `sigma_deg`, `spread_deg`, `readings`
       `groups_used`, `groups_rejected`   most trusted first
       `conflict`                  True when a group other than `magnetic` was rejected (ADR-0009 rule 4)
+      `corroborated`              True when two used groups agree closely enough to have caught a 15° error
       `disagreements`             every conflicting pair: `a`, `b`, `difference_deg`, `limit_deg`
       `gate`                      `pass` / `warn` / `blocked` (docs/04 §6)
       `needs_confirmation`        True when one minimal confirmation is required before anything beyond R0
@@ -93,7 +98,7 @@ def resolve(candidates):
     groups = {group: {"yaw_deg": merged[group][0], "sigma_deg": merged[group][1], "spread_deg": merged[group][2],
                       "readings": len(readings[group])} for group in order}
     result = {"version": VERSION, "method": METHOD, "yaw_deg": None, "sigma_deg": None, "groups": groups,
-              "groups_used": [], "groups_rejected": [], "conflict": False, "disagreements": [],
+              "groups_used": [], "groups_rejected": [], "conflict": False, "corroborated": False, "disagreements": [],
               "gate": "blocked", "needs_confirmation": False, "reason": "no valid direction source"}
     if not order:
         return result
@@ -116,13 +121,23 @@ def resolve(candidates):
     c = sum(w * math.cos(math.radians(merged[group][0])) for w, group in zip(weights, used))
     rejected = [group for group in order if group not in used]
     sigma = math.sqrt(1.0 / sum(weights))
+    # The most trusted pair whose agreement means something: a pair this tight would have disagreed over a 15° error.
+    corroborating = next(((a, b) for a, b in combinations(used, 2) if limit(a, b) <= CORROBORATION_DETECTABLE_DEG), None)
     result.update(yaw_deg=mod360(math.degrees(math.atan2(s, c))), sigma_deg=sigma, groups_used=used,
-                  groups_rejected=rejected, conflict=any(group != "magnetic" for group in rejected))
+                  groups_rejected=rejected, conflict=any(group != "magnetic" for group in rejected),
+                  corroborated=corroborating is not None)
     if result["conflict"]:
         result.update(gate="blocked", needs_confirmation=True,
                       reason="sources disagree: " + ", ".join(g for g in rejected if g != "magnetic") + " rejected")
+    elif corroborating:
+        result.update(gate="pass", reason=f"{len(used)} independent groups agree; "
+                                          f"{corroborating[0]} and {corroborating[1]} corroborate each other")
+    elif len(used) >= 2 and sigma <= SINGLE_GROUP_SIGMA_LIMIT_DEG:
+        result.update(gate="warn", reason=f"{len(used)} groups agree, but none closely enough to corroborate")
     elif len(used) >= 2:
-        result.update(gate="pass", reason=f"{len(used)} independent groups agree")
+        result.update(gate="blocked", needs_confirmation=True,
+                      reason=f"{len(used)} groups agree, none closely enough to corroborate, and the fused sigma is above "
+                             f"{SINGLE_GROUP_SIGMA_LIMIT_DEG:g} degrees")
     elif sigma <= SINGLE_GROUP_SIGMA_LIMIT_DEG:
         result.update(gate="warn", reason="one group only")
     else:

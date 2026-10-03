@@ -47,7 +47,8 @@ def second_frame(**overrides):
     return frame
 
 
-TWO_GROUPS = [candidate("magnetic", 0.0, 8.0), candidate("map", 2.0, 4.0)]
+TWO_GROUPS = [candidate("solar", 0.0, 2.0), candidate("map", 2.0, 4.0)]            # 3·sqrt(4 + 16) = 13.4°: corroborate
+UNCORROBORATED = [candidate("magnetic", 0.0, 8.0), candidate("map", 2.0, 4.0)]    # 3·sqrt(64 + 16) = 26.8°: agree only
 SPLIT = [candidate("solar", 20.0, 2.0), candidate("vps", 3.0, 3.0), candidate("map", 2.0, 4.0)]
 
 # name, base, changes, accepted, path of the refusal, the lights the evidence gives
@@ -120,6 +121,12 @@ CASES = [
     ("two_groups_agree_stated_warn", "ready",
      [["north.candidates", TWO_GROUPS], ["north.resolved", resolved_for(TWO_GROUPS)]],
      False, "$.quality.gates.north", dict(READY_GATES, north="pass")),
+    ("agreement_without_corroboration_is_amber", "ready",
+     [["north.candidates", UNCORROBORATED], ["north.resolved", resolved_for(UNCORROBORATED)]],
+     True, None, READY_GATES),
+    ("agreement_without_corroboration_stated_pass", "ready",
+     [["north.candidates", UNCORROBORATED], ["north.resolved", resolved_for(UNCORROBORATED)], ["quality.gates.north", "pass"]],
+     False, "$.quality.gates.north", READY_GATES),
     ("a_conflict_cannot_be_stated_away", "ready",
      [["north.candidates", SPLIT], ["north.resolved", resolved_for(SPLIT, conflict=False)], ["quality.gates.north", "pass"]],
      False, "$.quality.gates.north", dict(READY_GATES, north="blocked")),

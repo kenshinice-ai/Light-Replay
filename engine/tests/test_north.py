@@ -61,8 +61,10 @@ class ResolveTests(unittest.TestCase):
 
     def test_mild_disagreement_is_fused_by_inverse_variance(self):
         # map 10±4 and magnetic 25±8 differ by 15, inside 3·sqrt(16 + 64) = 26.8. Weights 1/16 and 1/64 give 13.
+        # A limit of 26.8° could not have caught an hour-sized error, so this is agreement without corroboration.
         r = self.resolve("mild_disagreement_still_agrees")
-        self.assertEqual((r["groups_used"], r["groups_rejected"], r["gate"]), (["map", "magnetic"], [], "pass"))
+        self.assertEqual((r["groups_used"], r["groups_rejected"], r["gate"]), (["map", "magnetic"], [], "warn"))
+        self.assertFalse(r["corroborated"])
         self.assertAlmostEqual(r["yaw_deg"], 13.0, delta=0.05)
         self.assertAlmostEqual(r["sigma_deg"], (1 / (1 / 16 + 1 / 64)) ** 0.5)
         self.assertEqual(r["disagreements"], [])
@@ -76,6 +78,8 @@ class ResolveTests(unittest.TestCase):
         r = self.resolve("magnetic_alone_is_off")
         self.assertEqual((r["groups_used"], r["groups_rejected"]), (["solar", "map"], ["magnetic"]))
         self.assertEqual((r["gate"], r["conflict"], r["needs_confirmation"]), ("pass", False, False))
+        self.assertTrue(r["corroborated"], "solar 2 and map 4: 3·sqrt(4 + 16) = 13.4° would have shown a 15° error")
+        self.assertEqual(r["reason"], "2 independent groups agree; solar and map corroborate each other")
         self.assertEqual(len(r["disagreements"]), 2, "the rejected reading's disagreements are still recorded")
 
     def test_confident_wrong_reading_does_not_win(self):
@@ -135,13 +139,36 @@ class ResolveTests(unittest.TestCase):
         self.assertAlmostEqual(r["groups"]["solar"]["sigma_deg"], 1.75)
         self.assertEqual(r["gate"], "pass")
 
-    def test_known_blind_spots_are_what_adr_0009_says(self):
-        # Not a goal: the accepted rule cannot see these. Pinned so a change to them is a decision, not an accident.
-        hidden = self.resolve("known_blind_spot_wide_compass_hides_an_error")
-        self.assertEqual((hidden["groups_used"], hidden["gate"]), (["solar", "magnetic"], "pass"))
-        vacuous = self.resolve("known_blind_spot_a_group_too_wide_to_disagree")
+    def test_agreement_is_not_corroboration(self):
+        # ADR-0018. The compass agreeing at sigma 12 cannot have caught a 17 degree error: amber, with the compass
+        # still in the fusion.
+        hidden = self.resolve("wide_compass_agreeing_is_not_corroboration")
+        self.assertEqual((hidden["groups_used"], hidden["gate"], hidden["corroborated"]), (["solar", "magnetic"], "warn", False))
+        self.assertEqual(hidden["reason"], "2 groups agree, but none closely enough to corroborate")
+        vacuous = self.resolve("a_group_too_wide_to_disagree_does_not_corroborate")
         self.assertAlmostEqual(vacuous["groups"]["magnetic"]["sigma_deg"], 90)
-        self.assertEqual((vacuous["groups_used"], vacuous["gate"]), (["map", "magnetic"], "pass"))
+        self.assertEqual((vacuous["groups_used"], vacuous["gate"]), (["map", "magnetic"], "warn"))
+        wall = self.resolve("wall_and_compass_agree_without_corroborating")
+        self.assertEqual(wall["gate"], "warn")
+        self.assertAlmostEqual(wall["sigma_deg"], (1 / (1 / 16 + 1 / 64)) ** 0.5, msg="the compass still sharpens the fusion")
+
+    def test_wide_agreement_above_six_degrees_needs_confirmation(self):
+        r = self.resolve("two_wide_groups_agree_above_six")
+        self.assertEqual((r["groups_used"], r["gate"], r["needs_confirmation"]), (["map", "magnetic"], "blocked", True))
+        self.assertGreater(r["sigma_deg"], 6)
+        self.assertEqual(r["reason"], "2 groups agree, none closely enough to corroborate, and the fused sigma is above 6 degrees")
+
+    def test_one_corroborating_pair_is_enough(self):
+        r = self.resolve("one_corroborating_pair_among_three")
+        self.assertEqual((r["groups_used"], r["gate"], r["corroborated"]), (["solar", "vps", "magnetic"], "pass", True))
+        self.assertEqual(r["reason"], "3 independent groups agree; solar and vps corroborate each other")
+
+    def test_a_phone_compass_never_corroborates_at_its_prior(self):
+        # With the 8 degree prior of docs/05 §2, 3·sqrt(64 + σ²) is at least 24°: the compass can veto a gross error
+        # and sharpen a fusion, but a green light needs a second source of another kind.
+        for sigma in (0.5, 2, 4):
+            r = north.resolve([c("solar", 0, sigma), c("magnetic", 1, 8)])
+            self.assertEqual((r["gate"], r["corroborated"]), ("warn", False), sigma)
 
 
 class InvarianceTests(unittest.TestCase):
