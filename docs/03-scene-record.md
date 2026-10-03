@@ -50,7 +50,7 @@
 | `viewpoint_lock` | object | `anchor_world`、`tolerance_m`、`max_drift_m`、`frames_within`、`frames_beyond`、`handling`（`depth_recentered` / `tolerated` / `rejected`）|
 | `guidance` | object | `question`（`winter_breakfast` / `full_year` / `west_afternoon` / `custom`）、`corridor_ref` |
 
-帧记录频率：姿态每帧；掩膜与深度按分割频率（5–10 fps）；其余帧 `mask_ref: null`。
+帧记录频率：姿态每帧；分割按 3–5 fps 取帧【估】，但记录里只保留 3–5 张关键帧的掩膜（ADR-0019），其余帧 `mask_ref: null`。
 
 ## 4. north
 
@@ -121,7 +121,7 @@
 <scene_id>/
 ├── scene.json
 ├── hero.heic
-├── masks/<frame_id>.png
+├── masks/<frame_id>.png          （只有关键帧，ADR-0019）
 ├── depth/<frame_id>.bin  (+ .conf)
 ├── visibility/states.png, confidence.png
 └── analysis/<n>-heatmap.png

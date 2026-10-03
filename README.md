@@ -78,4 +78,4 @@ Lee：决定、现场、渠道。Paradise Production：采集、真值、Light P
 
 ## 下一步
 
-Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）、Light 扫描界面、SunEngine 与太阳走廊覆盖率、界面评审的三轮修改（大字号、iPad 分栏、复看、同步状态）已在源码与模拟器测试里；相机方向、AR 轨迹对齐、VoiceOver 仍待真机验收。方向融合（NorthResolver）与质量门槛（QualityEvaluator）也已就位，记录里写的灯必须与证据一致。界面英文 + 简体中文；iPhone 可横屏；Compare 的九个维度都有记录入口。下一步是把日照测量闭环接完：天空分割（相机帧 → 可见域；方案 `docs/proposals/2026-10-03-sky-segmentation-plan.md`）、罗盘以外的方向来源、日照结果页，再到庭院单点白卡延时验收（`docs/12-roadmap.md`、`docs/HANDOFF.md` §7）。
+Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）、Light 扫描界面、SunEngine 与太阳走廊覆盖率、界面评审的三轮修改（大字号、iPad 分栏、复看、同步状态）已在源码与模拟器测试里；相机方向、AR 轨迹对齐、VoiceOver 仍待真机验收。方向融合（NorthResolver）与质量门槛（QualityEvaluator）也已就位，记录里写的灯必须与证据一致。界面英文 + 简体中文；iPhone 可横屏；Compare 的九个维度都有记录入口。下一步是把日照测量闭环接完：天空分割（相机帧 → 可见域；方案 `docs/proposals/2026-10-03-sky-segmentation-plan.md`，存储与时机按 ADR-0019）、罗盘以外的方向来源、日照结果页，再到庭院单点白卡延时验收（`docs/12-roadmap.md`、`docs/HANDOFF.md` §7）。

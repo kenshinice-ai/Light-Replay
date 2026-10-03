@@ -1,6 +1,6 @@
 # 天空分割：把"镜头看过"变成"那里是天空"的方案
 
-日期：2026-10-03。作者：Claude。状态：提案，等 Lee 定方向后动手。
+日期：2026-10-03。作者：Claude。状态：第 4 节的三件事 Lee 当日按推荐定下（ADR-0019）；顺序按第 5 节。
 对应：`02-architecture.md` 第 1、3、6 节（VisibilityCore），`04-capture-protocol.md` 第 5、6 节，ADR-0010（Vision 交互式分割为首选），`07-spike-plan.md` W1 的分割路径评估。
 
 ## 1. 现在卡在哪
