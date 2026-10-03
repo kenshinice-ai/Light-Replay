@@ -132,7 +132,6 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
-- **[动手] iPhone 装 10-03 晚的版本** — Mac 上 `xcrun devicectl device install app --device <iPhone 的 identifier，`xcrun devicectl list devices` 里看> ~/Library/Caches/propertyreplay/DerivedData-device/Build/Products/Debug-iphoneos/PropertyReplay.app`（iPad 已装；iPhone 锁屏时对 Mac 是 unavailable，只有你解锁后能装） · 不装：iPhone 上缺照片缩略图、丢照片提示、⌘D 场景命令 · 自 2026-10-03
 - **[动手] 真机横持拍一张、横持扫一次 Light** — 推荐：下次看房前，在家里拍竖横各一张看预览与照片方向，再横着扫一次看罗盘 ±σ 有没有跳 90° · 不做：横屏链路只在模拟器验过，真机方向错了只有你能看出 · 自 2026-10-03
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
