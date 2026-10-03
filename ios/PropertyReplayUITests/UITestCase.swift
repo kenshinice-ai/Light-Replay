@@ -13,6 +13,11 @@ class UITestCase: XCTestCase {
         app = XCUIApplication()
     }
 
+    /// A landscape test must not tilt the next one: the simulator keeps its orientation between tests.
+    override func tearDownWithError() throws {
+        XCUIDevice.shared.orientation = .portrait
+    }
+
     func launch(_ extra: [String] = []) {
         app.launchArguments = ["-uitest"] + extra
         app.launch()
@@ -43,8 +48,16 @@ class UITestCase: XCTestCase {
         add(attachment)
     }
 
+    /// A tab is a button in the tab bar; on an iPad turned to landscape the adaptable tab view shows the same tabs
+    /// as rows of a sidebar, where the name is a static text.
+    func openTab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
+        let button = app.buttons[name].firstMatch
+        if button.waitForExistence(timeout: 3) { button.tap(); return }
+        tap(app.staticTexts[name].firstMatch, file: file, line: line)
+    }
+
     func openProperty(_ shortAddress: String = "12 Example Street") {
-        tap(app.buttons["Properties"].firstMatch)
+        openTab("Properties")
         tap(app.staticTexts[shortAddress].firstMatch)
     }
 

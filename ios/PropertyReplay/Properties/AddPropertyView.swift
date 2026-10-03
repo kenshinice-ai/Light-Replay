@@ -61,7 +61,7 @@ struct AddPropertyView: View {
                         }
                     }
                     if let picked {
-                        Label(picked.locality.map { "Pin placed in \($0)" } ?? "Pin placed", systemImage: "mappin.and.ellipse")
+                        Label(picked.locality.map { String(localized: "Pin placed in \($0)") } ?? String(localized: "Pin placed"), systemImage: "mappin.and.ellipse")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
@@ -88,7 +88,7 @@ struct AddPropertyView: View {
                     Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(pinFailed ? "Save without pin" : "Save") { Task { await save() } }
+                    Button(pinFailed ? String(localized: "Save without pin") : String(localized: "Save")) { Task { await save() } }
                         .disabled(completer.query.trimmingCharacters(in: .whitespaces).isEmpty || isSaving || !StoreHealth.shared.isPersistent)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -188,9 +188,9 @@ final class AddressCompleter: NSObject, ObservableObject, @preconcurrency MKLoca
     var lookupNote: String? {
         switch lookup {
         case .idle, .found: nil
-        case .searching: "Looking for matches…"
-        case .noMatches: "No Australian matches yet. Keep typing, or save the address as you typed it."
-        case .failed: "Couldn't reach Apple Maps. You can still save the address as you typed it."
+        case .searching: String(localized: "Looking for matches…")
+        case .noMatches: String(localized: "No Australian matches yet. Keep typing, or save the address as you typed it.")
+        case .failed: String(localized: "Couldn't reach Apple Maps. You can still save the address as you typed it.")
         }
     }
 

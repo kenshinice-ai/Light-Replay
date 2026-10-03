@@ -7,6 +7,7 @@ import RealityKit
 import SunEngine
 import SwiftData
 import SwiftUI
+import UIKit
 import simd
 
 /// One day's sun path in the true-north frame, ready to be placed over the camera once Δ is known.
@@ -64,7 +65,7 @@ struct LightScanResult: Equatable, Identifiable {
     var canRetrySave = false
 
     /// What the saved observation says about itself.
-    var note: String { "Light scan · camera covered \(coveragePct)% of the \(questionName) path · sunlight not calculated" }
+    var note: String { String(localized: "Light scan · camera covered \(coveragePct)% of the \(questionName) path · sunlight not calculated") }
 }
 
 /// The Light scan (docs/04 OneTake): camera, the question's sun path over it, one instruction at a time, and a record
@@ -100,12 +101,16 @@ final class LightScanModel {
     /// Lens offset from the anchor in units of the tolerance: x to the right, y towards the top of the screen.
     private(set) var driftDot = CGPoint.zero
     private(set) var driftExceeded = false
-    private(set) var directionText = "Finding north…"
+    private(set) var directionText = String(localized: "Finding north…")
     let overlay = SunPathOverlayState()
 
     /// Created in `appear()`, not in `init`: SwiftUI may build this model more than once while the view is being
     /// declared, and an ARSession plus a location manager per throwaway copy would be waste.
     private(set) var recorder: CaptureRecorder?
+    /// What the screen shows, forwarded to the recorder so the compass knows which edge of the device is up.
+    @ObservationIgnored var interfaceOrientation: UIInterfaceOrientation = .portrait {
+        didSet { recorder?.interfaceOrientation = interfaceOrientation }
+    }
     @ObservationIgnored weak var arView: ARView?
     @ObservationIgnored var viewSize: CGSize = .zero
     @ObservationIgnored private var status = ScanStatus()
@@ -145,7 +150,7 @@ final class LightScanModel {
             phase = .ready
             #else
             isSimulated = false
-            phase = .unsupported("Light scan needs an iPhone or iPad with ARKit world tracking.")
+            phase = .unsupported(String(localized: "Light scan needs an iPhone or iPad with ARKit world tracking."))
             #endif
         }
     }
@@ -159,6 +164,7 @@ final class LightScanModel {
         if recorder == nil, !isSimulated, ARWorldTrackingConfiguration.isSupported { recorder = CaptureRecorder() }
         if let recorder {
             recorder.viewpointToleranceM = toleranceM
+            recorder.interfaceOrientation = interfaceOrientation
             recorder.frameObserver = { [weak self] frame in self?.handle(frame) }
             recorder.startPreview()
         }
@@ -245,10 +251,10 @@ final class LightScanModel {
             synthetic?.reset()
         }
         #endif
-        var result = LightScanResult(coveragePct: Int((coverage * 100).rounded()), questionName: question.title.lowercased(),
+        var result = LightScanResult(coveragePct: Int((coverage * 100).rounded()), questionName: question.localizedName,
                                      direction: directionText, place: place)
         guard let log else {
-            result.failure = "Nothing was recorded. Try the scan again."
+            result.failure = String(localized: "Nothing was recorded. Try the scan again.")
             phase = .saved(result)
             return
         }
@@ -278,10 +284,10 @@ final class LightScanModel {
             unsavedLog = nil
             pendingCapture = outcome.pending
             if let error = outcome.attachError {
-                result.pendingNote = "Couldn't add it to the property yet (\(error)). It's kept on this device and is added the next time the app opens."
+                result.pendingNote = String(localized: "Couldn't add it to the property yet (\(error)). It's kept on this device and is added the next time the app opens.")
             }
         } catch {
-            result.failure = "Couldn't save the scan: \(error.localizedDescription)"
+            result.failure = String(localized: "Couldn't save the scan: \(error.localizedDescription)")
             result.canRetrySave = true
         }
         phase = .saved(result)
@@ -298,7 +304,7 @@ final class LightScanModel {
             pendingCapture = nil
             result.pendingNote = nil
         } catch {
-            result.pendingNote = "Still couldn't add it (\(error.localizedDescription)). It stays on this device and is added next launch."
+            result.pendingNote = String(localized: "Still couldn't add it (\(error.localizedDescription)). It stays on this device and is added next launch.")
         }
         phase = .saved(result)
     }
@@ -469,7 +475,7 @@ final class LightScanModel {
         var s = status
         s.toleranceM = toleranceM
         s.targetCoverage = Self.targetCoverage
-        s.questionName = question.title.lowercased()
+        s.questionName = question.localizedName
         s.directionKnown = currentYaw != nil
         s.locationKnown = coordinate != nil
         s.coverage = 0
@@ -492,7 +498,7 @@ final class LightScanModel {
         if fixedYaw != nil {
             text = "Simulated north"
         } else if let estimate = liveYaw.estimate {
-            text = "Compass ±\(Int(estimate.sigmaDeg.rounded()))°"
+            text = String(localized: "Compass ±\(Int(estimate.sigmaDeg.rounded()))°")
         } else {
             text = "Finding north…"
         }

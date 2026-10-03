@@ -84,16 +84,35 @@
 | U13 其余 | 记录页按房间 / 日期筛选、Question 独立模型 |
 | U24 其余 | String Catalog 与中文界面（要 Lee 先定是否做）；证据等级的消费者措辞（ADR-0013 的六个标签是已接受的决定，要改先改 ADR） |
 | U17 / U18 其余 | 真实相机画面下的对比度（白墙、逆光窗）、用 Accessibility Inspector 量真实命中区：要真机 |
-| Compare 的三个维度没有资料来源 | School、Commute、Price comfort 目前没有对应的记录类别，格子写 "Not in the app yet"。要不要给它们加记录入口是产品决定 |
 | 输入地址后直接保存 | Maps 把这段文字匹配到了哪里，保存前没有给用户看（保存后在行里的区名和详情页的小地图上才看得到）。建议下一轮：查到后先显示匹配到的地址与区名，由用户确认再保存 |
+
+## 2e. Lee 的决定（10-03）与落地
+
+| 决定 | 落地 |
+|---|---|
+| iPhone 开放横屏，尤其拍摄 | 见 §3 第一条 |
+| 界面出双语 | String Catalog，英文与简体中文，见 §2f |
+| Compare 的 School / Commute / Price comfort 要有记录入口 | 新的 `note` 类记录：房产页 "Add a note"，Compare 空格点进去直接写第一条；三个新类别 school / commute / priceComfort；笔记挂在房产上不算一次看房，Observed · noted；"Not in the app yet" 状态删除 |
+| 佐证的 σ 上限由 Claude 定 | ADR-0018：不看单组 σ，看一对合起来能否分辨 15° 的错 |
+| 项目加入 pwe-tools 组记忆 | 已接入（`.claude/settings.local.json`，下个会话起生效） |
+
+## 2f. 双语界面（10-03）
+
+- 机制：App 用 String Catalog（`ios/PropertyReplay/Localizable.xcstrings`），编译器抽取每个 `Text` / `Button` / `String(localized:)` 字面量；`xcodebuild` 不会像 Xcode IDE 那样回写目录，所以 `scripts/strings-sync.sh` 用 `xcstringstool sync` 把 `.stringsdata` 并进去，再列出没有中文的键。343 个键，312 个有中文，31 个开发者页（Capture validator、Device capabilities）标为不译。Info.plist 的权限说明在 `InfoPlist.xcstrings`。
+- 包：`PropertyModel`（状态、类别、情绪、证据等级、Compare 格子文字）与 `CaptureCore`（扫描指引）的字符串改为 `String(localized:bundle:.module)`，目录手写在包里；SunEngine 保持英文原始标题，App 侧 `LightQuestion+Text.swift` 给出中文。
+- 原来不会被本地化的写法都改了：三元表达式里的字面量（`Text(cond ? "A" : "B")` 走的是 `String` 重载）、`String` 变量、数组、`StoreHealth` 的提示、`AdaptiveRow` 的标题、`deleteWithConfirmation` 的参数类型（改为 `LocalizedStringKey`）。
+- 存进记录的生成文本（光线扫描的状态行）按保存时的语言写入；买家自己的话本来就是什么语言写什么语言。
+- 验证：UI `ChineseInterfaceUITests.testMainScreensSpeakChinese`（中文启动：五个 tab、状态分组、房产页两个主按钮与"写笔记"、Inspect 三个动作、Light 指引与问题名、You 的触感与同步行都是中文）；英文套件不受影响。中文措辞请 Lee 过目（`等 Lee`）。
+- 截图（iPhone，模拟器样例数据，全部虚构）：[首页 / 房产 / 房产页 / 看房 / 光线 / 我](assets/2026-10-03-zh/iphone-zh-screens.png)。看房页里的 "Add test photo (simulator)" 之类是模拟器专用的调试按钮，真机上没有，没有翻译。
+- 没做：繁体中文；系统弹窗（定位 / 相机权限）文字跟随系统语言，不归 App；地址补全结果按 Apple 地图返回的语言显示。
 
 ## 3. 与建议不同的地方，和要 Lee 决定的
 
 - **相机上的悬浮文字在 accessibility2 封顶**（U01 / U02）。第一次实现让 Light 的顶栏、图例、指引完全跟随最大字号，结果它们加起来超过屏幕高度，图例被截成 "Camera has lo…"，方向芯片被压住，取景器基本被挡住。压在实时画面上的文字改为在 accessibility2 封顶（系统相机的取景器文字也不随辅助字号放大）；编辑面板、结果面板、详情页、房产页全部完全跟随。人工看过最大字号截图：问题、图例、指引、Start、覆盖率都完整。
 - **底栏文字不随最大字号放大**（U01）。Capture / Note / Light 三个动作是工具栏性质，标题在 xxxLarge 封顶，并提供 Large Content Viewer（长按放大显示），与系统 tab bar 一致。正文、编辑面板、结果面板全部随字号放大。"按住说话"自身是按住手势，和长按放大冲突，所以它的状态写在上方会放大的状态气泡里。
 - **绿色达标保留**（U06）。圆环达标仍变绿，但配了明确的 "covered" 文案、图例和结果面板里的"日照尚未计算"。如果实测仍被读成"采光好"，再把达标色改成中性色。
-- **要 Lee 决定：iPhone 是否开放横屏阅读**（评审 5.3）。现在 iPhone 全程竖屏，iPad 四向。建议 V1 保持：看房是单手竖持，回家复看在 iPad；开放横屏要逐屏控制方向，并重验相机与 AR 叠加。
-- **要 Lee 决定：界面是否出中文**（U24）。现在中文只在语音转写。String Catalog 可以接，但要先定是否做中文界面。
+- **iPhone 横屏（Lee 已定，2026-10-03）**：开放，尤其拍摄时有人横持。iPhone 现在竖屏 + 两个横屏（不含倒置），iPad 四向。相机预览与照片方向由 `RotationCoordinator` 处理（U03）；罗盘的参考边随界面方向更新（Inspect 与 Light），每条读数记下设备方向；UI 测试 `testInspectAndLightInLandscape` 看横屏下 Inspect、编辑面板、Light 的控件都在窗口内且可点。三个动作仍在屏幕底边，没有像系统相机那样挪到侧边：先验证方向链路，布局按真机手感再定。
+- **中文界面（Lee 已定，2026-10-03）**：做了，见 §2f。
 
 ## 4. 没有验收的
 

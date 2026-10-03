@@ -1,4 +1,5 @@
 import Foundation
+import NorthResolver
 import SceneRecord
 import XCTest
 @testable import CaptureCore
@@ -217,7 +218,7 @@ final class SceneRecordBuilderTests: XCTestCase {
         let reparsed = try SceneRecordDocument(data: try document.encoded())   // the validator recomputes the light
         XCTAssertEqual(object(object(reparsed.fields["quality"])["gates"])["north"], .string("blocked"), "one compass group, sigma 12")
         XCTAssertEqual(object(reparsed.fields["north"])["resolved"], .null, "a direction that needs confirming is not written as resolved")
-        XCTAssertEqual(object(object(reparsed.fields["app"])["algorithms"])["north"], .string("northresolver-0.1"))
+        XCTAssertEqual(object(object(reparsed.fields["app"])["algorithms"])["north"], .string(NorthResolver.version))
         XCTAssertEqual(QualityEvaluator.evaluate(reparsed.fields).north.needsConfirmation, true)
     }
 

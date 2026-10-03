@@ -58,6 +58,7 @@ struct LightScanView: View {
         }
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 1), value: model.phase)
         .background(Color.black)
+        .background(InterfaceOrientationReader { model.interfaceOrientation = $0 })   // the compass follows the screen
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
         .task {
@@ -90,7 +91,7 @@ struct LightScanView: View {
                 .presentationBackground(.thickMaterial)   // long text reads on a steady surface, not on the camera (review U17)
                 .interactiveDismissDisabled()
         }
-        .alert("The camera covered only \(Int((model.coverage * 100).rounded()))% of the \(model.question.title.lowercased()) path",
+        .alert("The camera covered only \(Int((model.coverage * 100).rounded()))% of the \(model.question.localizedName) path",
                isPresented: $confirmingLowCoverage) {
             Button("Save anyway") { model.save(in: context) }
             Button("Keep scanning", role: .cancel) {}
@@ -156,11 +157,11 @@ struct LightScanView: View {
     private var questionMenu: some View {
         Menu {
             Picker("Question", selection: Bindable(model).question) {
-                ForEach(LightQuestion.allCases) { Text($0.title).tag($0) }
+                ForEach(LightQuestion.allCases) { Text($0.localizedTitle).tag($0) }
             }
         } label: {
             HStack(spacing: 5) {
-                Text(model.question.title).font(.subheadline.weight(.semibold))
+                Text(model.question.localizedTitle).font(.subheadline.weight(.semibold))
                     .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.down").font(.caption2.weight(.bold))
             }
@@ -171,7 +172,7 @@ struct LightScanView: View {
         }
         .disabled(model.phase == .saving)
         .accessibilityLabel("Question")
-        .accessibilityValue(model.question.title)
+        .accessibilityValue(model.question.localizedTitle)
     }
 
     private var directionChip: some View {
@@ -396,9 +397,9 @@ struct LightResultSheet: View {
         }
         .font(.title2.weight(.bold))
         VStack(spacing: 10) {
-            AdaptiveRow(title: "Camera covered", value: "\(result.coveragePct)% of the \(result.questionName) path")
-            AdaptiveRow(title: "Direction", value: "\(result.direction), approximate")
-            AdaptiveRow(title: "Place", value: result.place)
+            AdaptiveRow(title: String(localized: "Camera covered"), value: String(localized: "\(result.coveragePct)% of the \(result.questionName) path"))
+            AdaptiveRow(title: String(localized: "Direction"), value: String(localized: "\(result.direction), approximate"))
+            AdaptiveRow(title: String(localized: "Place"), value: result.place)
         }
         .font(.callout)
         VStack(alignment: .leading, spacing: 6) {

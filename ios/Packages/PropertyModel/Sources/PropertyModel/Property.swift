@@ -11,10 +11,10 @@ public enum PropertyStatus: String, CaseIterable, Codable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .toInspect: "To inspect"
-        case .inspected: "Inspected"
-        case .shortlisted: "Shortlisted"
-        case .dropped: "Dropped"
+        case .toInspect: String(localized: "To inspect", bundle: .module)
+        case .inspected: String(localized: "Inspected", bundle: .module)
+        case .shortlisted: String(localized: "Shortlisted", bundle: .module)
+        case .dropped: String(localized: "Dropped", bundle: .module)
         }
     }
 }
@@ -44,6 +44,10 @@ public final class Property {
     public var notes: String?
     @Relationship(deleteRule: .cascade, inverse: \Inspection.property)
     public var inspections: [Inspection]? = []
+    /// Notes written away from an inspection (from the property page or a Compare cell). Everything recorded on site
+    /// hangs off an `Inspection` instead; a note from the desk is not a visit.
+    @Relationship(deleteRule: .cascade, inverse: \InspectionObservation.property)
+    public var standaloneNotes: [InspectionObservation]? = []
 
     public init(address: String, suburb: String? = nil, latitude: Double? = nil, longitude: Double? = nil,
                 source: PropertySource = .manual, status: PropertyStatus = .toInspect,
@@ -64,7 +68,8 @@ public final class Property {
     public var openInspection: Inspection? { (inspections ?? []).first { $0.isOpen && !$0.isDeleted } }
 
     public var allObservations: [InspectionObservation] {
-        (inspections ?? []).filter { !$0.isDeleted }.flatMap { $0.observations ?? [] }.filter { !$0.isDeleted }.sorted { $0.capturedAt > $1.capturedAt }
+        ((inspections ?? []).filter { !$0.isDeleted }.flatMap { $0.observations ?? [] } + (standaloneNotes ?? []))
+            .filter { !$0.isDeleted }.sorted { $0.capturedAt > $1.capturedAt }
     }
 
     public var source: PropertySource {

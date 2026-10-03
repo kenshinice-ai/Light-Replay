@@ -58,7 +58,7 @@ struct CompareView: View {
             if properties.isEmpty {
                 Text("Add properties first, in the Properties tab.").foregroundStyle(.secondary)
             } else {
-                Text(picked.count >= Self.limit ? "Three chosen. Remove one to add another." : "Choose up to three.")
+                Text(picked.count >= Self.limit ? String(localized: "Three chosen. Remove one to add another.") : String(localized: "Choose up to three."))
                     .font(.footnote).foregroundStyle(.secondary)
                 VStack(spacing: 0) {
                     ForEach(properties) { property in
@@ -152,13 +152,10 @@ struct CompareView: View {
         let content = CompareCellView(summary: summary, propertyName: named ? property.shortAddress : nil)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(property.shortAddress), \(dimension.displayName): \(summary.headline)\(summary.detail.map { ", \($0)" } ?? "")")
-        if summary.hasEvidence {
-            NavigationLink { CompareEvidenceView(property: property, dimension: dimension) } label: { content }
-                .buttonStyle(PressScaleStyle(scale: 0.98))
-                .accessibilityHint("Shows what you recorded")
-        } else {
-            content
-        }
+        // Every cell opens: the records behind it, or, when there are none, the place to write the first note.
+        NavigationLink { CompareEvidenceView(property: property, dimension: dimension) } label: { content }
+            .buttonStyle(PressScaleStyle(scale: 0.98))
+            .accessibilityHint(summary.hasEvidence ? "Shows what you recorded" : "Add a note about this")
     }
 }
 
@@ -197,7 +194,6 @@ struct CompareCellView: View {
         case .scannedNotCalculated: "sun.max"
         case .measured: "checkmark.seal"
         case .notRecorded: "circle.dashed"
-        case .noSource: "minus"
         }
     }
 
@@ -206,30 +202,38 @@ struct CompareCellView: View {
         case .noted: .accentColor
         case .scannedNotCalculated: SunPathOverlay.sun
         case .measured: .green
-        case .notRecorded, .noSource: .secondary
+        case .notRecorded: .secondary
         }
     }
 }
 
-/// What is behind one box: the photos, notes and scans themselves.
+/// What is behind one box: the photos, notes and scans themselves, and the way to add a note about it.
 struct CompareEvidenceView: View {
     let property: Property
     let dimension: PriorityDimension
+    @State private var addingNote = false
 
     var body: some View {
         let items = CompareSummary.observations(for: dimension, at: property)
         List {
             Section {
+                if items.isEmpty {
+                    Text("Nothing recorded for this yet.").foregroundStyle(.secondary)
+                }
                 ForEach(items) { item in
                     NavigationLink { ObservationDetailView(observation: item) } label: { ObservationRow(observation: item) }
                 }
+                Button { addingNote = true } label: { Label("Add a note", systemImage: "square.and.pencil") }
             } header: {
                 Text(property.shortAddress)
             } footer: {
-                if items.isEmpty { Text("Nothing recorded for this yet.") }
+                Text("A note here counts under \(dimension.displayName) for \(property.shortAddress).")
             }
         }
         .navigationTitle(dimension.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $addingNote) {
+            NoteEditor(property: property, category: CompareSummary.category(for: dimension))
+        }
     }
 }

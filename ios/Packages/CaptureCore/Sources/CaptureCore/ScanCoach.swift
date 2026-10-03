@@ -58,51 +58,51 @@ public enum ScanCoach {
 
     public static func prompt(for s: ScanStatus) -> ScanPrompt {
         guard s.isRecording else {
-            return ScanPrompt("Stand where you'd sit. Hold the phone at eye height, then tap Start.", symbol: "figure.stand")
+            return ScanPrompt(String(localized: "Stand where you'd sit. Hold the phone at eye height, then tap Start.", bundle: .module), symbol: "figure.stand")
         }
         switch s.trackingState {
         case "normal": break
         case "limited:excessive_motion":
-            return ScanPrompt("Slow down.", symbol: "tortoise", tone: .caution)
+            return ScanPrompt(String(localized: "Slow down.", bundle: .module), symbol: "tortoise", tone: .caution)
         case "limited:insufficient_features":
-            return ScanPrompt("Point at the room for a moment, not a blank wall.", symbol: "viewfinder", tone: .caution)
+            return ScanPrompt(String(localized: "Point at the room for a moment, not a blank wall.", bundle: .module), symbol: "viewfinder", tone: .caution)
         case "not_available":
-            return ScanPrompt("Starting the camera…", symbol: "camera", tone: .caution)
+            return ScanPrompt(String(localized: "Starting the camera…", bundle: .module), symbol: "camera", tone: .caution)
         default:
-            return ScanPrompt("Hold still for a moment.", symbol: "hand.raised", tone: .caution)
+            return ScanPrompt(String(localized: "Hold still for a moment.", bundle: .module), symbol: "hand.raised", tone: .caution)
         }
         guard s.anchorLocked else {
-            return ScanPrompt("Hold still for a moment.", symbol: "hand.raised", tone: .caution)
+            return ScanPrompt(String(localized: "Hold still for a moment.", bundle: .module), symbol: "hand.raised", tone: .caution)
         }
         if let drift = s.driftM, drift > s.toleranceM {
-            return ScanPrompt("Move back to where you started. Keep the dot in the circle.", symbol: "arrow.uturn.backward", tone: .caution)
+            return ScanPrompt(String(localized: "Move back to where you started. Keep the dot in the circle.", bundle: .module), symbol: "arrow.uturn.backward", tone: .caution)
         }
         if s.turnRateDegPerSec > fastTurnDegPerSec {
-            return ScanPrompt("Slower. Let the camera see the sky.", symbol: "tortoise", tone: .caution)
+            return ScanPrompt(String(localized: "Slower. Let the camera see the sky.", bundle: .module), symbol: "tortoise", tone: .caution)
         }
         guard s.locationKnown else {
-            return ScanPrompt("Finding where you are, to place the sun…", symbol: "location")
+            return ScanPrompt(String(localized: "Finding where you are, to place the sun…", bundle: .module), symbol: "location")
         }
         guard s.pathReady else {
-            return ScanPrompt("Working out the sun path…", symbol: "sun.max")
+            return ScanPrompt(String(localized: "Working out the sun path…", bundle: .module), symbol: "sun.max")
         }
         guard s.directionKnown else {
-            return ScanPrompt("Finding north. Keep the phone upright.", symbol: "location.north.line")
+            return ScanPrompt(String(localized: "Finding north. Keep the phone upright.", bundle: .module), symbol: "location.north.line")
         }
         if s.coverage >= s.targetCoverage {
             // "Covered" is about where the camera looked, not about what it saw there (review U06).
-            return ScanPrompt("Sun path covered. Tap Save.", symbol: "checkmark.circle.fill", tone: .done)
+            return ScanPrompt(String(localized: "Sun path covered. Tap Save.", bundle: .module), symbol: "checkmark.circle.fill", tone: .done)
         }
         guard let gap = s.gap, max(abs(gap.x), abs(gap.y)) > onScreenDeg else {
-            return ScanPrompt("Sweep slowly along the sun path.", symbol: "arrow.left.and.right")
+            return ScanPrompt(String(localized: "Sweep slowly along the sun path.", bundle: .module), symbol: "arrow.left.and.right")
         }
-        let reason = "The \(s.questionName) passes there."
+        let reason = String(localized: "The \(s.questionName) passes there.", bundle: .module)
         if abs(gap.x) >= abs(gap.y) {
-            return gap.x < 0 ? ScanPrompt("Turn left. \(reason)", symbol: "arrow.left")
-                             : ScanPrompt("Turn right. \(reason)", symbol: "arrow.right")
+            return gap.x < 0 ? ScanPrompt(String(localized: "Turn left. \(reason)", bundle: .module), symbol: "arrow.left")
+                             : ScanPrompt(String(localized: "Turn right. \(reason)", bundle: .module), symbol: "arrow.right")
         }
-        return gap.y > 0 ? ScanPrompt("Tilt up. \(reason)", symbol: "arrow.up")
-                         : ScanPrompt("Tilt down. \(reason)", symbol: "arrow.down")
+        return gap.y > 0 ? ScanPrompt(String(localized: "Tilt up. \(reason)", bundle: .module), symbol: "arrow.up")
+                         : ScanPrompt(String(localized: "Tilt down. \(reason)", bundle: .module), symbol: "arrow.down")
     }
 }
 

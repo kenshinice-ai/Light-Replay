@@ -50,7 +50,7 @@ struct ObservationDetailView: View {
                         editingWords = false
                         deleted = true
                         do { try PropertyStore.delete(observation, in: context) } catch {
-                            StoreHealth.shared.note("Deleting didn't finish saving (\(error.localizedDescription)); it completes with the next save.")
+                            StoreHealth.shared.note(String(localized: "Deleting didn't finish saving (\(error.localizedDescription)); it completes with the next save."))
                         }
                         dismiss()
                     }
@@ -77,10 +77,19 @@ struct ObservationDetailView: View {
 
     private var title: String {
         switch observation.kind {
-        case .photo: "Photo"
-        case .voice: "Note"
+        case .photo: String(localized: "Photo")
+        case .voice, .note: String(localized: "Note")
         case .tag: observation.sentiment.displayName
-        case .light: "Light scan"
+        case .light: String(localized: "Light scan")
+        }
+    }
+
+    private var wordsTitle: String {
+        switch observation.kind {
+        case .photo: String(localized: "Caption")
+        case .light: String(localized: "Status")
+        case .note: String(localized: "Your note")
+        case .voice, .tag: String(localized: "What you said")
         }
     }
 
@@ -101,8 +110,7 @@ struct ObservationDetailView: View {
     /// The buyer's words. Light scans show their status line read-only.
     private var wordsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(observation.kind == .photo ? "Caption" : (observation.kind == .light ? "Status" : "What you said"))
-                .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            Text(wordsTitle).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             if observation.kind == .light {
                 Text(observation.text ?? "").font(.body).textSelection(.enabled)
             } else {
@@ -111,7 +119,7 @@ struct ObservationDetailView: View {
                     .focused($editingWords)
                     .padding(12)
                     .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
-                    .accessibilityLabel(observation.kind == .photo ? "Caption" : "Your note")
+                    .accessibilityLabel(observation.kind == .photo ? String(localized: "Caption") : String(localized: "Your note"))
             }
             if let original = observation.originalText {
                 DisclosureGroup(isExpanded: $showingOriginal) {
@@ -143,7 +151,7 @@ struct ObservationDetailView: View {
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tags").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-            TagControls(rooms: InspectView.defaultRooms, room: observation.roomLabel, category: observation.category,
+            TagControls(rooms: observation.kind == .note ? [] : InspectView.defaultRooms, room: observation.roomLabel, category: observation.category,
                         sentiment: observation.sentiment,
                         setRoom: { observation.roomLabel = $0; tagsReviewed() },
                         setCategory: { observation.category = $0; tagsReviewed() },
@@ -168,13 +176,13 @@ struct ObservationDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Details").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             VStack(spacing: 10) {
-                AdaptiveRow(title: "Recorded", value: observation.capturedAt.formatted(date: .abbreviated, time: .shortened))
-                if let property = observation.inspection?.property {
-                    AdaptiveRow(title: "Property", value: property.shortAddress)
+                AdaptiveRow(title: String(localized: "Recorded"), value: observation.capturedAt.formatted(date: .abbreviated, time: .shortened))
+                if let property = observation.owner {
+                    AdaptiveRow(title: String(localized: "Property"), value: property.shortAddress)
                 }
-                AdaptiveRow(title: "How we know", value: evidenceText)
+                AdaptiveRow(title: String(localized: "How we know"), value: evidenceText)
                 if let heading = observation.headingDeg {
-                    AdaptiveRow(title: "Facing", value: Self.compassText(heading, accuracy: observation.headingAccuracyDeg))
+                    AdaptiveRow(title: String(localized: "Facing"), value: Self.compassText(heading, accuracy: observation.headingAccuracyDeg))
                 }
             }
             .font(.callout)
@@ -184,19 +192,21 @@ struct ObservationDetailView: View {
     /// Plain words for the evidence level and source (ADR-0013 levels; consumer wording per review U24).
     private var evidenceText: String {
         switch (observation.kind, observation.level) {
-        case (.photo, _): "You photographed this on site"
-        case (.voice, _): observation.originalText == nil ? "You said this on site" : "You said this on site, then corrected the words"
-        case (.tag, _): "You marked this on site"
-        case (.light, .observedMeasured): "Measured on site, passed the quality checks"
-        case (.light, _): "Recorded on site. Sunlight not calculated yet"
+        case (.photo, _): String(localized: "You photographed this on site")
+        case (.voice, _): observation.originalText == nil ? String(localized: "You said this on site") : String(localized: "You said this on site, then corrected the words")
+        case (.tag, _): String(localized: "You marked this on site")
+        case (.note, _): String(localized: "You wrote this down")
+        case (.light, .observedMeasured): String(localized: "Measured on site, passed the quality checks")
+        case (.light, _): String(localized: "Recorded on site. Sunlight not calculated yet")
         }
     }
 
     static func compassText(_ degrees: Double, accuracy: Double?) -> String {
-        let names = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"]
-        let name = names[Int((degrees + 22.5).truncatingRemainder(dividingBy: 360) / 45) % 8]
-        guard let accuracy, accuracy >= 0 else { return name.capitalized }
-        return "\(name.capitalized), compass within about \(Int(accuracy.rounded()))°"
+        let names = [String(localized: "north"), String(localized: "north-east"), String(localized: "east"), String(localized: "south-east"),
+                     String(localized: "south"), String(localized: "south-west"), String(localized: "west"), String(localized: "north-west")]
+        let name = names[Int((degrees + 22.5).truncatingRemainder(dividingBy: 360) / 45) % 8].localizedCapitalized
+        guard let accuracy, accuracy >= 0 else { return name }
+        return String(localized: "\(name), compass within about \(Int(accuracy.rounded()))°")
     }
 
     // MARK: - Edits
@@ -222,7 +232,7 @@ struct ObservationDetailView: View {
             try PropertyStore.commit(context)
             saveError = nil
         } catch {
-            saveError = "Couldn't save this change yet: \(error.localizedDescription)"
+            saveError = String(localized: "Couldn't save this change yet: \(error.localizedDescription)")
         }
     }
 }

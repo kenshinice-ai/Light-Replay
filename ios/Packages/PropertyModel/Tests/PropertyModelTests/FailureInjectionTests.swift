@@ -38,6 +38,21 @@ final class FailureInjectionTests: XCTestCase {
         return (property, photo)
     }
 
+    func testFailedNoteLeavesNothingAndRetrySavesOnce() throws {
+        let property = Property(address: "10 Test Lane, Nowhere VIC 3000")
+        context.insert(property)
+        try PropertyStore.commit(context)
+        let note = InspectionObservation(kind: .note, category: .commute, sentiment: .concern, source: .userText, text: "Forty minutes each way")
+        failingSaves()
+        XCTAssertThrowsError(try PropertyStore.addNote(note, to: property, in: context))
+        XCTAssertTrue(property.allObservations.isEmpty, "a failed note leaves nothing on the home")
+        workingSaves()
+        let again = InspectionObservation(kind: .note, category: .commute, sentiment: .concern, source: .userText, text: "Forty minutes each way")
+        try PropertyStore.addNote(again, to: property, in: context)
+        XCTAssertEqual(try count(InspectionObservation.self), 1)
+        XCTAssertEqual(property.allObservations.first?.owner?.address, property.address)
+    }
+
     func testFailedRecordLeavesNothingAndRetrySavesOnce() throws {
         let property = Property(address: "11 Test Lane, Nowhere VIC 3000")
         context.insert(property)

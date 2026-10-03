@@ -102,7 +102,7 @@
 | 相机 | RealityKit `ARView` 显示采集器自己的 ARSession，记录与画面是同一个会话 | `ARCameraView`，关闭运动模糊、HDR、景深等渲染效果 |
 | 两段式 | 打开即预览（追踪、罗盘、定位预热）；按 **Start** 才开始记录，锚点在下一帧正常追踪时锁定 | `CaptureRecorder.startPreview()` / `start()` |
 | 太阳路径 | 冬至（主）、春分、夏至三条弧，10 分钟一点，每 3 小时标时刻；当前太阳位置标 "Now"。看过的段变太阳黄，没看过的段为白色虚线 | `SunPathOverlay`（Canvas），弧线由 SunEngine 算，`az_ar = az_true − Δ` |
-| 方向 Δ | 罗盘实时估计：`Δ = trueHeading − az_ar(相机)`，圆周均值，σ = max(报告精度, 读数分散)；相机俯仰超过 50° 的读数不用。右上角显示 "Compass ±σ°"，结果卡写 "approximate" | `LiveYaw`；NorthResolver 融合仍按 docs/05 离线做 |
+| 方向 Δ | 罗盘实时估计：`Δ = trueHeading − az_ar(相机)`，圆周均值，σ = max(报告精度, 读数分散)；相机俯仰超过 50° 的读数不用。罗盘的参考边随界面方向更新（`headingOrientation`；iPhone 可横屏，2026-10-03），每条读数记下当时的设备方向。右上角显示 "Compass ±σ°"，结果卡写 "approximate" | `LiveYaw`；NorthResolver 融合仍按 docs/05 离线做 |
 | 问题 | Winter sun（默认，冬至 ± 6 周，按半球取 6 月或 12 月）/ All-year sun；可在扫描中切换，已看过的部分保留；切换后覆盖率与达标状态按新问题重算，重算期间不显示达标 | `LightQuestion` |
 | 覆盖 | 相机视锥看过的天空格（去掉每边 8% 边缘），只在正常追踪、视点漂移 ≤ 容差、转速 ≤ 60°/s 时计入；覆盖率 = 走廊内看过的格 / 走廊格。目标 90%（候选，与第 6 节走廊灯一致） | `SkySweep`、`CorridorProgress` |
 | 指引 | 每次一句，优先级：追踪 → 锚定 → 回到圆圈 → 慢一点 → 定位 → 太阳路径就绪 → 找北 → 已覆盖 → 朝缺口转（左右 / 上下，指向最近的未看走廊格）。达标句是 "Sun path covered. Tap Save."：说的是镜头覆盖，不是天空或日照 | `ScanCoach` |

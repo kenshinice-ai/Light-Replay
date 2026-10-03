@@ -1,8 +1,8 @@
 import Foundation
 
 /// What the buyer's own records say about one priority at one property (UI/UX review U14). Counts and states only:
-/// never a score, never a ranking (ADR-0005). Every "nothing" is named for what it is, because "not recorded",
-/// "scanned but not calculated" and "the app cannot record this yet" are different things to do something about.
+/// never a score, never a ranking (ADR-0005). Every "nothing" is named for what it is, because "not recorded" and
+/// "scanned but not calculated" are different things to do something about.
 public struct CompareCell: Equatable, Sendable {
     public enum State: String, Sendable {
         /// The buyer recorded something about it on site.
@@ -13,8 +13,6 @@ public struct CompareCell: Equatable, Sendable {
         case measured
         /// It could have been recorded here and was not.
         case notRecorded
-        /// Nothing in the app records this priority yet.
-        case noSource
     }
 
     public let state: State
@@ -27,11 +25,10 @@ public struct CompareCell: Equatable, Sendable {
     /// The cell's one line.
     public var headline: String {
         switch state {
-        case .noSource: "Not in the app yet"
-        case .notRecorded: "Not recorded"
-        case .measured: "Measured"
-        case .scannedNotCalculated: "Scanned, sunlight not calculated"
-        case .noted: tally ?? "Noted"
+        case .notRecorded: String(localized: "Not recorded", bundle: .module)
+        case .measured: String(localized: "Measured", bundle: .module)
+        case .scannedNotCalculated: String(localized: "Scanned, sunlight not calculated", bundle: .module)
+        case .noted: tally ?? String(localized: "Noted", bundle: .module)
         }
     }
 
@@ -46,10 +43,10 @@ public struct CompareCell: Equatable, Sendable {
     /// "2 likes · 1 concern · 1 to confirm · 1 note", leaving out the zeros.
     public var tally: String? {
         var parts: [String] = []
-        if likes > 0 { parts.append(likes == 1 ? "1 like" : "\(likes) likes") }
-        if concerns > 0 { parts.append(concerns == 1 ? "1 concern" : "\(concerns) concerns") }
-        if questions > 0 { parts.append("\(questions) to confirm") }
-        if notes > 0 { parts.append(notes == 1 ? "1 note" : "\(notes) notes") }
+        if likes > 0 { parts.append(likes == 1 ? String(localized: "1 like", bundle: .module) : String(localized: "\(likes) likes", bundle: .module)) }
+        if concerns > 0 { parts.append(concerns == 1 ? String(localized: "1 concern", bundle: .module) : String(localized: "\(concerns) concerns", bundle: .module)) }
+        if questions > 0 { parts.append(String(localized: "\(questions) to confirm", bundle: .module)) }
+        if notes > 0 { parts.append(notes == 1 ? String(localized: "1 note", bundle: .module) : String(localized: "\(notes) notes", bundle: .module)) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
@@ -57,8 +54,9 @@ public struct CompareCell: Equatable, Sendable {
 }
 
 public enum CompareSummary {
-    /// The observation category that speaks to a priority; nil when no category does yet.
-    public static func category(for dimension: PriorityDimension) -> ObservationCategory? {
+    /// The observation category that speaks to a priority. School, commute and price comfort are written down rather
+    /// than seen, so their categories are mostly used by notes from the desk.
+    public static func category(for dimension: PriorityDimension) -> ObservationCategory {
         switch dimension {
         case .naturalLight: .naturalLight
         case .privacy: .privacy
@@ -66,13 +64,15 @@ public enum CompareSummary {
         case .space: .space
         case .backyard: .outdoor
         case .renovationPotential: .condition
-        case .school, .commute, .priceComfort: nil
+        case .school: .school
+        case .commute: .commute
+        case .priceComfort: .priceComfort
         }
     }
 
     /// The buyer's records behind a cell, newest first: tagged photos and notes, plus light scans for natural light.
     public static func observations(for dimension: PriorityDimension, at property: Property) -> [InspectionObservation] {
-        guard let category = category(for: dimension) else { return [] }
+        let category = category(for: dimension)
         return property.allObservations.filter { observation in
             if observation.kind == .light { return dimension == .naturalLight }
             return observation.category == category
@@ -80,9 +80,6 @@ public enum CompareSummary {
     }
 
     public static func cell(for dimension: PriorityDimension, at property: Property) -> CompareCell {
-        guard category(for: dimension) != nil else {
-            return CompareCell(state: .noSource, likes: 0, concerns: 0, questions: 0, notes: 0, scans: 0)
-        }
         let all = observations(for: dimension, at: property)
         let scans = all.filter { $0.kind == .light }
         let tagged = all.filter { $0.kind != .light }

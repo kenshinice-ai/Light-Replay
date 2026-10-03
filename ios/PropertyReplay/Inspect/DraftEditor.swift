@@ -38,7 +38,7 @@ struct DraftEditor: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(draft.kind == .photo ? "Photo" : "Note")
+            .navigationTitle(draft.kind == .photo ? String(localized: "Photo") : String(localized: "Note"))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) { actions }
         }

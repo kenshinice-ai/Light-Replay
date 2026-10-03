@@ -118,6 +118,21 @@ public enum PropertyStore {
             throw error
         }
     }
+
+    /// Adds a note written away from an inspection and saves; on failure nothing of this change is kept. The
+    /// property's status does not move: a note from the desk is not a visit.
+    @MainActor
+    public static func addNote(_ note: InspectionObservation, to property: Property, in context: ModelContext) throws {
+        context.insert(note)
+        note.property = property
+        do {
+            try save(context)
+        } catch {
+            note.property = nil
+            context.delete(note)
+            throw error
+        }
+    }
 }
 
 /// Fictional properties for simulator and prototype sessions. Addresses do not exist; coordinates are generic

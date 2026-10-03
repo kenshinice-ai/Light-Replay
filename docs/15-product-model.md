@@ -21,12 +21,12 @@ Property
 
 | 模型 | 字段 | 说明 |
 |---|---|---|
-| `Property` | `uuid`、`address`、`suburb?`、`latitude?`、`longitude?`、`pinAddress?`、`source`（manual / shared / sample）、`status`（toInspect / inspected / shortlisted / dropped）、`createdAt`、`inspectionAt?`、`notes?` | 坐标来自 Apple 地理编码，只用于 pin；`pinAddress` 不等于当前地址时 pin 过期、不显示也不参与距离；`sample` 只在 DEBUG 出现且标注虚构 |
+| `Property` | `uuid`、`address`、`suburb?`、`latitude?`、`longitude?`、`pinAddress?`、`source`（manual / shared / sample）、`status`（toInspect / inspected / shortlisted / dropped）、`createdAt`、`inspectionAt?`、`notes?`、`standaloneNotes[]`（级联删除；脱离 inspection 写下的笔记） | 坐标来自 Apple 地理编码，只用于 pin；`pinAddress` 不等于当前地址时 pin 过期、不显示也不参与距离；`sample` 只在 DEBUG 出现且标注虚构 |
 | `UserPreferences` | `displayName`、`priorityRaws[]`（≤ 5）、`targetHeightM`、`hapticsEnabled`、`viewpointToleranceM`、`noteLanguage?`、`createdAt` | 每个 iCloud 账户一行；`PropertyStore.preferences(in:)` 首次创建，多行时最早的胜出 |
-| `PropertyStore` | `container(inMemory:iCloudSync:)`、`commit`、`record`、`preferences(in:)`、`delete`、`deleteEverything(in:)` | 每次写入要么完整保存，要么回滚并抛错；删除是物理删除 |
+| `PropertyStore` | `container(inMemory:iCloudSync:)`、`commit`、`record`、`addNote`、`preferences(in:)`、`delete`、`deleteEverything(in:)` | 每次写入要么完整保存，要么回滚并抛错；删除是物理删除 |
 
 | `Inspection` | `uuid`、`startedAt`、`endedAt?`、`property`、`observations[]`（级联删除） | 一套房同时只有一个未结束的 inspection；`PropertyStore.openInspection(for:in:)` 找或建 |
-| `InspectionObservation` | 第 2 节的字段；`photoData`、`sceneRecordData`（外部存储）；Swift 类型名避开 `Observation` 模块 | `level` 由规则赋予；`modelSuggested` 标记仍有模型建议的标签未被买家确认；`mediaPath` 只剩旧版迁移用 |
+| `InspectionObservation` | 第 2 节的字段；`photoData`、`sceneRecordData`（外部存储）；`property?` 只在脱离 inspection 的笔记上设置，`owner` 统一取回房产；Swift 类型名避开 `Observation` 模块 | `level` 由规则赋予；`modelSuggested` 标记仍有模型建议的标签未被买家确认；`mediaPath` 只剩旧版迁移用 |
 | `PendingCaptures` | `write`、`commit`、`recover`、`takenSceneIDs` | 测量先落 Application Support 再存库；按 `scene_id` 幂等（ADR-0017） |
 | `LegacyFiles` | `migrate`、`sweep`、`removeAll` | 把 ADR-0017 之前的 Documents 文件搬进行；只忽略"不存在"，其他错误上抛 |
 
@@ -38,14 +38,14 @@ Room 暂以 `roomLabel` 字符串表示（L0）；Question 暂以 `sentiment == 
 |---|---|---|
 | `id` | UUID | 稳定 ID（App Entity 化预留） |
 | `inspectionId`, `roomId?` | | |
-| `kind` | enum | `photo` / `voice` / `light` / `tag` |
-| `category` | enum | naturalLight / privacy / noise / space / condition / layout / outdoor / other |
+| `kind` | enum | `photo` / `voice` / `light` / `tag` / `note`（打字写下的，通常不在现场） |
+| `category` | enum | naturalLight / privacy / noise / space / condition / layout / outdoor / school / commute / priceComfort / other（后三类是写下来而不是看到的，给 Compare 的三个维度来源，2026-10-03） |
 | `sentiment` | enum | like / concern / ask / neutral |
 | `text` | String? | 语音转写（可编辑）或用户输入 |
 | `media[]` | refs | 照片路径；不存音频 |
 | `capturedAt`, `headingCandidate?`, `devicePose?`, `locationAccuracy?` | | Capture 的自动元数据 |
 | `level` | enum | verified / observedMeasured / observedNoted / strongIndication / indicative / unknown（ADR-0013） |
-| `source` | enum | listing / user_photo / user_voice / sensor / open_data / model |
+| `source` | enum | listing / user_photo / user_voice / user_text / sensor / open_data / model |
 | `followUp` | Bool | 为真则生成 Question |
 | `sceneId` | String? | `kind == light` 时指向 SceneRecord 的 `scene_id` |
 | `modelExtraction?` | struct | FM 结构化的原始输出与版本，供回归 |

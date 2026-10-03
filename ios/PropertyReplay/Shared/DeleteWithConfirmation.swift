@@ -6,8 +6,8 @@ import SwiftUI
 /// confirmation-dialog-anchors-to-its-view). The swipe button has no destructive role: that role animates the row
 /// away before the answer.
 struct DeleteWithConfirmation: ViewModifier {
-    let question: String
-    let actionLabel: String
+    let question: LocalizedStringKey
+    let actionLabel: LocalizedStringKey
     let action: () -> Void
     @State private var asking = false
 
@@ -27,7 +27,7 @@ struct DeleteWithConfirmation: ViewModifier {
 }
 
 extension View {
-    func deleteWithConfirmation(_ question: String, actionLabel: String = "Delete", action: @escaping () -> Void) -> some View {
+    func deleteWithConfirmation(_ question: LocalizedStringKey, actionLabel: LocalizedStringKey = "Delete", action: @escaping () -> Void) -> some View {
         modifier(DeleteWithConfirmation(question: question, actionLabel: actionLabel, action: action))
     }
 }

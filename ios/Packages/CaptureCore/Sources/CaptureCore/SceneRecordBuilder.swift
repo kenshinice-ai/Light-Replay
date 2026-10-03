@@ -8,7 +8,7 @@ public enum SceneRecordBuilder {
     public static let schemaVersion = "0.1.0"
     /// The heading is taken as the true azimuth of the back camera's forward axis (portrait, CLHeading referenced
     /// to the top of the device). This mapping is an assumption until the sundial check in docs/05 §2 (truth group).
-    public static let headingAxisAssumption = "CLHeading (portrait) taken as the back camera's true azimuth; verify against the sundial (docs/05)"
+    public static let headingAxisAssumption = "CLHeading, referenced to the interface orientation, taken as the back camera's true azimuth; verify against the sundial (docs/05)"
     /// A phone compass is never trusted below this σ, whatever it reports (docs/05 §2, candidate).
     public static let magneticPriorSigmaDeg = 8.0
     /// A heading is tied to a pose only when one with normal tracking lies this close in time.
@@ -175,6 +175,7 @@ public enum SceneRecordBuilder {
                 "true_heading": .number(sample.heading.trueHeading),
                 "magnetic_heading": .number(sample.heading.magneticHeading),
                 "heading_accuracy": .number(sample.heading.headingAccuracy),
+                "device_orientation": .string(sample.heading.deviceOrientation),
                 "frame_id": .string(sample.frame.frameID),
                 "camera_az_ar_deg": .number(sample.frame.cameraAzimuthAR),
                 "camera_pitch_deg": .number(sample.frame.cameraPitchDeg),

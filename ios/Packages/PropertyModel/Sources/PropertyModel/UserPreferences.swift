@@ -17,15 +17,15 @@ public enum PriorityDimension: String, CaseIterable, Codable, Sendable, Identifi
 
     public var displayName: String {
         switch self {
-        case .naturalLight: "Natural light"
-        case .privacy: "Privacy"
-        case .quiet: "Quiet"
-        case .space: "Space"
-        case .backyard: "Backyard"
-        case .school: "School"
-        case .commute: "Commute"
-        case .renovationPotential: "Renovation potential"
-        case .priceComfort: "Price comfort"
+        case .naturalLight: String(localized: "Natural light", bundle: .module)
+        case .privacy: String(localized: "Privacy", bundle: .module)
+        case .quiet: String(localized: "Quiet", bundle: .module)
+        case .space: String(localized: "Space", bundle: .module)
+        case .backyard: String(localized: "Backyard", bundle: .module)
+        case .school: String(localized: "School", bundle: .module)
+        case .commute: String(localized: "Commute", bundle: .module)
+        case .renovationPotential: String(localized: "Renovation potential", bundle: .module)
+        case .priceComfort: String(localized: "Price comfort", bundle: .module)
         }
     }
 

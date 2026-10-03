@@ -53,12 +53,12 @@ final class NoteRecorder: ObservableObject {
         func finish(_ newState: State) { if mine == generation { state = newState } }
 
         guard await AVAudioApplication.requestRecordPermission() else {
-            return finish(.unavailable("Microphone access is off. Enable it in Settings to dictate notes."))
+            return finish(.unavailable(String(localized: "Microphone access is off. Enable it in Settings to dictate notes.")))
         }
         guard current() else { return finish(.idle) }
         guard let locale = await NoteLanguages.resolve(preferredLanguage) else {
             let wanted = preferredLanguage ?? Locale.current.identifier
-            return finish(.unavailable("On-device transcription does not support \(wanted) on this phone. Pick another note language in You › Preferences."))
+            return finish(.unavailable(String(localized: "On-device transcription does not support \(wanted) on this phone. Pick another note language in You › Preferences.")))
         }
         guard current() else { return finish(.idle) }
         activeLocaleName = Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
@@ -68,11 +68,11 @@ final class NoteRecorder: ObservableObject {
                 try await request.downloadAndInstall()
             }
         } catch {
-            return finish(.unavailable("Speech model is not installed: \(error.localizedDescription)"))
+            return finish(.unavailable(String(localized: "Speech model is not installed: \(error.localizedDescription)")))
         }
         guard current() else { return finish(.idle) }
         guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
-            return finish(.unavailable("No compatible audio format for transcription."))
+            return finish(.unavailable(String(localized: "No compatible audio format for transcription.")))
         }
         guard current() else { return finish(.idle) }
 
@@ -88,7 +88,7 @@ final class NoteRecorder: ObservableObject {
             } catch {
                 await MainActor.run {
                     guard let self, self.transcriptOwner == mine, self.generation == mine else { return }
-                    self.state = .unavailable("Transcription stopped: \(error.localizedDescription)")
+                    self.state = .unavailable(String(localized: "Transcription stopped: \(error.localizedDescription)"))
                 }
             }
         }
@@ -111,7 +111,7 @@ final class NoteRecorder: ObservableObject {
             try await session.analyzer.start(inputSequence: stream)
         } catch {
             await release(session)
-            return finish(.unavailable("Could not start the microphone: \(error.localizedDescription)"))
+            return finish(.unavailable(String(localized: "Could not start the microphone: \(error.localizedDescription)")))
         }
         guard current() else {                       // released or superseded while preparing
             await release(session)

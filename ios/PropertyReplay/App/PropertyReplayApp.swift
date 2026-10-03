@@ -41,7 +41,7 @@ struct PropertyReplayApp: App {
                 health.mode = .iCloud
                 return container
             } catch {
-                health.note("iCloud sync unavailable, keeping data on this device: \(error)")
+                health.note(String(localized: "iCloud sync unavailable, keeping data on this device: \(error.localizedDescription)"))
             }
         }
         do {
@@ -49,7 +49,7 @@ struct PropertyReplayApp: App {
             health.mode = .deviceOnly
             return container
         } catch {
-            health.note("Persistent store unavailable, using memory: \(error)")
+            health.note(String(localized: "Persistent store unavailable, using memory: \(error.localizedDescription)"))
             health.mode = .memory
             return try! PropertyStore.container(inMemory: true)
         }
@@ -64,15 +64,15 @@ enum StartupTasks {
         do {
             let report = try LegacyFiles.migrate(in: context)
             if report.photos + report.scenes > 0 {
-                StoreHealth.shared.note("Moved \(report.photos) photos and \(report.scenes) measurements into the library.")
+                StoreHealth.shared.note(String(localized: "Moved \(report.photos) photos and \(report.scenes) measurements into the library."))
             }
             try LegacyFiles.sweep(in: context)
         } catch {
-            StoreHealth.shared.note("Couldn't move older files into the library yet: \(error.localizedDescription)")
+            StoreHealth.shared.note(String(localized: "Couldn't move older files into the library yet: \(error.localizedDescription)"))
         }
         let pending = PendingCaptures.recover(in: context)
-        if pending.recovered > 0 { StoreHealth.shared.note("Added \(pending.recovered) measurement(s) that weren't saved last time.") }
-        if pending.waiting > 0 { StoreHealth.shared.note("\(pending.waiting) measurement(s) are waiting for a property that no longer exists.") }
+        if pending.recovered > 0 { StoreHealth.shared.note(String(localized: "Added \(pending.recovered) measurement(s) that weren't saved last time.")) }
+        if pending.waiting > 0 { StoreHealth.shared.note(String(localized: "\(pending.waiting) measurement(s) are waiting for a property that no longer exists.")) }
         _ = try? PropertyStore.preferences(in: context)
     }
 }

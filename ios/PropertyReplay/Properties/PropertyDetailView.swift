@@ -13,6 +13,7 @@ struct PropertyDetailView: View {
     @State private var removeRequested = false
     @State private var inspecting = false
     @State private var scanningLight = false
+    @State private var addingNote = false
     /// Set just before the property is deleted: the page stops reading a model that is about to go.
     @State private var removed = false
 
@@ -40,7 +41,7 @@ struct PropertyDetailView: View {
                     Text(property.address).font(.title3.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
                     Label(inspectionText, systemImage: "calendar").font(.subheadline).foregroundStyle(.secondary)
                     if property.coordinate == nil {
-                        Label(property.isPinStale ? "The pin was for the previous address. Edit to place it again." : "Not on the map yet. Edit to place the pin.",
+                        Label(property.isPinStale ? String(localized: "The pin was for the previous address. Edit to place it again.") : String(localized: "Not on the map yet. Edit to place the pin."),
                               systemImage: "mappin.slash")
                             .font(.footnote).foregroundStyle(Color.cautionText)
                     }
@@ -54,13 +55,16 @@ struct PropertyDetailView: View {
             Section("Your inspection") {
                 let observations = property.allObservations.filter { $0.kind != .light }
                 if observations.isEmpty {
-                    Text("Nothing recorded yet. Use Inspect when you are at the property.").foregroundStyle(.secondary)
+                    Text("Nothing recorded yet. Use Inspect when you are at the property, or write a note from here.")
+                        .foregroundStyle(.secondary)
                 } else {
                     ForEach(observations.prefix(3)) { item in
                         NavigationLink { ObservationDetailView(observation: item) } label: { ObservationRow(observation: item) }
                     }
                     NavigationLink("All \(property.allObservations.count) recorded") { InspectionSummaryView(property: property) }
                 }
+                // Things the camera cannot catch (school zone, commute, the price) are written down here, at any time.
+                Button { addingNote = true } label: { Label("Add a note", systemImage: "square.and.pencil") }
             }
             Section("Light") {
                 let scans = property.allObservations.filter { $0.kind == .light }
@@ -82,6 +86,7 @@ struct PropertyDetailView: View {
         // Inspect is camera-style: full screen on every device, not squeezed into the detail column of a split view.
         .fullScreenCover(isPresented: $inspecting) { NavigationStack { InspectView(property: property) } }
         .fullScreenCover(isPresented: $scanningLight) { LightScanView(property: property, roomLabel: nil) }
+        .sheet(isPresented: $addingNote) { NoteEditor(property: property, category: nil) }
         .sheet(isPresented: $editing, onDismiss: removeIfRequested) {
             EditPropertyView(property: property, removeRequested: $removeRequested)
         }
@@ -121,7 +126,7 @@ struct PropertyDetailView: View {
 
     /// Icon and words as an explicit pair. A `Label` here drops its title when it is told not to wrap (seen on
     /// iPhone and iPad, 2026-10-01), which left two unlabelled buttons.
-    private func actionLabel(_ title: String, systemImage: String, singleLine: Bool) -> some View {
+    private func actionLabel(_ title: LocalizedStringKey, systemImage: String, singleLine: Bool) -> some View {
         HStack(spacing: 8) {
             Image(systemName: systemImage)
             if singleLine {
@@ -136,7 +141,7 @@ struct PropertyDetailView: View {
 
     /// The booked time, or plainly that there is none. Never today's date standing in for a booking.
     private var inspectionText: String {
-        property.inspectionAt.map { "Inspection \(Formatting.inspectionDate.string(from: $0))" } ?? "No inspection time set"
+        property.inspectionAt.map { String(localized: "Inspection \(Formatting.inspectionDate.string(from: $0))") } ?? String(localized: "No inspection time set")
     }
 
     private func removeIfRequested() {
@@ -146,7 +151,7 @@ struct PropertyDetailView: View {
             try PropertyStore.delete(property, in: context)
         } catch {
             // The deletion stays pending and completes with the next save; this page must not outlive it.
-            StoreHealth.shared.note("Removing a property didn't finish saving (\(error.localizedDescription)); it completes with the next save.")
+            StoreHealth.shared.note(String(localized: "Removing a property didn't finish saving (\(error.localizedDescription)); it completes with the next save."))
         }
         dismiss()
     }
@@ -216,7 +221,7 @@ struct EditPropertyView: View {
                     Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(pinFailed ? "Save without pin" : "Save") { Task { await save() } }
+                    Button(pinFailed ? String(localized: "Save without pin") : String(localized: "Save")) { Task { await save() } }
                         .disabled(trimmedAddress.isEmpty || isSaving)
                         .keyboardShortcut(.defaultAction)
                 }
@@ -260,7 +265,7 @@ struct EditPropertyView: View {
             try PropertyStore.commit(context)
             dismiss()
         } catch {
-            saveError = "Couldn't save: \(error.localizedDescription)"
+            saveError = String(localized: "Couldn't save: \(error.localizedDescription)")
         }
     }
 }

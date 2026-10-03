@@ -66,7 +66,7 @@ struct InspectTabView: View {
             }
         case .allowed:
             HStack {
-                Label(locator.location == nil ? (locator.failed ? "Couldn't find where you are" : "Finding where you are…") : "Nearest first",
+                Label(locator.location == nil ? (locator.failed ? String(localized: "Couldn't find where you are") : String(localized: "Finding where you are…")) : String(localized: "Nearest first"),
                       systemImage: "location.fill")
                     .foregroundStyle(locator.failed && locator.location == nil ? Color.cautionText : Color.primary)
                 Spacer()

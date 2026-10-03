@@ -49,6 +49,40 @@ final class AdaptiveLayoutUITests: UITestCase {
         XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 8))
     }
 
+    /// Lee, 2026-10-03: the phone may turn, people shoot landscape. Inspect's three actions, the editor's Save and
+    /// Discard and the Light controls must stay inside the turned window and tappable. The camera picture and the
+    /// saved photo follow the rotation coordinator (U03), which the simulator cannot show.
+    func testInspectAndLightInLandscape() {
+        launch(["-syntheticSweepSpeed", "0"])
+        XCUIDevice.shared.orientation = .landscapeLeft
+        openInspect()
+        let window = app.windows.firstMatch.frame
+        XCTAssertGreaterThan(window.width, window.height, "the window really turned")
+        for name in ["Capture", "Light", "Dictate note"] {
+            assertInsideWindow(app.buttons[name], name)
+            XCTAssertTrue(app.buttons[name].isHittable, name)
+        }
+        assertInsideWindow(app.staticTexts["12 Example Street"].firstMatch, "address")
+        snapshot("landscape-inspect")
+        tap(app.buttons["Add test photo (simulator)"])
+        for name in ["Save", "Discard"] {
+            assertInsideWindow(app.buttons[name], name)
+            XCTAssertTrue(app.buttons[name].isHittable, name)
+        }
+        snapshot("landscape-editor")
+        tap(app.buttons["Discard"])
+        tap(app.buttons["Light"])
+        assertInsideWindow(app.buttons["Start"], "Start")
+        assertInsideWindow(app.buttons["Question"], "question menu")
+        snapshot("landscape-light")
+        tap(app.buttons["Start"])
+        assertInsideWindow(app.buttons["Save"], "Save")
+        snapshot("landscape-light-scanning")
+        tap(app.buttons["Close"])
+        tap(confirmButton("Discard"))
+        XCTAssertTrue(app.buttons["Capture"].waitForExistence(timeout: 8), "back on Inspect, still in landscape")
+    }
+
     /// The four list screens at the largest text: titles whole, rows inside the window, search still offered.
     func testTabsAtTheLargestText() {
         launch(Self.largestText)

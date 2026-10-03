@@ -92,8 +92,8 @@ struct PropertiesMapView: View {
         if missing > 0 || properties.count != total {
             Button(action: showList) {
                 Text(missing > 0
-                     ? "\(located.count) of \(properties.count) on the map. \(missing) need a pin: see the list."
-                     : "\(properties.count) of \(total) homes match.")
+                     ? String(localized: "\(located.count) of \(properties.count) on the map. \(missing) need a pin: see the list.")
+                     : String(localized: "\(properties.count) of \(total) homes match."))
                     .font(.footnote)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)

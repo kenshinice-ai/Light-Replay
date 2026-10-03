@@ -56,7 +56,7 @@ public enum PendingCaptures {
                                                 roomLabel: capture.roomLabel, capturedAt: capture.capturedAt)
         observation.sceneId = capture.sceneID
         observation.sceneRecordData = capture.record
-        observation.text = capture.note ?? "Light measurement recorded (analysis pending)"
+        observation.text = capture.note ?? String(localized: "Light measurement recorded (analysis pending)", bundle: .module)
         try PropertyStore.record(observation, for: property, in: context)
         try? remove(sceneID: capture.sceneID, root: root)   // a leftover is recognised by scene_id next time
         return observation

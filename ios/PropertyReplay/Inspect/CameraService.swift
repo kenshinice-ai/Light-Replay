@@ -34,12 +34,12 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
         case .notDetermined: granted = await AVCaptureDevice.requestAccess(for: .video)
         default: granted = false
         }
-        guard granted else { lastError = "Camera access is off. Enable it in Settings to capture photos."; return }
+        guard granted else { lastError = String(localized: "Camera access is off. Enable it in Settings to capture photos."); return }
         let configuredOK: Bool = await withCheckedContinuation { continuation in
             queue.async { continuation.resume(returning: self.configureIfNeeded()) }
         }
         isAvailable = configuredOK
-        guard configuredOK else { lastError = "No camera available on this device."; return }
+        guard configuredOK else { lastError = String(localized: "No camera available on this device."); return }
         queue.async { self.session.startRunning() }
         isRunning = true
         startRotationIfReady()

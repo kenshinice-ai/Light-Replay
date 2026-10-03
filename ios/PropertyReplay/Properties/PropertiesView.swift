@@ -10,7 +10,7 @@ struct PropertiesView: View {
     private enum Mode: String, CaseIterable, Identifiable {
         case list, map
         var id: String { rawValue }
-        var title: String { self == .list ? "List" : "Map" }
+        var title: String { self == .list ? String(localized: "List") : String(localized: "Map") }
     }
 
     @Environment(\.modelContext) private var context
@@ -70,8 +70,8 @@ struct PropertiesView: View {
                 Label("No properties yet", systemImage: "house")
             } description: {
                 Text(StoreHealth.shared.mode == .iCloud
-                     ? "Add the homes you plan to inspect. If you already use Property Replay on another device, your homes arrive here once iCloud catches up; that can take a few minutes."
-                     : "Add the homes you plan to inspect. They stay on this device.")
+                     ? String(localized: "Add the homes you plan to inspect. If you already use Property Replay on another device, your homes arrive here once iCloud catches up; that can take a few minutes.")
+                     : String(localized: "Add the homes you plan to inspect. They stay on this device."))
             } actions: {
                 Button("Add a property") { showingAdd = true }.buttonStyle(.borderedProminent)
                 #if DEBUG
@@ -168,7 +168,7 @@ struct PropertiesView: View {
         for property in doomed {
             if selectedID == property.persistentModelID { selectedID = nil }
             do { try PropertyStore.delete(property, in: context) } catch {
-                deleteError = "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves."
+                deleteError = String(localized: "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves.")
             }
         }
     }

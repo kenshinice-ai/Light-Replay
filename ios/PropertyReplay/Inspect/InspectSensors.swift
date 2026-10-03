@@ -1,5 +1,7 @@
+import CaptureCore
 import CoreLocation
 import Foundation
+import UIKit
 
 /// Heading and location while the Inspect screen is open, stamped onto each Capture (docs/01 §4).
 @MainActor
@@ -13,11 +15,16 @@ final class InspectSensors: NSObject, ObservableObject, CLLocationManagerDelegat
 
     @Published private(set) var snapshot = Snapshot()
     private let manager = CLLocationManager()
+    /// CLHeading measures from the top edge of the device; the screen says which edge that is.
+    var interfaceOrientation: UIInterfaceOrientation = .portrait {
+        didSet { manager.headingOrientation = CaptureRecorder.headingOrientation(for: interfaceOrientation) }
+    }
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        manager.headingOrientation = .portrait
     }
 
     func start() {

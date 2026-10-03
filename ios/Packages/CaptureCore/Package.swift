@@ -5,11 +5,12 @@ import PackageDescription
 // iOS only: ARKit has no macOS host, so its tests run through the app's xcodebuild test scheme.
 let package = Package(
     name: "CaptureCore",
+    defaultLocalization: "en",   // the scan coach's sentences live here in English and zh-Hans (Localizable.xcstrings)
     platforms: [.iOS("27.0")],
     products: [.library(name: "CaptureCore", targets: ["CaptureCore"])],
     dependencies: [.package(path: "../SceneRecord"), .package(path: "../NorthResolver")],
     targets: [
-        .target(name: "CaptureCore", dependencies: ["SceneRecord", "NorthResolver"]),
-        .testTarget(name: "CaptureCoreTests", dependencies: ["CaptureCore", "SceneRecord"])
+        .target(name: "CaptureCore", dependencies: ["SceneRecord", "NorthResolver"], resources: [.process("Localizable.xcstrings")]),
+        .testTarget(name: "CaptureCoreTests", dependencies: ["CaptureCore", "SceneRecord", "NorthResolver"])
     ]
 )

@@ -25,7 +25,7 @@ struct YouView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("What you care about")
-                                Text(preferences.priorities.isEmpty ? "None chosen" : preferences.priorities.map(\.displayName).joined(separator: " · "))
+                                Text(preferences.priorities.isEmpty ? String(localized: "None chosen") : preferences.priorities.map(\.displayName).joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(.secondary)
                             }
                         }
@@ -115,41 +115,41 @@ struct YouView: View {
 extension YouView {
     private var syncHeadline: String {
         switch StoreHealth.shared.mode {
-        case .memory: return "Not being saved (storage problem)"
-        case .deviceOnly: return "Kept on this device only"
+        case .memory: return String(localized: "Not being saved (storage problem)")
+        case .deviceOnly: return String(localized: "Kept on this device only")
         case .iCloud:
-            guard iCloudAccount == .available else { return "iCloud sync is on, but not working on this device" }
+            guard iCloudAccount == .available else { return String(localized: "iCloud sync is on, but not working on this device") }
             switch SyncMonitor.shared.status.summary {
-            case .failed: return "iCloud sync is on, but the last attempt failed"
-            case .lastSucceeded: return "Syncing with your private iCloud"
-            case .working: return "Talking to iCloud…"
-            case .nothingYet: return "iCloud sync is on"
+            case .failed: return String(localized: "iCloud sync is on, but the last attempt failed")
+            case .lastSucceeded: return String(localized: "Syncing with your private iCloud")
+            case .working: return String(localized: "Talking to iCloud…")
+            case .nothingYet: return String(localized: "iCloud sync is on")
             }
         }
     }
 
     private var syncDetail: String? {
         switch StoreHealth.shared.mode {
-        case .memory: return "Nothing you add will survive quitting the app."
-        case .deviceOnly: return SyncSettings.attemptedAtLaunch ? "iCloud sync couldn't start this time, so nothing is being sent." : nil
+        case .memory: return String(localized: "Nothing you add will survive quitting the app.")
+        case .deviceOnly: return SyncSettings.attemptedAtLaunch ? String(localized: "iCloud sync couldn't start this time, so nothing is being sent.") : nil
         case .iCloud:
             switch iCloudAccount {
             case .available: break
-            case .noAccount: return "This device isn't signed in to iCloud. Your records stay here until it is."
-            case .restricted: return "iCloud is restricted on this device. Your records stay here."
-            case .unknown: return "Couldn't check the iCloud account. Your records are on this device."
+            case .noAccount: return String(localized: "This device isn't signed in to iCloud. Your records stay here until it is.")
+            case .restricted: return String(localized: "iCloud is restricted on this device. Your records stay here.")
+            case .unknown: return String(localized: "Couldn't check the iCloud account. Your records are on this device.")
             case nil: return nil
             }
             switch SyncMonitor.shared.status.summary {
             case .failed(let failure):
-                let what = failure.kind == .send ? "send to" : (failure.kind == .receive ? "receive from" : "set up")
-                return "Couldn't \(what) iCloud at \(failure.at.formatted(date: .omitted, time: .shortened)): \(failure.reason). Your records are safe on this device and the app keeps trying."
+                let what = failure.kind == .send ? String(localized: "send to") : (failure.kind == .receive ? String(localized: "receive from") : String(localized: "set up"))
+                return String(localized: "Couldn't \(what) iCloud at \(failure.at.formatted(date: .omitted, time: .shortened)): \(failure.reason). Your records are safe on this device and the app keeps trying.")
             case .lastSucceeded(let sent, let received):
-                let parts = [sent.map { "Last sent \($0.formatted(date: .abbreviated, time: .shortened))" },
-                             received.map { "last received \($0.formatted(date: .abbreviated, time: .shortened))" }].compactMap { $0 }
-                return parts.joined(separator: ", ") + ". Anything recorded since may still be on its way."
+                let parts = [sent.map { String(localized: "Last sent \($0.formatted(date: .abbreviated, time: .shortened))") },
+                             received.map { String(localized: "last received \($0.formatted(date: .abbreviated, time: .shortened))") }].compactMap { $0 }
+                return parts.joined(separator: ", ") + String(localized: ". Anything recorded since may still be on its way.")
             case .working: return nil
-            case .nothingYet: return "Nothing has been sent or received since the app opened."
+            case .nothingYet: return String(localized: "Nothing has been sent or received since the app opened.")
             }
         }
     }
@@ -205,12 +205,12 @@ struct PrioritiesView: View {
 
 struct EvidenceLegendView: View {
     private let rows: [(String, String)] = [
-        ("Verified", "A fact you confirmed, or licensed data with a source."),
-        ("Observed · measured", "Measured on site by the sensors and passed the quality gates."),
-        ("Observed · noted", "Something you photographed, said or tagged on site."),
-        ("Strong indication", "Several sources agree."),
-        ("Indicative", "A model's estimate. Worth verifying."),
-        ("Unknown", "Not enough information. Shown, never hidden.")
+        (String(localized: "Verified"), String(localized: "A fact you confirmed, or licensed data with a source.")),
+        (String(localized: "Observed · measured"), String(localized: "Measured on site by the sensors and passed the quality gates.")),
+        (String(localized: "Observed · noted"), String(localized: "Something you photographed, said or tagged on site.")),
+        (String(localized: "Strong indication"), String(localized: "Several sources agree.")),
+        (String(localized: "Indicative"), String(localized: "A model's estimate. Worth verifying.")),
+        (String(localized: "Unknown"), String(localized: "Not enough information. Shown, never hidden."))
     ]
 
     var body: some View {

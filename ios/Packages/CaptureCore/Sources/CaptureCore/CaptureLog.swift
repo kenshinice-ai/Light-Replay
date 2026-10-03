@@ -56,12 +56,18 @@ public struct HeadingSample: Sendable, Equatable {
     /// CLHeading.headingAccuracy: negative means invalid.
     public var headingAccuracy: Double
     public var sampledAt: Date
+    /// The device orientation the reading was referenced to (`CLLocationManager.headingOrientation`), in
+    /// CLDeviceOrientation names: "portrait", "landscapeLeft", "landscapeRight", ... The compass measures from the
+    /// top edge of the device, so this is part of the reading, not a display detail.
+    public var deviceOrientation: String
 
-    public init(trueHeading: Double, magneticHeading: Double, headingAccuracy: Double, sampledAt: Date) {
+    public init(trueHeading: Double, magneticHeading: Double, headingAccuracy: Double, sampledAt: Date,
+                deviceOrientation: String = "portrait") {
         self.trueHeading = trueHeading
         self.magneticHeading = magneticHeading
         self.headingAccuracy = headingAccuracy
         self.sampledAt = sampledAt
+        self.deviceOrientation = deviceOrientation
     }
 
     /// CLHeading reports "unavailable" as a negative value on either field.

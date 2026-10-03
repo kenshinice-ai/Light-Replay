@@ -87,6 +87,6 @@ struct HomeView: View {
     /// "5 recorded" for a home with records, nothing otherwise.
     private static func activityText(_ property: Property) -> String? {
         let count = property.allObservations.count
-        return count == 0 ? nil : "\(count) recorded"
+        return count == 0 ? nil : String(localized: "\(count) recorded")
     }
 }

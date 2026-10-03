@@ -43,13 +43,15 @@ struct TagControls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             FlowLayout {
-                Menu {
-                    ForEach(rooms, id: \.self) { name in Button(name) { setRoom(name) } }
-                } label: {
-                    ChipLabel(title: room ?? "Room", systemImage: "door.left.hand.open", isMenu: true)
+                if !rooms.isEmpty {   // a note written away from the home has no room
+                    Menu {
+                        ForEach(rooms, id: \.self) { name in Button(name) { setRoom(name) } }
+                    } label: {
+                        ChipLabel(title: room ?? String(localized: "Room"), systemImage: "door.left.hand.open", isMenu: true)
+                    }
+                    .accessibilityLabel("Room")
+                    .accessibilityValue(room ?? String(localized: "Not set"))
                 }
-                .accessibilityLabel("Room")
-                .accessibilityValue(room ?? "Not set")
                 Menu {
                     ForEach(ObservationCategory.allCases) { c in
                         Button(c.displayName, systemImage: c.systemImage) { setCategory(c) }

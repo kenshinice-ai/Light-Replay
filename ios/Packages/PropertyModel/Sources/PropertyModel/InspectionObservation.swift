@@ -3,24 +3,34 @@ import SwiftData
 
 public enum ObservationKind: String, Codable, Sendable {
     case photo, voice, tag, light
+    /// Typed by the buyer, usually away from the home: a fact or a judgment the camera cannot catch (school zone,
+    /// commute, how the price sits). Hangs off the property, not an inspection.
+    case note
 }
 
 /// Categories a note or photo can be about (docs/15 §2).
 public enum ObservationCategory: String, CaseIterable, Codable, Sendable, Identifiable {
-    case naturalLight, privacy, noise, space, condition, layout, outdoor, other
+    case naturalLight, privacy, noise, space, condition, layout, outdoor
+    /// Things a buyer records about a home rather than at it (Lee, 2026-10-03): they give Compare's School,
+    /// Commute and Price comfort rows a source.
+    case school, commute, priceComfort
+    case other
 
     public var id: String { rawValue }
 
     public var displayName: String {
         switch self {
-        case .naturalLight: "Natural light"
-        case .privacy: "Privacy"
-        case .noise: "Noise"
-        case .space: "Space"
-        case .condition: "Condition"
-        case .layout: "Layout"
-        case .outdoor: "Outdoor"
-        case .other: "Other"
+        case .naturalLight: String(localized: "Natural light", bundle: .module)
+        case .privacy: String(localized: "Privacy", bundle: .module)
+        case .noise: String(localized: "Noise", bundle: .module)
+        case .space: String(localized: "Space", bundle: .module)
+        case .condition: String(localized: "Condition", bundle: .module)
+        case .layout: String(localized: "Layout", bundle: .module)
+        case .outdoor: String(localized: "Outdoor", bundle: .module)
+        case .school: String(localized: "School", bundle: .module)
+        case .commute: String(localized: "Commute", bundle: .module)
+        case .priceComfort: String(localized: "Price comfort", bundle: .module)
+        case .other: String(localized: "Other", bundle: .module)
         }
     }
 
@@ -33,6 +43,9 @@ public enum ObservationCategory: String, CaseIterable, Codable, Sendable, Identi
         case .condition: "wrench.and.screwdriver"
         case .layout: "square.grid.2x2"
         case .outdoor: "leaf"
+        case .school: "graduationcap"
+        case .commute: "tram"
+        case .priceComfort: "dollarsign.circle"
         case .other: "tag"
         }
     }
@@ -46,10 +59,10 @@ public enum Sentiment: String, CaseIterable, Codable, Sendable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .like: "Like"
-        case .concern: "Concern"
-        case .ask: "Ask"
-        case .neutral: "Note"
+        case .like: String(localized: "Like", bundle: .module)
+        case .concern: String(localized: "Concern", bundle: .module)
+        case .ask: String(localized: "Ask", bundle: .module)
+        case .neutral: String(localized: "Note", bundle: .module)
         }
     }
 
@@ -69,18 +82,20 @@ public enum EvidenceLevel: String, Codable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .verified: "Verified"
-        case .observedMeasured: "Observed · measured"
-        case .observedNoted: "Observed · noted"
-        case .strongIndication: "Strong indication"
-        case .indicative: "Indicative"
-        case .unknown: "Unknown"
+        case .verified: String(localized: "Verified", bundle: .module)
+        case .observedMeasured: String(localized: "Observed · measured", bundle: .module)
+        case .observedNoted: String(localized: "Observed · noted", bundle: .module)
+        case .strongIndication: String(localized: "Strong indication", bundle: .module)
+        case .indicative: String(localized: "Indicative", bundle: .module)
+        case .unknown: String(localized: "Unknown", bundle: .module)
         }
     }
 }
 
 public enum EvidenceSource: String, Codable, Sendable {
     case listing, userPhoto, userVoice, sensor, openData, model
+    /// Typed by the buyer.
+    case userText
 }
 
 /// A visit to a property. Observations hang off it; one open inspection per property at a time.
@@ -136,6 +151,9 @@ public final class InspectionObservation {
     /// The SceneRecord JSON for `kind == .light`, stored with the row (ADR-0017). Files on disk are export copies only.
     @Attribute(.externalStorage) public var sceneRecordData: Data?
     public var inspection: Inspection?
+    /// The home a note written away from an inspection belongs to. Nil for everything recorded during one, which
+    /// reaches its home through `inspection`.
+    public var property: Property?
 
     public init(kind: ObservationKind, category: ObservationCategory = .other, sentiment: Sentiment = .neutral,
                 source: EvidenceSource, text: String? = nil, roomLabel: String? = nil, capturedAt: Date = Date()) {
@@ -157,7 +175,7 @@ public final class InspectionObservation {
         switch (kind, source) {
         case (.light, _): .unknown          // only the SceneRecord quality mapping can raise this (lightLevel below)
         case (_, .model): .indicative
-        case (.photo, _), (.voice, _), (.tag, _): .observedNoted
+        case (.photo, _), (.voice, _), (.tag, _), (.note, _): .observedNoted
         }
     }
 
@@ -205,10 +223,14 @@ public final class InspectionObservation {
         if let text, !text.isEmpty { return text }
         if let summary, !summary.isEmpty { return summary }
         switch kind {
-        case .photo: return "Photo"
-        case .voice: return "Voice note"
+        case .photo: return String(localized: "Photo", bundle: .module)
+        case .voice: return String(localized: "Voice note", bundle: .module)
         case .tag: return sentiment.displayName
-        case .light: return "Light measurement"
+        case .note: return String(localized: "Note", bundle: .module)
+        case .light: return String(localized: "Light measurement", bundle: .module)
         }
     }
+
+    /// The home this belongs to, whichever way it is attached.
+    public var owner: Property? { inspection?.property ?? property }
 }

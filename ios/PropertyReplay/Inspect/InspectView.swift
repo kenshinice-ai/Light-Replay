@@ -5,7 +5,7 @@ import SwiftUI
 /// Inspect mode (ADR-0015): camera-style, three actions, no mode picker. Every capture becomes an InspectionObservation on
 /// the property's open inspection; a sheet over the viewfinder lets the buyer tag it without leaving the screen.
 struct InspectView: View {
-    static let defaultRooms = ["Entry", "Living", "Kitchen", "Dining", "Bedroom 1", "Bedroom 2", "Bedroom 3", "Bathroom", "Study", "Balcony", "Backyard", "Garage"]
+    static let defaultRooms: [String] = [String(localized: "Entry"), String(localized: "Living"), String(localized: "Kitchen"), String(localized: "Dining"), String(localized: "Bedroom 1"), String(localized: "Bedroom 2"), String(localized: "Bedroom 3"), String(localized: "Bathroom"), String(localized: "Study"), String(localized: "Balcony"), String(localized: "Backyard"), String(localized: "Garage")]
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -18,7 +18,7 @@ struct InspectView: View {
     @StateObject private var camera = CameraService()
     @StateObject private var sensors = InspectSensors()
     @StateObject private var recorder = NoteRecorder()
-    @State private var room = "Living"
+    @State private var room = InspectView.defaultRooms[1]   // "Living", in the interface language
     @State private var draft: ObservationDraft?
     @State private var blink = false
     @State private var busy = false
@@ -48,6 +48,7 @@ struct InspectView: View {
                 controls
             }
         }
+        .background(InterfaceOrientationReader { sensors.interfaceOrientation = $0 })   // the compass follows the screen
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)   // camera-style: the three actions are the only controls (docs/14 §1)
         .navigationBarBackButtonHidden(recorder.isRecording)   // while dictating, leaving goes through Done
@@ -102,7 +103,7 @@ struct InspectView: View {
                     Color(.systemGray6)
                     VStack(spacing: 8) {
                         Image(systemName: "camera").font(.largeTitle).foregroundStyle(.secondary)
-                        Text(camera.lastError ?? "Starting camera…").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Text(camera.lastError ?? String(localized: "Starting camera…")).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         #if DEBUG
                         if !camera.isAvailable {
                             // Simulator stand-ins for the camera and microphone so the UI tests walk the real draft paths.
@@ -179,9 +180,9 @@ struct InspectView: View {
         let language = recorder.activeLocaleName.map { " (\($0))" } ?? ""
         switch recorder.state {
         case .unavailable(let why): return why
-        case .preparing: return "Getting ready to listen\(language)… The microphone is not on yet."
-        case .recording: return recorder.transcript.isEmpty ? "Listening\(language)…" : recorder.transcript
-        case .finishing: return recorder.transcript.isEmpty ? "Finishing…" : recorder.transcript
+        case .preparing: return String(localized: "Getting ready to listen\(language)… The microphone is not on yet.")
+        case .recording: return recorder.transcript.isEmpty ? String(localized: "Listening\(language)…") : recorder.transcript
+        case .finishing: return recorder.transcript.isEmpty ? String(localized: "Finishing…") : recorder.transcript
         case .idle: return ""
         }
     }
@@ -228,16 +229,17 @@ struct InspectView: View {
         .accessibilityAddTraits([.isButton, .startsMediaSession])
         .accessibilityAction { toggleNote() }
         .background {
-            Button("Dictate note", action: toggleNote).keyboardShortcut("d", modifiers: .command).opacity(0).accessibilityHidden(true)
+            // Hidden proxy for the keyboard shortcut; its own name so no test or assistive query finds two "Dictate note".
+            Button("Dictate note shortcut", action: toggleNote).keyboardShortcut("d", modifiers: .command).opacity(0).accessibilityHidden(true)
         }
     }
 
     private var noteCaption: String {
         switch recorder.state {
-        case .preparing: "Getting ready"
-        case .recording: "Release to finish"
-        case .finishing: "Finishing"
-        default: "Hold to note"
+        case .preparing: String(localized: "Getting ready")
+        case .recording: String(localized: "Release to finish")
+        case .finishing: String(localized: "Finishing")
+        default: String(localized: "Hold to note")
         }
     }
 
@@ -282,7 +284,7 @@ struct InspectView: View {
         busy = true
         defer { busy = false }
         do {
-            guard let data = try await camera.capturePhoto() else { message = "No photo captured."; return }
+            guard let data = try await camera.capturePhoto() else { message = String(localized: "No photo captured."); return }
             captureCount += 1
             if !reduceMotion {
                 withAnimation(.easeOut(duration: 0.05)) { blink = true }
@@ -292,7 +294,7 @@ struct InspectView: View {
             message = nil
             draft = ObservationDraft(kind: .photo, room: room, photoData: PhotoScaler.jpeg(data), sensors: sensors.snapshot)
         } catch {
-            message = "Capture failed: \(error.localizedDescription)"
+            message = String(localized: "Capture failed: \(error.localizedDescription)")
         }
     }
 
@@ -356,7 +358,7 @@ struct InspectView: View {
     /// Saves the draft on screen. Returns false and keeps the draft when anything fails.
     private func save() -> Bool {
         guard let draft else { return true }
-        guard StoreHealth.shared.isPersistent else { message = "Storage problem: this can't be saved right now."; return false }
+        guard StoreHealth.shared.isPersistent else { message = String(localized: "Storage problem: this can't be saved right now."); return false }
         let words = draft.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = (words?.isEmpty ?? true) ? draft.transcript : words   // a note is never saved empty
         let observation = InspectionObservation(kind: draft.kind, category: draft.category, sentiment: draft.sentiment,
@@ -373,7 +375,7 @@ struct InspectView: View {
         do {
             try PropertyStore.record(observation, for: property, in: context)
         } catch {
-            message = "Couldn't save: \(error.localizedDescription). Your draft is still here."
+            message = String(localized: "Couldn't save: \(error.localizedDescription). Your draft is still here.")
             return false
         }
         message = nil
@@ -401,7 +403,7 @@ struct InspectView: View {
             try PropertyStore.commit(context)
             dismiss()
         } catch {
-            message = "Couldn't close the inspection: \(error.localizedDescription)"
+            message = String(localized: "Couldn't close the inspection: \(error.localizedDescription)")
         }
     }
 }
@@ -451,8 +453,8 @@ struct ObservationDraft: Identifiable {
         if !setByBuyer.contains(.sentiment) { sentiment = suggestion.sentiment; setByModel.insert(.sentiment) }
         summary = suggestion.summary
         modelNote = setByModel.isEmpty
-            ? "Summary by the on-device model · Indicative"
-            : "Suggested by the on-device model · Indicative until you confirm"
+            ? String(localized: "Summary by the on-device model · Indicative")
+            : String(localized: "Suggested by the on-device model · Indicative until you confirm")
     }
 
     private mutating func buyerSet(_ field: Field) {

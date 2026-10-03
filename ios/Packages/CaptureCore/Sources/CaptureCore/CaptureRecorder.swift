@@ -34,6 +34,11 @@ public final class CaptureRecorder: NSObject, ObservableObject {
 
     public let availability: Availability
     public var viewpointToleranceM = 0.15
+    /// The orientation the interface is showing. CLHeading is measured from the top edge of the device, so the
+    /// location manager has to be told which edge is up, or every landscape reading is 90° off.
+    public var interfaceOrientation: UIInterfaceOrientation = .portrait {
+        didSet { locationManager.headingOrientation = Self.headingOrientation(for: interfaceOrientation) }
+    }
     /// Called on the main queue with every frame while the session runs. It must not keep the frame.
     public var frameObserver: (@MainActor (ARFrame) -> Void)?
     /// The session a camera view (RealityKit `ARView`) displays. The recorder stays its delegate.
@@ -61,6 +66,30 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         session.delegateQueue = .main
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.headingOrientation = .portrait
+    }
+
+    /// UIInterfaceOrientation and CLDeviceOrientation name landscape from opposite sides: an interface shown in
+    /// `.landscapeLeft` means the device was turned to `.landscapeRight`.
+    public static func headingOrientation(for orientation: UIInterfaceOrientation) -> CLDeviceOrientation {
+        switch orientation {
+        case .landscapeLeft: .landscapeRight
+        case .landscapeRight: .landscapeLeft
+        case .portraitUpsideDown: .portraitUpsideDown
+        default: .portrait
+        }
+    }
+
+    static func name(_ orientation: CLDeviceOrientation) -> String {
+        switch orientation {
+        case .portrait: "portrait"
+        case .portraitUpsideDown: "portraitUpsideDown"
+        case .landscapeLeft: "landscapeLeft"
+        case .landscapeRight: "landscapeRight"
+        case .faceUp: "faceUp"
+        case .faceDown: "faceDown"
+        default: "unknown"
+        }
     }
 
     /// Runs the session without recording: camera view, tracking, compass and location warm up.
@@ -250,10 +279,11 @@ extension CaptureRecorder: ARSessionDelegate {
 
 extension CaptureRecorder: CLLocationManagerDelegate {
     nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        let sample = HeadingSample(trueHeading: newHeading.trueHeading, magneticHeading: newHeading.magneticHeading,
-                                   headingAccuracy: newHeading.headingAccuracy, sampledAt: newHeading.timestamp)
+        let trueHeading = newHeading.trueHeading, magneticHeading = newHeading.magneticHeading
+        let accuracy = newHeading.headingAccuracy, sampledAt = newHeading.timestamp
         MainActor.assumeIsolated {
-            guard self.isPreviewing else { return }
+            let sample = HeadingSample(trueHeading: trueHeading, magneticHeading: magneticHeading, headingAccuracy: accuracy,
+                                       sampledAt: sampledAt, deviceOrientation: Self.name(self.locationManager.headingOrientation))
             self.latestHeading = sample
             if self.isRunning { self.headings.append(sample) }
         }

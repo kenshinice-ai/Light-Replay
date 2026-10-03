@@ -35,7 +35,7 @@ enum NoteStructurer {
     static var availabilityNote: String? {
         switch SystemLanguageModel.default.availability {
         case .available: return nil
-        case .unavailable(let reason): return "On-device model unavailable (\(reason)). Pick the category yourself."
+        case .unavailable(let reason): return String(localized: "On-device model unavailable (\(reason)). Pick the category yourself.")
         }
     }
 

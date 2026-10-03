@@ -27,7 +27,7 @@ struct InspectionSummaryView: View {
     }
 
     @ViewBuilder
-    private func group(_ title: String, _ sentiment: Sentiment, _ symbol: String) -> some View {
+    private func group(_ title: LocalizedStringKey, _ sentiment: Sentiment, _ symbol: String) -> some View {
         let items = observations.filter { $0.sentiment == sentiment }
         if !items.isEmpty {
             Section {
@@ -35,7 +35,7 @@ struct InspectionSummaryView: View {
                     NavigationLink { ObservationDetailView(observation: item) } label: { ObservationRow(observation: item) }
                         .deleteWithConfirmation("Delete this \(Self.name(item.kind))?") {
                             do { try PropertyStore.delete(item, in: context) } catch {
-                                deleteError = "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves."
+                                deleteError = String(localized: "\(error.localizedDescription) It is hidden now and will be removed the next time the library saves.")
                             }
                         }
                 }
@@ -49,10 +49,10 @@ struct InspectionSummaryView: View {
 extension InspectionSummaryView {
     static func name(_ kind: ObservationKind) -> String {
         switch kind {
-        case .photo: "photo"
-        case .voice: "note"
-        case .tag: "tag"
-        case .light: "light scan"
+        case .photo: String(localized: "photo")
+        case .voice, .note: String(localized: "note")
+        case .tag: String(localized: "tag")
+        case .light: String(localized: "light scan")
         }
     }
 }

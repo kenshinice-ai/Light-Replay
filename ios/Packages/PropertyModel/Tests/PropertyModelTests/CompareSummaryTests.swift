@@ -26,8 +26,8 @@ final class CompareSummaryTests: XCTestCase {
         let (property, context) = try makeProperty()
         XCTAssertEqual(CompareSummary.cell(for: .privacy, at: property).state, .notRecorded)
         XCTAssertEqual(CompareSummary.cell(for: .privacy, at: property).headline, "Not recorded")
-        XCTAssertEqual(CompareSummary.cell(for: .commute, at: property).state, .noSource, "no category records commute yet")
-        XCTAssertEqual(CompareSummary.cell(for: .commute, at: property).headline, "Not in the app yet")
+        XCTAssertEqual(CompareSummary.cell(for: .commute, at: property).state, .notRecorded, "a note can record commute (2026-10-03)")
+        XCTAssertEqual(CompareSummary.cell(for: .commute, at: property).headline, "Not recorded")
 
         try add(.light, .naturalLight, .neutral, to: property, in: context)
         let light = CompareSummary.cell(for: .naturalLight, at: property)
@@ -58,6 +58,26 @@ final class CompareSummaryTests: XCTestCase {
         XCTAssertEqual(light.headline, "Scanned, sunlight not calculated")
         XCTAssertEqual(light.detail, "1 concern", "the buyer's own note sits under the scan state")
         XCTAssertEqual(light.scans, 1)
+    }
+
+    func testANoteFromTheDeskCountsButIsNotAVisit() throws {
+        let (property, context) = try makeProperty()
+        let note = InspectionObservation(kind: .note, category: .school, sentiment: .like, source: .userText,
+                                         text: "Zoned for the primary school we wanted")
+        try PropertyStore.addNote(note, to: property, in: context)
+        XCTAssertEqual(property.status, .toInspect, "writing a note is not inspecting")
+        XCTAssertTrue((property.inspections ?? []).isEmpty, "no inspection is opened for it")
+        XCTAssertEqual(property.allObservations.count, 1)
+        XCTAssertEqual(note.owner?.address, property.address)
+        XCTAssertEqual(note.level, .observedNoted)
+        let school = CompareSummary.cell(for: .school, at: property)
+        XCTAssertEqual(school.state, .noted)
+        XCTAssertEqual(school.headline, "1 like")
+        XCTAssertEqual(CompareSummary.observations(for: .school, at: property).first?.text, note.text)
+        XCTAssertEqual(CompareSummary.cell(for: .commute, at: property).state, .notRecorded, "a school note says nothing about the commute")
+
+        try PropertyStore.delete(note, in: context)
+        XCTAssertTrue(property.allObservations.isEmpty)
     }
 
     func testEveryPriorityHasACellAndNoneIsANumberOutOfTen() throws {
