@@ -106,7 +106,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | CloudKit schema：开发环境补全后 10-03 Lee 已部署到 Production（控制台里四个 `CD_` 类型在）；补全器（`PropertyStore.initializeCloudKitSchema`，DEBUG 参数 `-initializeCloudKitSchema`，真机上跑：`xcrun devicectl device process launch --console --terminate-existing --device <id> com.pwegroup.propertyreplay -- -initializeCloudKitSchema`，设备要解锁） | ✓ | — | ✓ 10-03 iPad 上跑过，控制台里四个记录类型的字段齐了 | 控制台里开发环境缺 `CD_originalText`、`CD_property`、`CD_mediaPath`、`CD_notes`：CloudKit 只在字段第一次有值时才建；补全后才能部署 Production |
 | 姿态记录 ≤ 10 Hz + 第一帧 / 锚定帧 / 追踪状态变化帧（ADR-0020；10-03 一次 6.5 分钟扫描曾写出 25 MB） | ✓ | ✓ 单元 `PoseLogRateTests` | ✓ 10-03 晚三次扫描 `PR-20261003-05…07`：10.0 Hz，18–38 秒 0.29–0.59 MB，`pose_gap` ≤ 52 ms，三份都过校验器 | 漂移仍逐帧算；`frames_within / beyond` 按保留帧计 |
 | SceneRecord 0.2.0 与 quality-0.2（ADR-0022）：内联网格与掩膜带长度和 SHA-256、Hero 变换链、太阳圆面候选的有效性、结果 revision、五盏灯全部按证据重算；0.1.0 照旧 | ✓ 两端校验器 | ✓ `scene-v2-cases.json` 57 例（13 接受 / 44 拒绝），Swift 与 Python 的灯与拒绝位置一致；SceneRecord 36 项、Python 96 项 | — | **只是契约**：App 写出的仍是 0.1.0，没有接任何检测器。阈值全是候选 |
-| 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图跑通（`docs/spike/2026-10-04-segmentation-smoke.md`） | — | 真实照片的冒烟等 Lee 给照片；三条接口行为已记：分的是种子所在的对象、被窗框隔开的天空要各自的种子、先跑种子再逐点细化 |
+| 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图 + Codex 按 Lee 授权下载的 9 张真实网络照片【验】（`docs/spike/2026-10-04-segmentation-smoke.md` 同日补记） | — | 输入、来源、逐图日志、掩膜和失败观察在 `field/data/smoke/`；只是普通照片的接口冒烟，不替代 App 帧卷评估。细枝天空只返回局部小块，自动种子与真机性能未测 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
 加了或改了界面文字：`./scripts/strings-sync.sh` 把编译器抽到的键并进 `ios/PropertyReplay/Localizable.xcstrings`，并列出还没有中文的键，然后把中文写进目录（`zh-Hans` → `stringUnit.value`）。包里的字符串（显示名、扫描指引）用 `String(localized:bundle:.module)`，目录手写在包目录下。中文启动看界面：`-AppleLanguages (zh-Hans) -AppleLocale zh_CN`。
@@ -126,7 +126,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已交付契约部分**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 57 例 fixture、冒烟工具）；A 的退出还差真实照片上的分割冒烟。**下一步是阶段 B**：Hero 静帧 + 帧卷（`04` §12 的契约与十条恢复验收）、记录切到 0.2.0、Light 状态摘要列与旧行迁移（要追加一个 CloudKit 字段并再部署一次）、任务身份改用行 uuid。之后是闸门 1（Lee 用 B 版本拍评估片段）。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
+- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已交付契约部分**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 57 例 fixture、冒烟工具）；真实网络照片的接口冒烟已由 Codex 按 Lee 授权补齐（`field/data/smoke/`，同日 spike 补记），不替代自家 App 帧卷；A 的契约复审仍有四项待修（`reviews/2026-10-04-stage-a-delivery-review.md`：检测帧归属、时段重叠、掩膜完整性与解码上限、支持帧计数）。**下一步是阶段 B**：Hero 静帧 + 帧卷（`04` §12 的契约与十条恢复验收）、记录切到 0.2.0、Light 状态摘要列与旧行迁移（要追加一个 CloudKit 字段并再部署一次）、任务身份改用行 uuid。之后是闸门 1（Lee 用 B 版本拍评估片段）。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -139,5 +139,4 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
-- **[给料] 5–10 张带天空的随手照片**（窗外、檐下、树下各几张，任何相机；放进 `field/data/smoke/`，那里不入库）— 推荐现在就给 · 不给：阶段 A 的分割冒烟只有画出来的测试图，实验 1 比哪几条路定不下来 · 自 2026-10-04
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

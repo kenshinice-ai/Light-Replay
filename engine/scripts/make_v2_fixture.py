@@ -50,12 +50,14 @@ def synthetic_states(az, alt):
     return 1
 
 
-def png(width, height):
-    """A valid one-bit PNG, all zero: the smallest honest stand-in for a keyframe mask."""
+def png(width, height, depth=1, colour=0, rows=None):
+    """A valid greyscale PNG, all zero: the smallest honest stand-in for a keyframe mask. `rows` overrides the pixel
+    data, for the cases that must be wrong."""
     def chunk(kind, data):
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
-    rows = b"".join(b"\x00" + bytes((width + 7) // 8) for _ in range(height))
-    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 1, 0, 0, 0, 0)) \
+    if rows is None:
+        rows = b"".join(b"\x00" + bytes((width * depth + 7) // 8) for _ in range(height))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, depth, colour, 0, 0, 0)) \
         + chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b"")
 
 
@@ -63,6 +65,9 @@ STATES = grid(synthetic_states)
 CONFIDENCE = grid(lambda az, alt: 0 if synthetic_states(az, alt) == 0 else 200)
 CELLS = {name: STATES.count(bytes([state])) for state, name in enumerate(("unknown", "sky", "blocked", "glass"))}
 MASK = png(96, 72)
+#: Review A03's probe: 24 bytes that start like a PNG and claim ten billion pixels.
+HEADER_ONLY = b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + struct.pack(">II", 100000, 100000)
+NO_HORIZON = {"status": "not_found", "residual_deg": None, "confidence": None, "frame_id": "synthetic-frame-001", "detector": "synthetic-test-only"}
 NOT_RUN = {"rules": "quality-0.2",
            "horizon": {"status": "not_run", "residual_deg": None, "confidence": None, "frame_id": None, "detector": None},
            "lens": {"status": "not_run", "smudge_confidence": None, "frame_id": None, "detector": None},
@@ -138,10 +143,12 @@ def analysed():
 
 
 READY = {"coverage": "pass", "north": "warn", "segmentation": "pass", "level": "pass", "lens": "pass"}
+SEGMENTS = analysed()["analysis"][0]["bands"][0]["segments"]
 SAVED = {"coverage": "blocked", "north": "blocked", "segmentation": "blocked", "level": "blocked", "lens": "blocked"}
 COMPASS_ONLY = [dict(candidate("magnetic", 2.0, 13.0))]
 MIRRORED = [dict(candidate("magnetic", 0.0, 13.0)), dict(candidate("solar", 330.0, 2.0), source="sun_disk", evidence=SUN_EVIDENCE)]
-LIMITED = [["capture_session.frames.2.tracking_state", "limited:excessive_motion"], ["capture_session.frames.2.used_for_visibility", False]]
+LIMITED = [["capture_session.frames.2.tracking_state", "limited:excessive_motion"], ["capture_session.frames.2.used_for_visibility", False],
+           ["visibility.votes.frames_used", 3]]
 #: Analysis ran and the record is still R0: the direction never got past the compass. A normal ending, not a failure.
 STILL_R0 = [["north.candidates", COMPASS_ONLY], ["north.resolved", None], ["analysis", []],
             ["quality.gates.north", "blocked"], ["quality.level", "R0"], ["quality.false_valid_guard", "blocked"],
@@ -164,6 +171,12 @@ CASES = [
     ("payload_larger_than_the_limit", "analysed", [["visibility.states.byte_count", 70000]], False, "$.visibility.states.byte_count", READY),
     ("payload_that_is_not_base64", "analysed", [["visibility.states.data", "not base64!"]], False, "$.visibility.states.data", READY),
     ("states_without_confidence", "analysed", [["visibility.confidence", None]], False, "$.visibility", READY),
+    # The grid rests on the frames the record says were used (review A04).
+    ("grid_resting_on_no_frames", "analysed", [["visibility.votes.frames_used", 0]], False, "$.visibility.votes.frames_used", READY),
+    ("more_frames_claimed_than_used", "analysed", [["visibility.votes.frames_used", 9]], False, "$.visibility.votes.frames_used", READY),
+    ("fewer_frames_than_the_minimum", "analysed",
+     [["capture_session.frames.3.used_for_visibility", False], ["capture_session.frames.2.used_for_visibility", False], ["visibility.votes.frames_used", 2]],
+     False, "$.visibility.votes.frames_used", READY),
 
     # Keyframe masks: a few, each one of the frames that went into the grid.
     ("keyframe_that_is_not_a_frame", "analysed", [["capture_session.keyframes.0.frame_id", "synthetic-frame-099"]],
@@ -174,6 +187,20 @@ CASES = [
      False, "$.capture_session.keyframes[0].mask.data", READY),
     ("mask_of_another_size", "analysed", [["capture_session.keyframes.0.mask.width", 97]], False, "$.capture_session.keyframes[0].mask", READY),
     ("r1_without_a_keyframe_mask", "analysed", [["capture_session.keyframes", []]], False, "$.capture_session.keyframes", READY),
+    # A mask has to be a whole PNG that decodes within bounds, not a header that says so (review A03).
+    ("mask_that_is_only_a_header", "analysed", [["capture_session.keyframes.0.mask", payload(HEADER_ONLY, 100000, 100000, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask.data", READY),
+    ("mask_claiming_ten_billion_pixels", "analysed", [["capture_session.keyframes.0.mask", payload(png(100000, 100000, rows=b""), 100000, 100000, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask", READY),
+    ("mask_with_a_damaged_chunk", "analysed", [["capture_session.keyframes.0.mask", payload(MASK[:40] + bytes([MASK[40] ^ 1]) + MASK[41:], 96, 72, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask.data", READY),
+    ("mask_cut_short", "analysed", [["capture_session.keyframes.0.mask", payload(MASK[:-12], 96, 72, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask.data", READY),
+    ("mask_with_too_few_rows", "analysed", [["capture_session.keyframes.0.mask", payload(png(96, 72, rows=bytes(13 * 10)), 96, 72, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask.data", READY),
+    ("mask_in_colour", "analysed", [["capture_session.keyframes.0.mask", payload(png(96, 72, colour=2, depth=8, rows=bytes((1 + 96 * 3) * 72)), 96, 72, "png+base64")]],
+     False, "$.capture_session.keyframes[0].mask.data", READY),
+    ("mask_eight_bits_deep", "analysed", [["capture_session.keyframes.0.mask", payload(png(96, 72, depth=8), 96, 72, "png+base64")]], True, None, READY),
 
     # The hero's pixels are a scaled copy of the sensor image; the chain has to add up (review R01).
     ("hero_scale_that_does_not_give_its_size", "analysed", [["capture_session.hero_frame.image.scale", 0.25]],
@@ -198,13 +225,26 @@ CASES = [
      LIMITED + [["capture_session.frames.3.t", 4.2], ["capture_session.frames.4.t", 4.3], ["quality.gates.level", "warn"]],
      False, "$.quality.gates.level", dict(READY, level="blocked")),
     ("relocalized_during_the_scan", "analysed",
-     [["capture_session.frames.2.tracking_state", "limited:relocalizing"], ["capture_session.frames.2.used_for_visibility", False]],
+     [["capture_session.frames.2.tracking_state", "limited:relocalizing"], ["capture_session.frames.2.used_for_visibility", False],
+      ["visibility.votes.frames_used", 3]],
      False, "$.quality.gates.level", dict(READY, level="blocked")),
     ("limited_while_walking_to_the_sun_is_not_the_scan", "analysed",
      [["capture_session.frames.5.tracking_state", "limited:excessive_motion"]], True, None, READY),
 
     # Horizon against gravity: no horizon in view is not held against an indoor scan; not looking is.
-    ("no_horizon_in_view", "analysed", [["quality.evidence.horizon", dict(NOT_RUN["horizon"], status="not_found")]], True, None, READY),
+    ("no_horizon_in_view", "analysed", [["quality.evidence.horizon", NO_HORIZON]], True, None, READY),
+    ("no_horizon_without_saying_where_it_looked", "analysed", [["quality.evidence.horizon", dict(NOT_RUN["horizon"], status="not_found")]],
+     False, "$.quality.evidence.horizon.detector", READY),
+    # The evidence has to be about this capture (review A01).
+    ("horizon_checked_on_a_frame_that_is_not_here", "analysed", [["quality.evidence.horizon.frame_id", "nonexistent-frame"]],
+     False, "$.quality.evidence.horizon.frame_id", READY),
+    ("horizon_checked_on_a_calibration_frame", "analysed", [["quality.evidence.horizon.frame_id", "synthetic-frame-006"]],
+     False, "$.quality.evidence.horizon.frame_id", READY),
+    ("horizon_checked_on_the_hero", "analysed", [["quality.evidence.horizon.frame_id", "synthetic-hero"]], True, None, READY),
+    ("lens_checked_on_another_scan", "analysed", [["quality.evidence.lens.frame_id", "another-scan"]],
+     False, "$.quality.evidence.lens.frame_id", READY),
+    ("lens_checked_on_a_sweeping_frame", "analysed", [["quality.evidence.lens.frame_id", "synthetic-frame-002"]],
+     False, "$.quality.evidence.lens.frame_id", READY),
     ("horizon_three_degrees_off", "analysed", [["quality.evidence.horizon.residual_deg", 3.0], ["quality.gates.level", "warn"]],
      True, None, dict(READY, level="warn")),
     ("horizon_six_degrees_off_stated_pass", "analysed", [["quality.evidence.horizon.residual_deg", 6.0]],
@@ -219,7 +259,8 @@ CASES = [
      False, "$.quality.gates.lens", dict(READY, lens="blocked")),
     ("lens_not_checked_stated_pass", "analysed", [["quality.evidence.lens", NOT_RUN["lens"]]],
      False, "$.quality.gates.lens", dict(READY, lens="blocked")),
-    ("lens_check_had_no_steady_frame", "analysed", [["quality.evidence.lens", dict(NOT_RUN["lens"], status="unusable_input")]],
+    ("lens_check_had_no_steady_frame", "analysed",
+     [["quality.evidence.lens", dict(NOT_RUN["lens"], status="unusable_input", detector="synthetic-test-only")]],
      False, "$.quality.gates.lens", dict(READY, lens="blocked")),
 
     # Reflections: not looking blocks; looking and not being sure warns; finding none lets the glass share stand.
@@ -258,6 +299,25 @@ CASES = [
     ("analysis_of_other_inputs", "analysed", [["analysis.0.versions.inputs_hash", "another-hash"]], False, "$.analysis[].versions.inputs_hash", READY),
     ("unknown_minutes_counted_as_sun", "analysed", [["analysis.0.totals.direct_min", 265], ["analysis.0.totals.unknown_min", 0]],
      False, "$.analysis[].totals.direct_min", READY),
+    # One timeline a day: no stretch counted twice, none left out, none outside the question (review A02).
+    ("a_direct_stretch_counted_twice", "analysed",
+     [["analysis.0.bands.0.segments", SEGMENTS[:3] + [SEGMENTS[2]] + SEGMENTS[3:]], ["analysis.0.totals.direct_min", 350]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("direct_overlapping_unknown", "analysed", [["analysis.0.bands.0.segments.5.from", "15:00"], ["analysis.0.totals.unknown_min", 130]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("a_missing_tail_instead_of_unknown", "analysed", [["analysis.0.bands.0.segments", SEGMENTS[:5]], ["analysis.0.totals.unknown_min", 0]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("a_day_with_no_answer_at_all", "analysed",
+     [["analysis.0.bands.0.segments", []], ["analysis.0.totals", {"direct_min": 0, "sensitive_min": 0, "blocked_min": 0, "unknown_min": 0}]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("a_gap_in_the_middle", "analysed", [["analysis.0.bands.0.segments", SEGMENTS[:4] + SEGMENTS[5:]], ["analysis.0.totals.blocked_min", 180]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("a_segment_after_the_window", "analysed", [["analysis.0.query.time_window", ["07:30", "17:00"]]],
+     False, "$.analysis[].bands[].segments[]", READY),
+    ("a_day_outside_the_query", "analysed", [["analysis.0.bands.0.date", "2027-06-22"]], False, "$.analysis[].bands[].date", READY),
+    ("the_same_day_twice", "analysed",
+     [["analysis.0.bands", [analysed()["analysis"][0]["bands"][0]] * 2], ["analysis.0.totals", {"direct_min": 350, "sensitive_min": 100, "blocked_min": 530, "unknown_min": 180}]],
+     False, "$.analysis[].bands[].date", READY),
     ("analysed_without_an_inputs_hash", "analysed", [["result.inputs_hash", None]], False, "$.result", READY),
     ("never_analysed_but_carrying_a_grid", "analysed", STILL_R0 + [["result", saved()["result"]]], False, "$.result", dict(READY, north="blocked")),
 

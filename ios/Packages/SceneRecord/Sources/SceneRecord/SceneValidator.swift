@@ -16,6 +16,15 @@ internal enum SceneValidator {
     static let maxGridBytes = 360 * 181
     static let maxMaskBytes = 400_000
     static let maxKeyframes = 5
+    /// A keyframe mask is a small greyscale PNG; its side is bounded before anything is inflated (review A03).
+    static let maxMaskSide = 2048
+
+    /// What the later checks need to know about the capture: which frames exist, which went into the grid, which the
+    /// scan tracked normally, and which one is the hero.
+    private struct Frames {
+        var ids = Set<String>(), used = Set<String>(), steady = Set<String>()
+        var hero: String?
+    }
     /// Sun-disk candidate validity, sundisk-0.1 (docs/05 §2a). Candidates until experiment 2 (docs/07 §5).
     static let sunDiskRules = "sundisk-0.1"
     static let sunAltitudeResidualDeg = 1.5
@@ -182,14 +191,14 @@ internal enum SceneValidator {
             try vector(target.value("anchor_world"), 3, "$.target.anchor_world")
             for key in ["confirmed_by", "notes"] { try optionalText(target.value(key), "$.target." + key) }
         }
-        let frames = r.value("capture_session") == .null ? [] : try capture(r.value("capture_session"), v2)
-        try north(r.value("north"), frames: v2 ? frames : nil)
-        if r.value("visibility") != .null { try visibility(r.value("visibility"), v2) }
+        let frames = r.value("capture_session") == .null ? Frames() : try capture(r.value("capture_session"), v2)
+        try north(r.value("north"), frames: v2 ? frames.ids : nil)
+        if r.value("visibility") != .null { try visibility(r.value("visibility"), v2, usedFrames: frames.used.count) }
         if r.value("geometry") != .null { try geometry(r.value("geometry")) }
         let analyses = try array(r.value("analysis"), "$.analysis")
         let q = try object(r.value("quality"), "$.quality", "level gates flags false_valid_guard blocked_reason" + (v2 ? " evidence" : ""))
         let result = v2 ? try self.result(r, analyses) : nil
-        if v2 { try qualityEvidence(q.value("evidence")) }
+        if v2 { try qualityEvidence(q.value("evidence"), frames) }
         let level = try choice(q.value("level"), ["R0", "R1", "R2", "R3"], "$.quality.level")
         let guardState = try choice(q.value("false_valid_guard"), ["blocked", "passed"], "$.quality.false_valid_guard")
         let gates = try object(q.value("gates"), "$.quality.gates", "level coverage north segmentation lens")
@@ -269,8 +278,53 @@ internal enum SceneValidator {
         try text(i.value("sha256"), path + ".sha256")
     }
 
-    /// Returns the frame ids, for the checks that point at frames.
-    private static func capture(_ value: JSONValue, _ v2: Bool) throws -> Set<String> {
+    private static let crcTable: [UInt32] = (0..<256).map { index in
+        (0..<8).reduce(UInt32(index)) { value, _ in value & 1 == 1 ? 0xEDB8_8320 ^ (value >> 1) : value >> 1 }
+    }
+
+    private static func crc32(_ bytes: ArraySlice<UInt8>) -> UInt32 {
+        ~bytes.reduce(~UInt32(0)) { crcTable[Int(($0 ^ UInt32($1)) & 0xFF)] ^ ($0 >> 8) }
+    }
+
+    /// A keyframe mask must be a whole PNG that can be decoded within bounds: every chunk present and intact,
+    /// greyscale, not interlaced, sides within the limit, and pixel data that inflates to exactly its rows. Returns
+    /// (width, height). The size is read and bounded before anything is inflated; a header that claims
+    /// 100000 x 100000 costs nothing.
+    private static func maskPNG(_ png: [UInt8], _ path: String) throws -> (width: Double, height: Double) {
+        let p = path + ".data"
+        func big(_ at: Int) -> Int { png[at..<at + 4].reduce(0) { $0 << 8 | Int($1) } }
+        try require(png.count >= 8 && Array(png[0..<8]) == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], p, "not a PNG")
+        var at = 8
+        var chunks: [(kind: [UInt8], body: ArraySlice<UInt8>)] = []
+        while at < png.count {
+            try require(at + 12 <= png.count, p, "truncated PNG")
+            let length = big(at)
+            try require(at + 12 + length <= png.count, p, "truncated PNG")
+            try require(UInt32(big(at + 8 + length)) == crc32(png[(at + 4)..<(at + 8 + length)]), p, "damaged PNG chunk")
+            chunks.append((Array(png[(at + 4)..<(at + 8)]), png[(at + 8)..<(at + 8 + length)]))
+            at += 12 + length
+        }
+        try require(chunks.count >= 3 && chunks[0].kind == Array("IHDR".utf8) && chunks[0].body.count == 13
+                    && chunks[chunks.count - 1].kind == Array("IEND".utf8) && chunks[chunks.count - 1].body.isEmpty, p, "not a whole PNG")
+        let header = Array(chunks[0].body)
+        let width = header[0..<4].reduce(0) { $0 << 8 | Int($1) }, height = header[4..<8].reduce(0) { $0 << 8 | Int($1) }
+        try require((1...maxMaskSide).contains(width) && (1...maxMaskSide).contains(height), path, "mask larger than the limit")
+        let depth = Int(header[8])
+        try require(header[9] == 0 && [1, 8].contains(depth) && header[10] == 0 && header[11] == 0 && header[12] == 0, p, "mask must be a plain greyscale PNG")
+        let data = chunks.filter { $0.kind == Array("IDAT".utf8) }.flatMap { Array($0.body) }
+        try require(!data.isEmpty, p, "not a whole PNG")
+        let rows = height * (1 + (width * depth + 7) / 8)
+        // The stream is zlib-wrapped (two header bytes); Compression's ZLIB is the raw DEFLATE inside.
+        var pixels = [UInt8](repeating: 0, count: rows + 1)
+        let written = data.count > 2 ? data.dropFirst(2).withUnsafeBufferPointer { source in
+            compression_decode_buffer(&pixels, rows + 1, source.baseAddress!, source.count, nil, COMPRESSION_ZLIB)
+        } : 0
+        try require(written == rows, p, "PNG pixel data is not the size of the image")
+        return (Double(width), Double(height))
+    }
+
+    /// Returns what the later checks need to know about the frames.
+    private static func capture(_ value: JSONValue, _ v2: Bool) throws -> Frames {
         let p = "$.capture_session"
         let s = try object(value, p, "session_id started_at ended_at world_alignment hero_frame frames viewpoint_lock guidance" + (v2 ? " keyframes" : ""))
         try text(s.value("session_id"), p + ".session_id")
@@ -291,7 +345,7 @@ internal enum SceneValidator {
             }
         }
         var ids = Set<String>()
-        var used = Set<String>()
+        var used = Set<String>(), steady = Set<String>()
         for (i, item) in try array(s.value("frames"), p + ".frames").enumerated() {
             let fp = "\(p).frames[\(i)]"
             let f = try object(item, fp, "frame_id t camera_transform intrinsics tracking_state lens_offset_m depth_ref depth_confidence_ref mask_ref exposure_offset used_for_visibility")
@@ -311,6 +365,7 @@ internal enum SceneValidator {
                 // A frame taken while confirming the direction is not evidence about the target point's sky (review V2-02).
                 try require(role == "visibility" || f.value("used_for_visibility") == .bool(false), fp, "a calibration frame cannot be used for visibility")
                 if f.value("used_for_visibility") == .bool(true) { used.insert(id) }
+                if state == "normal" && role == "visibility" { steady.insert(id) }
             }
         }
         if v2 {
@@ -323,11 +378,8 @@ internal enum SceneValidator {
                 try require(ids.contains(id), kp + ".frame_id", "keyframe is not one of the frames")
                 try require(used.contains(id), kp + ".frame_id", "keyframe was not used for visibility")
                 let mask = try payload(k.value("mask"), kp + ".mask", "png+base64", maxMaskBytes)
-                let png = [UInt8](mask.bytes)
-                try require(png.count >= 24 && Array(png[0..<8]) == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] && Array(png[12..<16]) == Array("IHDR".utf8),
-                            kp + ".mask.data", "not a PNG")
-                func big(_ at: Int) -> Double { Double(png[at..<at + 4].reduce(0) { $0 << 8 | UInt32($1) }) }
-                try require(big(16) == mask.width && big(20) == mask.height, kp + ".mask", "stated size is not the image's")
+                let size = try maskPNG([UInt8](mask.bytes), kp + ".mask")
+                try require(size.width == mask.width && size.height == mask.height, kp + ".mask", "stated size is not the image's")
             }
         }
         let lock = try object(s.value("viewpoint_lock"), p + ".viewpoint_lock", "anchor_world tolerance_m max_drift_m frames_within frames_beyond handling")
@@ -337,7 +389,7 @@ internal enum SceneValidator {
         try choice(lock.value("handling"), ["depth_recentered", "tolerated", "rejected"], p + ".viewpoint_lock.handling")
         let g = try object(s.value("guidance"), p + ".guidance", "question corridor_ref")
         try choice(g.value("question"), ["winter_breakfast", "full_year", "west_afternoon", "custom"], p + ".guidance.question")
-        return ids
+        return Frames(ids: ids, used: used, steady: steady, hero: s.value("hero_frame").object?["frame_id"]?.string)
     }
 
     /// A sun-disk candidate stated valid must carry evidence that passes sundisk-0.1 (docs/05 §2a). Passing does not
@@ -405,7 +457,7 @@ internal enum SceneValidator {
         }
     }
 
-    private static func visibility(_ value: JSONValue, _ v2: Bool) throws {
+    private static func visibility(_ value: JSONValue, _ v2: Bool, usedFrames: Int) throws {
         let p = "$.visibility"
         let v = try object(value, p, "grid votes coverage segmentation near_field " + (v2 ? "states confidence" : "states_ref confidence_ref"))
         let grid = try object(v.value("grid"), p + ".grid", "az_step_deg alt_step_deg az_frame alt_range")
@@ -419,7 +471,7 @@ internal enum SceneValidator {
         let lo = try number(range[0], p), hi = try number(range[1], p)
         try require(lo >= -90 && lo < hi && hi <= 90, p, "invalid altitude range")
         if v2 {
-            try gridPayloads(v, p, width: 360 / (grid.value("az_step_deg").number ?? 1), height: (hi - lo) / (grid.value("alt_step_deg").number ?? 1))
+            try gridPayloads(v, p, width: 360 / (grid.value("az_step_deg").number ?? 1), height: (hi - lo) / (grid.value("alt_step_deg").number ?? 1), usedFrames: usedFrames)
         } else if v.value("votes") != .null {
             for (key, count) in try object(v.value("votes"), p + ".votes") { try number(count, p + ".votes." + key, low: 0, integer: true) }
         }
@@ -448,8 +500,11 @@ internal enum SceneValidator {
     }
 
     /// 0.2: the grid travels inside the record. One byte a cell, row-major from the lowest altitude, azimuth 0 first:
-    /// 0 unknown, 1 sky, 2 blocked, 3 glass-uncertain. `votes.cells` must be the grid's own histogram.
-    private static func gridPayloads(_ v: Object, _ p: String, width: Double, height: Double) throws {
+    /// 0 unknown, 1 sky, 2 blocked, 3 glass-uncertain. `votes.cells` must be the grid's own histogram, and
+    /// `votes.frames_used` the number of frames the record marks as used for visibility: a grid that knows anything
+    /// rests on at least `min_distinct_frames` of them (review A04). This counts frames; whether each cell had enough
+    /// distinct support is the accumulator's business and is tested there.
+    private static func gridPayloads(_ v: Object, _ p: String, width: Double, height: Double, usedFrames: Int) throws {
         try require(width.rounded(.down) == width && height.rounded(.down) == height, p + ".grid", "steps do not divide the ranges")
         var states: Data?
         for key in ["states", "confidence"] where v.value(key) != .null {
@@ -472,6 +527,11 @@ internal enum SceneValidator {
             var histogram = [Double](repeating: 0, count: 4)
             for state in states { histogram[Int(state)] += 1 }
             try require(names.map { cells.value($0).number ?? -1 } == histogram, p + ".votes.cells", "cell counts are not the grid's")
+            let votes = try object(v.value("votes"), p + ".votes")
+            let stated = votes.value("frames_used").number ?? -1
+            try require(stated == Double(usedFrames), p + ".votes.frames_used", "not the number of frames used for visibility")
+            try require(histogram[1...].reduce(0, +) == 0 || stated >= (votes.value("min_distinct_frames").number ?? .infinity), p + ".votes.frames_used",
+                        "a grid that knows anything needs at least min_distinct_frames frames")
         }
     }
 
@@ -513,21 +573,32 @@ internal enum SceneValidator {
     }
 
     /// 0.2: what the detectors reported, so that every light can be worked out again (rules in QualityEvaluator).
-    private static func qualityEvidence(_ value: JSONValue) throws {
+    /// A check that ran says which frame of *this* capture it looked at (review A01): the horizon check one of the
+    /// scan's normally tracked frames or the hero, the lens check the hero. `not_found` is a check that ran.
+    private static func qualityEvidence(_ value: JSONValue, _ frames: Frames) throws {
         let p = "$.quality.evidence"
         let e = try object(value, p, "rules horizon lens reflection")
         try choice(e.value("rules"), [QualityEvaluator.version2], p + ".rules")
         let h = try object(e.value("horizon"), p + ".horizon", "status residual_deg confidence frame_id detector")
-        let horizonMeasured = try choice(h.value("status"), ["measured", "not_found", "not_run"], p + ".horizon.status") == "measured"
+        let horizonStatus = try choice(h.value("status"), ["measured", "not_found", "not_run"], p + ".horizon.status")
+        let horizonMeasured = horizonStatus == "measured"
         if horizonMeasured { try number(h.value("residual_deg"), p + ".horizon.residual_deg", low: 0, high: 180) } else { try optionalNumber(h.value("residual_deg"), p + ".horizon.residual_deg", low: 0, high: 180) }
         if horizonMeasured { try number(h.value("confidence"), p + ".horizon.confidence", low: 0, high: 1) } else { try optionalNumber(h.value("confidence"), p + ".horizon.confidence", low: 0, high: 1) }
         let lens = try object(e.value("lens"), p + ".lens", "status smudge_confidence frame_id detector")
-        let lensMeasured = try choice(lens.value("status"), ["measured", "unusable_input", "not_run"], p + ".lens.status") == "measured"
+        let lensStatus = try choice(lens.value("status"), ["measured", "unusable_input", "not_run"], p + ".lens.status")
+        let lensMeasured = lensStatus == "measured"
         if lensMeasured { try number(lens.value("smudge_confidence"), p + ".lens.smudge_confidence", low: 0, high: 1) } else { try optionalNumber(lens.value("smudge_confidence"), p + ".lens.smudge_confidence", low: 0, high: 1) }
-        for (name, part, measured) in [("horizon", h, horizonMeasured), ("lens", lens, lensMeasured)] {
-            for key in ["frame_id", "detector"] {
-                if measured { try text(part.value(key), "\(p).\(name).\(key)") } else { try optionalText(part.value(key), "\(p).\(name).\(key)") }
-            }
+        for (name, part, status) in [("horizon", h, horizonStatus), ("lens", lens, lensStatus)] {
+            let ran = status != "not_run"
+            if ran { try text(part.value("detector"), "\(p).\(name).detector") } else { try optionalText(part.value("detector"), "\(p).\(name).detector") }
+            if ran && status != "unusable_input" { try text(part.value("frame_id"), "\(p).\(name).frame_id") } else { try optionalText(part.value("frame_id"), "\(p).\(name).frame_id") }
+        }
+        if horizonStatus != "not_run" {
+            let frame = h.value("frame_id").string ?? ""
+            try require(frames.steady.contains(frame) || frame == frames.hero, p + ".horizon.frame_id", "not a normally tracked frame of this scan")
+        }
+        if let frame = lens.value("frame_id").string {
+            try require(frame == frames.hero, p + ".lens.frame_id", "the lens is checked on this scan's hero frame")
         }
         let reflection = try object(e.value("reflection"), p + ".reflection", "status frames_checked hits detector")
         let status = try choice(reflection.value("status"), ["none_found", "suspected", "undetermined", "not_run"], p + ".reflection.status")
@@ -577,6 +648,31 @@ internal enum SceneValidator {
             try timestamp(a.value("computed_at"), "$.analysis[].computed_at")
             if let result {
                 try boolean(q.value("representative"), "$.analysis[].query.representative")
+                // A day's segments are one timeline inside the query's window: in order, touching, never overlapping.
+                // A stretch nothing is known about is a segment of its own, state unknown (review A02).
+                let window = (try array(q.value("time_window"), "$.analysis[].query.time_window")).compactMap(\.string)
+                try require(window.count == 2 && q.value("time_window").array?.count == 2 && window.allSatisfy { matches($0, "\\A(?:[01][0-9]|2[0-3]):[0-5][0-9]\\z") }
+                            && window[0] < window[1], "$.analysis[].query.time_window", "expected two local times in order")
+                let bands = (a.value("bands").array ?? []).compactMap(\.object)
+                let dates = bands.compactMap { $0.value("date").string }
+                try require(dates.count == Set(dates).count, "$.analysis[].bands[].date", "a date appears twice")
+                for band in bands {
+                    let day = band.value("date").string ?? ""
+                    try require(from <= day && day <= to, "$.analysis[].bands[].date", "date outside the query")
+                    let segments = (band.value("segments").array ?? []).compactMap(\.object)
+                    var previous: String?
+                    for segment in segments {
+                        let start = segment.value("from").string ?? "", end = segment.value("to").string ?? ""
+                        try require(window[0] <= start && end <= window[1], "$.analysis[].bands[].segments[]", "segment outside the query's window")
+                        try require(previous == nil || start == previous, "$.analysis[].bands[].segments[]", "segments overlap or leave a gap")
+                        previous = end
+                    }
+                    // A one-day question is answered for its whole window; what is not known is said, not left out.
+                    if from == to {
+                        try require(segments.first?.value("from").string == window[0] && previous == window[1],
+                                    "$.analysis[].bands[].segments[]", "segments do not cover the query's window")
+                    }
+                }
                 try require(a.value("revision") == result.value("revision"), "$.analysis[].revision", "not the record's result revision")
                 try require(versions.value("inputs_hash") == result.value("inputs_hash"), "$.analysis[].versions.inputs_hash", "not the record's inputs hash")
                 // Minutes a state is shown for are the segments' own: an unknown stretch can never be counted as sun.

@@ -372,7 +372,7 @@ extension SceneRecordTests {
     /// reference is held to. A refused record must be refused at the same place in both languages.
     func testEverySchema2CaseGetsItsVerdict() throws {
         let cases = try qualityCases("scene-v2-cases.json", version: QualityEvaluator.version2)
-        XCTAssertGreaterThan(cases.count, 50)
+        XCTAssertGreaterThan(cases.count, 75)
         for c in cases {
             if c.accepted {
                 XCTAssertNoThrow(try SceneRecordDocument(fields: c.record), c.name)

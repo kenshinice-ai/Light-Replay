@@ -133,19 +133,19 @@
 
 ## 11. schema 0.2.0（ADR-0022，2026-10-04）
 
-0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 57 个用例【验】。当前 App 写出的仍是 0.1.0，阶段 B 切换。
+0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 81 个用例（15 接受、66 拒绝）【验】。当前 App 写出的仍是 0.1.0，阶段 B 切换。
 
 | 位置 | 0.2.0 | 校验 |
 |---|---|---|
 | 根 | 新增 `result`：`revision`（0 = 刚保存）、`capture_digest`、`north_digest`、`inputs_hash`、`computed_at` | revision 0 时没有网格、没有分析、没有 hash；≥ 1 时必须有 hash 与时间 |
 | `capture_session.hero_frame.image` | `null` 或 `{storage: "row.photo", native_size, encoded_size, scale, crop, rotation_deg, byte_count, sha256}`；像素在行的照片列 | 裁剪在原图内；`encoded_size` 必须等于 裁剪 × 缩放（旋转 90 / 270 时宽高对调），容差 1 px |
 | `capture_session.frames[].role` | `visibility` 或 `calibration`（确认方向时的帧） | `calibration` 帧不得 `used_for_visibility` |
-| `capture_session.keyframes[]` | 至多 5 项：`frame_id` + `mask` 载荷（`png+base64`） | 必须是用于可见域的帧；PNG 签名与 IHDR 尺寸要对 |
+| `capture_session.keyframes[]` | 至多 5 项：`frame_id` + `mask` 载荷（`png+base64`） | 必须是用于可见域的帧。掩膜是一张完整、可在界内解码的 PNG：每个块齐全且 CRC 正确、以 IHDR 开头 IEND 结尾、灰度（1 或 8 位）、不隔行、边长 ≤ 2048【估】，像素数据解压后恰好等于各行之和。先读尺寸并设界，再解压（评审 A03） |
 | `visibility.states` / `confidence` | 取代 `states_ref` / `confidence_ref`：载荷 `{encoding: "deflate+base64", width, height, byte_count, sha256, data}`；一字节一格，行优先，自最低高度角、方位 0 起；状态 0 未知、1 天空、2 遮挡、3 玻璃不确定 | 尺寸等于网格；解压有上限；长度与 SHA-256 是解码后字节的；两者同在或同缺 |
-| `visibility.votes` | `frames_used`、`min_distinct_frames`、`cells: {unknown, sky, blocked, glass}` | `cells` 必须是网格自己的直方图 |
+| `visibility.votes` | `frames_used`、`min_distinct_frames`、`cells: {unknown, sky, blocked, glass}` | `cells` 必须是网格自己的直方图；`frames_used` 必须等于记录里 `used_for_visibility` 的帧数；有已知格的网格至少要 `min_distinct_frames` 帧（评审 A04）。这只数帧，逐格是否有足够的不同帧支持由累积层保证并在那里测 |
 | `north.candidates[]`（`source: sun_disk`） | `evidence`：`rules: "sundisk-0.1"`、`frame_id`、`time`、`altitude_measured_deg`、`altitude_expected_deg`、`azimuth_expected_deg`、`depth_m`、`sky_ring_fraction`、`user_confirmed`、`tracking_continuous` | 声称有效而证据不过规则（`05` §2a）的记录被拒；无效的候选可以带着证据保留 |
-| `analysis[]` | 新增 `revision`、`totals: {direct_min, sensitive_min, blocked_min, unknown_min}`、`query.representative` | revision 与 `versions.inputs_hash` 必须是 `result` 的；四个分钟数必须等于各段之和（未知不能被算成直射） |
-| `quality.evidence` | `rules: "quality-0.2"`、`horizon`、`lens`、`reflection`（各有 `status` 与原始数值） | 形状与一致性在校验器；灯的规则在 QualityEvaluator（`04` §6） |
+| `analysis[]` | 新增 `revision`、`totals: {direct_min, sensitive_min, blocked_min, unknown_min}`、`query.representative` | revision 与 `versions.inputs_hash` 必须是 `result` 的；四个分钟数必须等于各段之和（未知不能被算成直射）。一天的各段是一条时间线：在查询窗口内、按序、首尾相接、不重叠；日期不重复且在查询范围内；单日查询必须铺满窗口，不知道的部分写成 `unknown` 段而不是留空（评审 A02） |
+| `quality.evidence` | `rules: "quality-0.2"`、`horizon`、`lens`、`reflection`（各有 `status` 与原始数值） | 形状与一致性在校验器；灯的规则在 QualityEvaluator（`04` §6）。跑过的检查（含 `not_found`）必须写明检测器与帧：地平线的帧是本次扫描追踪正常的帧或 Hero，镜头的帧是本次的 Hero（评审 A01）。"稳定"本身的证明随阶段 B 的帧卷元数据补 |
 | R1 的证据要求 | 内联网格与置信度、至少一张属于可用帧的关键帧掩膜（取代 0.1 的 `mask_ref`） | 其余同 0.1 |
 
 载荷上限【估】：网格 ≤ 65 160 字节（360 × 181），掩膜 ≤ 400 000 字节，关键帧 ≤ 5。真实样本的体积与读取内存待阶段 C 量。

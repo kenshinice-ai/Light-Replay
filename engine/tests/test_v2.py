@@ -48,7 +48,7 @@ class V2CaseTests(unittest.TestCase):
     def test_every_case_gets_its_verdict(self):
         data = load()
         self.assertEqual(data["version"], quality.VERSION_2)
-        self.assertGreater(len(data["cases"]), 50)
+        self.assertGreater(len(data["cases"]), 75)
         for case in data["cases"]:
             with self.subTest(case["name"]):
                 record = applied(data, case)
@@ -67,7 +67,10 @@ class V2CaseTests(unittest.TestCase):
     def test_the_review_probes_are_in_the_fixture(self):
         cases = {case["name"]: case for case in load()["cases"]}
         for refused in ("calibration_frame_used_for_visibility", "a_surface_at_the_bright_spot", "lens_not_checked_stated_pass",
-                        "reflections_not_checked", "unknown_minutes_counted_as_sun", "never_analysed_but_carrying_a_grid"):
+                        "reflections_not_checked", "unknown_minutes_counted_as_sun", "never_analysed_but_carrying_a_grid",
+                        # the stage A delivery review, A01–A04
+                        "horizon_checked_on_a_frame_that_is_not_here", "lens_checked_on_another_scan", "a_direct_stretch_counted_twice",
+                        "direct_overlapping_unknown", "mask_that_is_only_a_header", "mask_claiming_ten_billion_pixels", "grid_resting_on_no_frames"):
             self.assertFalse(cases[refused]["accepted"], refused)
         # Review V2-01: a vertical mirror keeps the sun's altitude. The stated checks pass and the record is accepted;
         # the fixture holds that on purpose, so the limit of sundisk-0.1 stays in plain sight.

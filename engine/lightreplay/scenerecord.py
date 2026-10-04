@@ -35,6 +35,8 @@ _ACCURACY_KEYS = set("h_acc_m v_acc_m heading_accuracy sigma_deg yaw_sigma_deg b
 MAX_GRID_BYTES = 360 * 181
 MAX_MASK_BYTES = 400_000
 MAX_KEYFRAMES = 5
+#: A keyframe mask is a small greyscale PNG; its side is bounded before anything is inflated (review A03).
+MAX_MASK_SIDE = 2048
 #: Sun-disk candidate validity, sundisk-0.1 (docs/05 §2a). Candidates until experiment 2 (docs/07 §5).
 SUN_DISK_RULES = "sundisk-0.1"
 SUN_ALTITUDE_RESIDUAL_DEG = 1.5
@@ -225,8 +227,7 @@ def _capture(value, v2=False):
             _require(k["frame_id"] in roles, kpath + ".frame_id", "keyframe is not one of the frames")
             _require(roles[k["frame_id"]]["used_for_visibility"] is True, kpath + ".frame_id", "keyframe was not used for visibility")
             png = _payload(k["mask"], kpath + ".mask", "png+base64", MAX_MASK_BYTES)
-            _require(png[:8] == b"\x89PNG\r\n\x1a\n" and png[12:16] == b"IHDR" and len(png) >= 24, kpath + ".mask.data", "not a PNG")
-            _require(struct.unpack(">II", png[16:24]) == (k["mask"]["width"], k["mask"]["height"]), kpath + ".mask", "stated size is not the image's")
+            _require((k["mask"]["width"], k["mask"]["height"]) == _mask_png(png, kpath + ".mask"), kpath + ".mask", "stated size is not the image's")
     lock = _object(s["viewpoint_lock"], p + ".viewpoint_lock", "anchor_world tolerance_m max_drift_m frames_within frames_beyond handling")
     _vector(lock["anchor_world"], 3, p + ".viewpoint_lock.anchor_world")
     for key in ("tolerance_m", "max_drift_m"):
@@ -236,6 +237,36 @@ def _capture(value, v2=False):
     _enum(lock["handling"], ("depth_recentered", "tolerated", "rejected"), p + ".viewpoint_lock.handling")
     g = _object(s["guidance"], p + ".guidance", "question corridor_ref")
     _enum(g["question"], ("winter_breakfast", "full_year", "west_afternoon", "custom"), p + ".guidance.question")
+
+
+def _mask_png(png, path):
+    """A keyframe mask must be a whole PNG that can be decoded within bounds: every chunk present and intact, greyscale,
+    not interlaced, sides within the limit, and pixel data that inflates to exactly its rows. Returns (width, height).
+    The size is read and bounded before anything is inflated; a header that claims 100000 x 100000 costs nothing."""
+    p = path + ".data"
+    _require(png[:8] == b"\x89PNG\r\n\x1a\n", p, "not a PNG")
+    at, chunks = 8, []
+    while at < len(png):
+        _require(at + 12 <= len(png), p, "truncated PNG")
+        length, kind = struct.unpack(">I4s", png[at:at + 8])
+        _require(at + 12 + length <= len(png), p, "truncated PNG")
+        body = png[at + 8:at + 8 + length]
+        _require(struct.unpack(">I", png[at + 8 + length:at + 12 + length])[0] == zlib.crc32(kind + body), p, "damaged PNG chunk")
+        chunks.append((kind, body))
+        at += 12 + length
+    _require(len(chunks) >= 3 and chunks[0][0] == b"IHDR" and len(chunks[0][1]) == 13 and chunks[-1] == (b"IEND", b""), p, "not a whole PNG")
+    width, height, depth, colour, compression, filtering, interlace = struct.unpack(">IIBBBBB", chunks[0][1])
+    _require(1 <= width <= MAX_MASK_SIDE and 1 <= height <= MAX_MASK_SIDE, path, "mask larger than the limit")
+    _require(colour == 0 and depth in (1, 8) and (compression, filtering, interlace) == (0, 0, 0), p, "mask must be a plain greyscale PNG")
+    data = b"".join(body for kind, body in chunks if kind == b"IDAT")
+    _require(bool(data), p, "not a whole PNG")
+    rows = height * (1 + (width * depth + 7) // 8)
+    try:
+        pixels = zlib.decompressobj().decompress(data, rows + 1)
+    except zlib.error as error:
+        raise ValidationError(f"{p}: PNG pixel data does not inflate") from error
+    _require(len(pixels) == rows, p, "PNG pixel data is not the size of the image")
+    return width, height
 
 
 def _hero_image(value, path):
@@ -331,7 +362,7 @@ def _north(value, frames=None):
         _require(not set(r["groups_used"]) & set(r["groups_rejected"]), p, "used/rejected groups overlap")
 
 
-def _visibility(value, v2=False):
+def _visibility(value, v2=False, used_frames=0):
     p = "$.visibility"
     v = _object(value, p, "grid votes coverage segmentation near_field " + ("states confidence" if v2 else "states_ref confidence_ref"))
     grid = _object(v["grid"], p + ".grid", "az_step_deg alt_step_deg az_frame alt_range")
@@ -342,7 +373,7 @@ def _visibility(value, v2=False):
     _vector(grid["alt_range"], 2, p + ".grid.alt_range")
     _require(-90 <= grid["alt_range"][0] < grid["alt_range"][1] <= 90, p, "invalid altitude range")
     if v2:
-        _grid_payloads(v, grid, p)
+        _grid_payloads(v, grid, p, used_frames)
     elif v["votes"] is not None:
         votes = _object(v["votes"], p + ".votes")
         for key, count in votes.items():
@@ -370,9 +401,12 @@ def _visibility(value, v2=False):
         _enum(n["source"], ("lidar",), p + ".near_field.source")
 
 
-def _grid_payloads(v, grid, p):
+def _grid_payloads(v, grid, p, used_frames):
     """0.2: the grid travels inside the record. One byte a cell, row-major from the lowest altitude, azimuth 0 first:
-    0 unknown, 1 sky, 2 blocked, 3 glass-uncertain. `votes.cells` must be the grid's own histogram."""
+    0 unknown, 1 sky, 2 blocked, 3 glass-uncertain. `votes.cells` must be the grid's own histogram, and
+    `votes.frames_used` the number of frames the record marks as used for visibility: a grid that knows anything
+    rests on at least `min_distinct_frames` of them (review A04). This counts frames; whether each cell had enough
+    distinct support is the accumulator's business and is tested there."""
     width = 360 / grid["az_step_deg"]
     height = (grid["alt_range"][1] - grid["alt_range"][0]) / grid["alt_step_deg"]
     _require(width == math.floor(width) and height == math.floor(height), p + ".grid", "steps do not divide the ranges")
@@ -397,6 +431,9 @@ def _grid_payloads(v, grid, p):
         votes = _object(v["votes"], p + ".votes", "cells")
         histogram = [states.count(bytes([state])) for state in range(4)]
         _require([votes["cells"][key] for key in ("unknown", "sky", "blocked", "glass")] == histogram, p + ".votes.cells", "cell counts are not the grid's")
+        _require(votes["frames_used"] == used_frames, p + ".votes.frames_used", "not the number of frames used for visibility")
+        _require(sum(histogram[1:]) == 0 or votes["frames_used"] >= votes["min_distinct_frames"], p + ".votes.frames_used",
+                 "a grid that knows anything needs at least min_distinct_frames frames")
 
 
 def _geometry(value):
@@ -458,6 +495,24 @@ def _analysis(value, result=None):
         _timestamp(a["computed_at"], "$.analysis[].computed_at")
         if result is not None:
             _bool(q["representative"], "$.analysis[].query.representative")
+            # A day's segments are one timeline inside the query's window: in order, touching, never overlapping. A stretch
+            # nothing is known about is a segment of its own, state unknown (review A02).
+            window = _array(q["time_window"], "$.analysis[].query.time_window")
+            _require(len(window) == 2 and all(isinstance(t, str) and re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", t) for t in window)
+                     and window[0] < window[1], "$.analysis[].query.time_window", "expected two local times in order")
+            dates = [band["date"] for band in a["bands"]]
+            _require(len(dates) == len(set(dates)), "$.analysis[].bands[].date", "a date appears twice")
+            for band in a["bands"]:
+                _require(q["date_from"] <= band["date"] <= q["date_to"], "$.analysis[].bands[].date", "date outside the query")
+                previous = None
+                for segment in band["segments"]:
+                    _require(window[0] <= segment["from"] and segment["to"] <= window[1], "$.analysis[].bands[].segments[]", "segment outside the query's window")
+                    _require(previous is None or segment["from"] == previous, "$.analysis[].bands[].segments[]", "segments overlap or leave a gap")
+                    previous = segment["to"]
+                # A one-day question is answered for its whole window; what is not known is said, not left out.
+                if q["date_from"] == q["date_to"]:
+                    _require(bool(band["segments"]) and band["segments"][0]["from"] == window[0] and previous == window[1],
+                             "$.analysis[].bands[].segments[]", "segments do not cover the query's window")
             _require(a["revision"] == result["revision"], "$.analysis[].revision", "not the record's result revision")
             _require(a["versions"]["inputs_hash"] == result["inputs_hash"], "$.analysis[].versions.inputs_hash", "not the record's inputs hash")
             # Minutes a state is shown for are the segments' own: an unknown stretch can never be counted as sun.
@@ -495,8 +550,11 @@ def _result(r):
     return result
 
 
-def _quality_evidence(value):
-    """0.2: what the detectors reported, so that every light can be worked out again (rules in quality.py)."""
+def _quality_evidence(value, steady=frozenset(), hero=None):
+    """0.2: what the detectors reported, so that every light can be worked out again (rules in quality.py).
+
+    A check that ran says which frame of *this* capture it looked at (review A01): the horizon check one of the scan's
+    normally tracked frames or the hero, the lens check the hero. `not_found` is a check that ran."""
     p = "$.quality.evidence"
     e = _object(value, p, "rules horizon lens reflection")
     _enum(e["rules"], ("quality-0.2",), p + ".rules")
@@ -509,8 +567,13 @@ def _quality_evidence(value):
     _enum(lens["status"], ("measured", "unusable_input", "not_run"), p + ".lens.status")
     _number(lens["smudge_confidence"], p + ".lens.smudge_confidence", low=0, high=1, nullable=lens["status"] != "measured")
     for name, part in (("horizon", h), ("lens", lens)):
-        for key in ("frame_id", "detector"):
-            _string(part[key], f"{p}.{name}.{key}", nullable=part["status"] != "measured")
+        ran = part["status"] != "not_run"
+        _string(part["detector"], f"{p}.{name}.detector", nullable=not ran)
+        _string(part["frame_id"], f"{p}.{name}.frame_id", nullable=not ran or part["status"] == "unusable_input")
+    if h["status"] != "not_run":
+        _require(h["frame_id"] in steady or h["frame_id"] == hero, p + ".horizon.frame_id", "not a normally tracked frame of this scan")
+    if lens["frame_id"] is not None:
+        _require(lens["frame_id"] == hero, p + ".lens.frame_id", "the lens is checked on this scan's hero frame")
     reflection = _object(e["reflection"], p + ".reflection", "status frames_checked hits detector")
     _enum(reflection["status"], ("none_found", "suspected", "undetermined", "not_run"), p + ".reflection.status")
     for key in ("frames_checked", "hits"):
@@ -588,17 +651,20 @@ def validate(record):
         _string(t["notes"], "$.target.notes", nullable=True)
     if r["capture_session"] is not None:
         _capture(r["capture_session"], v2)
-    frames = {f["frame_id"] for f in r["capture_session"]["frames"]} if r["capture_session"] is not None else set()
+    session = r["capture_session"]
+    frames = {f["frame_id"] for f in session["frames"]} if session is not None else set()
     _north(r["north"], frames if v2 else None)
     if r["visibility"] is not None:
-        _visibility(r["visibility"], v2)
+        _visibility(r["visibility"], v2, sum(1 for f in session["frames"] if f["used_for_visibility"]) if session is not None else 0)
     if r["geometry"] is not None:
         _geometry(r["geometry"])
     a = _array(r["analysis"], "$.analysis")
     q = _object(r["quality"], "$.quality", "level gates flags false_valid_guard blocked_reason" + (" evidence" if v2 else ""))
     result = _result(r) if v2 else None
     if v2:
-        _quality_evidence(q["evidence"])
+        steady = {f["frame_id"] for f in session["frames"] if f["tracking_state"] == "normal" and f["role"] == "visibility"} if session is not None else set()
+        hero = session["hero_frame"]["frame_id"] if session is not None and session["hero_frame"] is not None else None
+        _quality_evidence(q["evidence"], steady, hero)
     _enum(q["level"], ("R0", "R1", "R2", "R3"), "$.quality.level")
     _enum(q["false_valid_guard"], ("blocked", "passed"), "$.quality.false_valid_guard")
     gates = _object(q["gates"], "$.quality.gates", "level coverage north segmentation lens")
