@@ -1,8 +1,8 @@
 # Light Replay：回家后在照片上拖时间看光——方案与执行清单
 
-日期：2026-10-03。作者：Claude。状态：方案，等 Lee 认可后按第 6 节的 PR 顺序开工。
-对应：`00-blueprint.md` §3 首发范围、`02-architecture.md` §2–3、`03-scene-record.md` §5 / §7、`04-capture-protocol.md` §11、`06-sun-model.md` §4–8、ADR-0010（Vision 分割首选）、ADR-0013（"测得"的数字只来自工具）、ADR-0019（存网格 + 关键帧掩膜，Save 之后算）、ADR-0020（姿态 10 Hz）。
-配套的概念图页面：同日发布的 artifact「Light Replay 方案」（图 1–4 的源文件在本文件末尾的说明里）。
+日期：2026-10-03。作者：Claude。状态：**被 `2026-10-04-light-replay-plan-v2.md` 取代**（Codex 评审 R01–R08；本文件留作评审的对象，其中罗盘黄灯、±N 分钟、Caches 帧卷、30° 种子、三盏灯的说法都不成立）。
+对应：`00-blueprint.md` §3 首发范围、`02-architecture.md` §2–3、`03-scene-record.md` §5 / §7、`04-capture-protocol.md` §11、`06-sun-engine.md` §4–8、ADR-0010（Vision 分割首选）、ADR-0013（"测得"的数字只来自工具）、ADR-0019（存网格 + 关键帧掩膜，Save 之后算）、ADR-0020（姿态 10 Hz）。
+配套的概念图页面：artifact「Light Replay 方案」，10-04 已更新为 v2 的图。
 
 ## 1. 要做出来的体验（一句话）
 

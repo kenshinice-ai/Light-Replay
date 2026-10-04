@@ -97,9 +97,9 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 按住说话的辅助入口：VoiceOver 双击开始 / 结束、⌘D、`.startsMediaSession` | ✓ | — | — | 需真机开 VoiceOver / Switch Control 验收（U05） |
 | 改地址使旧 pin 失效、过期结果丢弃 | ✓ | ✓ | — | |
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；太阳位置 Swift / Python 1e-7°；走廊、时段与随机数流 Swift / Python 逐分钟、逐比特一致（`sun-bands.json`，2026-10-03） | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
-| NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组，罗盘按 8° 先验永远不能佐证，所以真机上方向灯最多黄灯，这是对的 |
+| NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组：一组且 σ > 6° 是阻断，真机 σ 10–20°，所以方向灯是**阻断**、记录停在 R0（10-04 更正：此前写成"最多黄灯"是错的，评审 R04） |
 | QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
-| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | ✓ 10-03 三份记录（`PR-20261003-01…03`，Lee 家客厅）：σ 10° / 17° / 11°，CLHeading 精度 10–22°，三份都过 Python 校验器且重算的灯与写入值一致；方向灯黄灯是对的 | 俯仰超过 50° 的读数保留但不参与合并 |
+| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | ✓ 10-03 三份记录（`PR-20261003-01…03`，Lee 家客厅）：σ 10° / 17° / 11°，CLHeading 精度 10–22°，三份都过 Python 校验器且重算的灯与写入值一致；方向灯阻断（一组且 σ > 6°），按规则该如此 | 俯仰超过 50° 的读数保留但不参与合并 |
 | 照片缩略图存在行上、字节数守卫：列表不再为画缩略图加载照片；外部存储文件丢了（SwiftData 回 38 字节引用而非 nil）详情页写"照片还没到这台设备"而不是坏图；旧行启动时分批补缩略图 | ✓ | ✓ 单元 `ObservationTests` 两例（丢字节识别、谓词只找没缩略图的照片） | 待 Lee 装新版后看旧照片列表 | 组记忆 swiftdata-external-storage-original-bytes |
 | ⌘D 口述改为场景命令（iPad 菜单栏可见，不进辅助树）；`-uitestEmpty` 空库启动；UI 测试启动关 UIKit 动画 | ✓ | ✓ UI `testEveryTabAnswersInLandscape`：空库横屏五个 tab 15 s 内应答，地图横屏搜索有结果 | — | 组记忆 swiftui-keyboard-shortcuts-as-commands、swiftui-searchable-empty-state-landscape-freeze |
 | 发版脚手架（10-03 接入 pwe-tools 组）：`scripts/preflight.sh`（占位文件、冲突副本、干净工作区；接进 `test.sh`）、`scripts/testflight.sh`、`PrivacyInfo.xcprivacy`、版本 / 构建号来自构建设置、`AGENTS.md` | ✓ | 预检 ✓；`testflight.sh --no-upload` 走到归档一次 | — | 上传要 Lee 对构建号的 go，且 CloudKit production schema 先部署 |
@@ -124,7 +124,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- Light Replay（回家在照片上拖时间看光）是下一条主线：方案与九条 PR 清单在 `proposals/2026-10-03-light-replay-plan.md`，等 Lee 认可后从 PR 1（Hero 静帧与帧卷）开工。TestFlight 等回放做好再上（Lee 2026-10-03）。
+- Light Replay（回家在照片上拖时间看光）是下一条主线：方案 v2 在 `proposals/2026-10-04-light-replay-plan-v2.md`（阶段 A 契约与冒烟 → B 可恢复采集 → 闸门 1 分割评估 → C 合成闭环 → D 自家真实闭环 → E 回放体验 → F 独立验证），等 Lee 认可。v1（10-03）被取代。TestFlight 等回放做好再上（Lee 2026-10-03）。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -137,5 +137,9 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
-- **[决定] Light Replay 方案** — `proposals/2026-10-03-light-replay-plan.md`：路线 A（Save 前强制一次方向确认）、PR 顺序 1→7、回放屏先合成数据还是等真实分割 · 不定：回放这条线不开工；TestFlight 按 Lee 10-03 的决定等回放做好再一步到位 · 自 2026-10-03
+- **[决定] Light Replay 方案 v2 与阶段顺序 A → F** — `proposals/2026-10-04-light-replay-plan-v2.md`（Codex 评审后重写；回应在 `reviews/2026-10-04-light-replay-plan-review-response.md`）；推荐认可，认可后先写 ADR-0021 / 0022 与 ADR-0019 补记再开工 · 不定：回放这条线不动 · 自 2026-10-03
+- **[决定] 第一版的范围：晴天、看得见太阳才有时段，阴天的扫描只是参考（R0）** — 推荐接受；太阳圆面是唯一自带残差检查的方向来源，墙面对齐排在其后 · 不定：要先做墙面对齐，多一个建筑轮廓数据依赖 · 自 2026-10-04
+- **[决定] 太阳确认的通过线** — 推荐 Δ 误差中位 ≤ 2°、P90 ≤ 4°【估】，测之前登记进 `07` §5 · 不定：实验 2 没有判据 · 自 2026-10-04
+- **[决定] TestFlight 分两步** — 推荐：阶段 E 结束且自家对照在预登记线内 → 内部测试；阶段 F 独立 holdout 通过 → 外部测试者 · 不定：按 10-03 的"replay 做好一步到位"理解为 E 结束即上 · 自 2026-10-04
+- **[给料] 5–10 张带天空的随手照片**（窗外、檐下、树下，任何相机）— 给分割冒烟用 · 不给：阶段 A 的实验 0 做不了 · 自 2026-10-04
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

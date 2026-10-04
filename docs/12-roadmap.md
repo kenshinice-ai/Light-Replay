@@ -85,4 +85,4 @@ Domain API（仅当有商务谈判且条款允许）；planning context（只链
 
 ## 下一步
 
-Phase 0 剩余：Xcode 工程。然后 Phase 1 W1：采集验证器（`07-spike-plan.md`）与原型 A 同时开工。
+Phase 0 已完成；Phase 1 进行中，当前状态以 `HANDOFF.md` §7 为准（不在这里重复）。下一条主线是 Light Replay：`proposals/2026-10-04-light-replay-plan-v2.md` 的阶段 A → F，其中 F 即线 A 的 W2 / W3 与汇合门。
