@@ -3,10 +3,13 @@ import NorthResolver
 
 /// What the evidence in a record gives for the lights that can be worked out again from it.
 public struct QualityEvaluation: Sendable, Equatable {
-    /// The lights schema 0.1.0 carries evidence for. `level` (tracking) and `lens` are decided by on-device detectors
-    /// whose evidence the schema does not carry, so they stay as recorded.
+    /// The five lights. A 0.1.0 record carries evidence for the first three only; `level` (tracking) and `lens` stay
+    /// as recorded there. A 0.2.0 record carries evidence for all five (ADR-0022).
     public enum Light: String, CaseIterable, Sendable {
-        case coverage, north, segmentation
+        case coverage, north, segmentation, level, lens
+
+        /// The lights that can be worked out again from a record of this schema version.
+        public static func evaluated(v2: Bool) -> [Light] { v2 ? allCases : [.coverage, .north, .segmentation] }
     }
 
     public let gates: [Light: QualityGate]
@@ -17,11 +20,24 @@ public struct QualityEvaluation: Sendable, Equatable {
     public let problems: [String]
 }
 
-/// The five lights are claims; this works three of them out again from the record's own evidence and refuses a record
-/// whose claims differ (docs/04 §6, ADR-0009, reviews F05 and R08). Mirrors `engine/lightreplay/quality.py`; the two
-/// are held together by `engine/tests/fixtures/quality-cases.json`. Every limit is a candidate until the spike.
+/// The five lights are claims; this works them out again from the record's own evidence and refuses a record whose
+/// claims differ (docs/04 §6, ADR-0009, ADR-0022, reviews F05 and R08). quality-0.1 recomputes three lights of a
+/// 0.1.0 record; quality-0.2 recomputes all five of a 0.2.0 record: tracking from the frames themselves, the horizon,
+/// lens and reflection checks from `quality.evidence`. A check that did not run is missing evidence, and missing
+/// evidence blocks; a check that ran and found nothing is not proof of absence. Mirrors `engine/lightreplay/quality.py`;
+/// the two are held together by `quality-cases.json` and `scene-v2-cases.json`. Every limit is a candidate until the spike.
 public enum QualityEvaluator {
     public static let version = "quality-0.1"
+    public static let version2 = "quality-0.2"
+    /// Tracking (quality-0.2): the longest stretch without normal tracking after it first became normal.
+    public static let limitedWarnS = 0.5
+    public static let limitedBlockS = 2.0
+    /// Horizon against gravity, both as angles in the image (quality-0.2).
+    public static let horizonPassDeg = 2.0
+    public static let horizonWarnDeg = 5.0
+    /// Lens smudge confidence from the detector, 0…1 (quality-0.2). Candidates until calibrated on the device.
+    public static let smudgeWarn = 0.3
+    public static let smudgeBlock = 0.6
     /// Share of the sun corridor seen: at least this passes, at least `coverageWarnPct` warns (docs/04 §6).
     public static let coveragePassPct = 90.0
     public static let coverageWarnPct = 70.0
@@ -64,6 +80,45 @@ public enum QualityEvaluator {
         let north = NorthResolver.resolve(readings(fields))
         (gates[.north], reasons[.north]) = (north.gate, north.reason)
 
+        if fields["schema_version"] == .string("0.2.0") {
+            let evidence = fields["quality"]?.object?["evidence"]?.object
+            if corridor > 0, segmentation?["model"]?.string != nil {
+                // "Reflections not identified" blocks (docs/04 §6). Looking and finding nothing lets the glass share
+                // stand; it does not say there is no glass.
+                switch evidence?["reflection"]?.object?["status"]?.string {
+                case "none_found": break
+                case "undetermined":
+                    gates[.segmentation] = worst(gates[.segmentation] ?? .blocked, .warn)
+                    reasons[.segmentation, default: ""] += "; reflections could not be ruled out"
+                case "suspected":
+                    gates[.segmentation] = worst(gates[.segmentation] ?? .blocked, .warn)
+                    reasons[.segmentation, default: ""] += "; reflections suspected"
+                default: (gates[.segmentation], reasons[.segmentation]) = (.blocked, "reflections were not checked")
+                }
+            }
+            var (level, why) = tracking(fields["capture_session"]?.object?["frames"]?.array?.compactMap(\.object) ?? [])
+            let horizon = evidence?["horizon"]?.object
+            switch horizon?["status"]?.string {
+            case "measured":
+                let residual = horizon?["residual_deg"]?.number ?? .infinity
+                level = worst(level, residual <= horizonPassDeg ? .pass : residual <= horizonWarnDeg ? .warn : .blocked)
+                why += "; horizon \(residual) degrees off gravity"
+            case "not_found": why += "; no horizon in view"   // most indoor frames have none: nothing held against the scan
+            default:
+                level = .blocked
+                why += "; horizon not checked"
+            }
+            (gates[.level], reasons[.level]) = (level, why)
+            let lens = evidence?["lens"]?.object
+            if lens?["status"]?.string == "measured", let smudge = lens?["smudge_confidence"]?.number {
+                gates[.lens] = smudge < smudgeWarn ? .pass : smudge < smudgeBlock ? .warn : .blocked
+                reasons[.lens] = "lens smudge confidence \(smudge)"
+            } else {
+                gates[.lens] = .blocked
+                reasons[.lens] = lens?["status"]?.string == "unusable_input" ? "no frame steady enough to check the lens" : "lens not checked"
+            }
+        }
+
         var problems: [String] = []
         let session = fields["capture_session"]?.object
         if let target = fields["target"]?.object?["anchor_world"]?.vector,
@@ -84,8 +139,40 @@ public enum QualityEvaluator {
         return QualityEvaluation(gates: gates, reasons: reasons, north: north, problems: problems)
     }
 
-    /// Throws unless the record's stated quality follows from its evidence. For every record: the three evaluable
-    /// lights are stated as the evidence gives them, and a stored north resolution is the one its candidates produce.
+    private static func worst(_ a: QualityGate, _ b: QualityGate) -> QualityGate {
+        let order: [QualityGate] = [.pass, .warn, .blocked]
+        return order.firstIndex(of: a)! >= order.firstIndex(of: b)! ? a : b
+    }
+
+    /// The tracking light from the frames of the scan itself. Frames taken while confirming the direction
+    /// (`role: calibration`) are not part of the scan; what happens before tracking first becomes normal is start-up.
+    /// The recorder keeps every change of tracking state (ADR-0020), so a stretch runs from its first frame to the
+    /// next normal one.
+    static func tracking(_ frames: [[String: JSONValue]]) -> (gate: QualityGate, reason: String) {
+        let scan = frames.filter { ($0["role"]?.string ?? "visibility") == "visibility" }
+        guard let first = scan.firstIndex(where: { $0["tracking_state"] == .string("normal") }) else {
+            return (.blocked, "tracking never became normal")
+        }
+        var longest = 0.0, start: Double?
+        for frame in scan[first...] {
+            let t = frame["t"]?.number ?? 0
+            if frame["tracking_state"] == .string("limited:relocalizing") {
+                return (.blocked, "tracking relocalized at frame \(frame["frame_id"]?.string ?? "?"): the world frame may have moved")
+            }
+            if frame["tracking_state"] != .string("normal") {
+                start = start ?? t
+            } else if let began = start {
+                longest = max(longest, t - began)
+                start = nil
+            }
+        }
+        if let began = start { longest = max(longest, (scan.last?["t"]?.number ?? began) - began) }
+        let gate: QualityGate = longest <= limitedWarnS + 1e-9 ? .pass : longest <= limitedBlockS + 1e-9 ? .warn : .blocked
+        return (gate, "longest stretch without normal tracking \(String(format: "%.2f", longest)) s")
+    }
+
+    /// Throws unless the record's stated quality follows from its evidence. For every record: the evaluable lights
+    /// (three in 0.1.0, all five in 0.2.0) are stated as the evidence gives them, and a stored north resolution is the one its candidates produce.
     /// For a record that claims more than R0: no physical contradiction either. Unknown stays unknown: missing
     /// evidence is `blocked`, never assumed.
     @discardableResult
@@ -93,7 +180,7 @@ public enum QualityEvaluator {
         let result = evaluate(fields)
         let quality = fields["quality"]?.object
         let stated = quality?["gates"]?.object
-        for light in QualityEvaluation.Light.allCases {
+        for light in QualityEvaluation.Light.evaluated(v2: fields["schema_version"] == .string("0.2.0")) {
             let claim = stated?[light.rawValue]?.string ?? "nothing"
             let given = result.gates[light] ?? .blocked
             if claim != given.rawValue {

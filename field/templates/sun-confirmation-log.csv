@@ -1,0 +1,2 @@
+trial_id,date,local_time,site_code,target_class,target_note,sun_altitude_expected_deg,target_altitude_measured_deg,altitude_residual_deg,depth_m,sky_ring_fraction,user_confirmed,tracking_continuous,marked_valid,rejected_by,delta_deg,sundial_truth_deg,delta_error_deg,walked_out_and_back,closing_difference_deg,abandoned,rescue_minutes,scene_id,app_build,notes
+EX2-0001,2026-01-01,12:00,HOME-A,true_sun_open_sky,example row: delete before use,41.6,41.2,0.4,,0.9,yes,yes,yes,,358.2,359.0,0.8,no,,no,0,PR-00000000-00,0,synthetic example

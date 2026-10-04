@@ -328,17 +328,17 @@ final class SceneRecordTests: XCTestCase {
 extension SceneRecordTests {
     /// engine/tests/fixtures/quality-cases.json: records, one change each, and the verdict each must get. Written by
     /// engine/scripts/make_quality_fixture.py, where every expectation is spelled out by hand from the documents.
-    private func qualityFixture() throws -> [String: JSONValue] {
+    private func qualityFixture(_ file: String = "quality-cases.json") throws -> [String: JSONValue] {
         var root = URL(fileURLWithPath: #filePath)
         for _ in 0..<6 { root.deleteLastPathComponent() }
-        let data = try Data(contentsOf: root.appendingPathComponent("engine/tests/fixtures/quality-cases.json"))
+        let data = try Data(contentsOf: root.appendingPathComponent("engine/tests/fixtures/" + file))
         guard case .object(let fields) = try JSONDecoder().decode(JSONValue.self, from: data) else { preconditionFailure() }
         return fields
     }
 
-    private func qualityCases() throws -> [(name: String, record: [String: JSONValue], accepted: Bool, errorPath: String?, gates: [String: String])] {
-        let fixture = try qualityFixture()
-        XCTAssertEqual(fixture["version"], .string(QualityEvaluator.version))
+    private func qualityCases(_ file: String = "quality-cases.json", version: String = QualityEvaluator.version) throws -> [(name: String, record: [String: JSONValue], accepted: Bool, errorPath: String?, gates: [String: String])] {
+        let fixture = try qualityFixture(file)
+        XCTAssertEqual(fixture["version"], .string(version))
         let bases = fixture["bases"]!.object!
         return fixture["cases"]!.array!.map { item in
             let c = item.object!
@@ -366,6 +366,44 @@ extension SceneRecordTests {
                 }
             }
         }
+    }
+
+    /// engine/tests/fixtures/scene-v2-cases.json: schema 0.2.0 and quality-0.2 (ADR-0022), the same file the Python
+    /// reference is held to. A refused record must be refused at the same place in both languages.
+    func testEverySchema2CaseGetsItsVerdict() throws {
+        let cases = try qualityCases("scene-v2-cases.json", version: QualityEvaluator.version2)
+        XCTAssertGreaterThan(cases.count, 50)
+        for c in cases {
+            if c.accepted {
+                XCTAssertNoThrow(try SceneRecordDocument(fields: c.record), c.name)
+                let gates = QualityEvaluator.evaluate(c.record).gates
+                XCTAssertEqual(Dictionary(uniqueKeysWithValues: gates.map { ($0.key.rawValue, $0.value.rawValue) }), c.gates, c.name)
+            } else {
+                XCTAssertThrowsError(try SceneRecordDocument(fields: c.record), c.name) { error in
+                    XCTAssertEqual((error as? SceneRecordValidationError)?.path, c.errorPath, c.name)
+                }
+            }
+        }
+    }
+
+    func testTrackingIsReadFromTheScanFramesOnly() {
+        func frames(_ states: [(String, String)]) -> [[String: JSONValue]] {
+            states.enumerated().map { i, pair in
+                ["frame_id": .string("f\(i)"), "t": .number(0.1 * Double(i)), "tracking_state": .string(pair.0), "role": .string(pair.1)]
+            }
+        }
+        func scan(_ states: String...) -> [[String: JSONValue]] { frames(states.map { ($0, "visibility") }) }
+        XCTAssertEqual(QualityEvaluator.tracking(scan("limited:initializing", "limited:initializing")).gate, .blocked)
+        XCTAssertEqual(QualityEvaluator.tracking(scan("limited:initializing", "normal", "normal")).gate, .pass)   // start-up does not count
+        XCTAssertEqual(QualityEvaluator.tracking(scan("normal", "limited:excessive_motion", "limited:excessive_motion", "normal")).gate, .pass)
+        let unfinished = QualityEvaluator.tracking(frames([("normal", "visibility")] + Array(repeating: ("limited:insufficient_features", "visibility"), count: 9)))
+        XCTAssertEqual(unfinished.gate, .warn)   // a stretch that never ends runs to the last frame: 0.8 s
+        XCTAssertEqual(QualityEvaluator.tracking(scan("normal", "limited:relocalizing", "normal")).gate, .blocked)
+        XCTAssertEqual(QualityEvaluator.tracking(frames([("normal", "visibility"), ("limited:relocalizing", "calibration")])).gate, .pass)
+    }
+
+    func testOldRecordsAreJudgedByTheOldRules() throws {
+        XCTAssertEqual(Set(QualityEvaluator.evaluate(try ready()).gates.keys), [.coverage, .north, .segmentation])
     }
 
     func testTheFourR08ProbesAreRefused() throws {

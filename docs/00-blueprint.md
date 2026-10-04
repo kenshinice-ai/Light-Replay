@@ -43,6 +43,8 @@
 | 18 | 一致不等于佐证 | 两组一致只在 `3·sqrt(σ_i² + σ_j²) ≤ 15°` 时点绿灯，否则按一组处理；罗盘按 8° 先验永远不能佐证 | [ADR-0018](decisions/ADR-0018-corroboration-must-detect-an-hour.md) |
 | 19 | 可见域只存累积网格 + 3–5 张关键帧掩膜；Save 之后计算 | 掩膜是过程不是证据，每帧存会把几十 MB 送进 iCloud；实时分割等 spike 结论 | [ADR-0019](decisions/ADR-0019-visibility-storage-and-timing.md) |
 | 20 | 姿态记录 ≤ 10 Hz + 第一帧、锚定帧、追踪状态变化帧 | 每帧 60 fps 记姿态让一次扫描写出 25 MB；姿态的三个用途都不需要 16 ms 分辨率 | [ADR-0020](decisions/ADR-0020-pose-log-rate.md) |
+| 21 | 方向确认：保存不设障；R1 要罗盘以外的证据；太阳圆面是待验证的第一条路径 | 罗盘 σ 10–20° 永远到不了 R1；高度角残差挡不住同高度的反光，适用范围由实验定 | [ADR-0021](decisions/ADR-0021-direction-confirmation.md) |
+| 22 | SceneRecord 0.2：资产内联带哈希，五盏灯按证据重算，结果有版本，系统状态不写进买家的文字 | 另一台设备要能相信同一条记录；没跑的检查是缺证据，缺证据阻断 | [ADR-0022](decisions/ADR-0022-schema-0.2-and-result-contract.md) |
 
 ## 3. 首发范围（V1 = MVP v0，`12-roadmap.md` Phase 2）
 

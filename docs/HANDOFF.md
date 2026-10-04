@@ -68,7 +68,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 
 | 能力 | 源码 | 测试 | 真机 | 备注 |
 |---|---|---|---|---|
-| 文档：蓝图 1.1，ADR-0001–0020 | ✓ | — | — | ADR-0017 iCloud 同步；0018 佐证；0019 可见域存储与时机；0020 姿态频率 |
+| 文档：蓝图 1.1，ADR-0001–0022 | ✓ | — | — | ADR-0017 iCloud 同步；0018 佐证；0019 可见域存储与时机；0020 姿态频率；0021 方向确认；0022 schema 0.2 与结果契约 |
 | SceneRecord 格式与校验（Swift / Python 一致） | ✓ | ✓ | — | `scripts/test.sh` |
 | R0 采集验证器（每帧姿态、全部罗盘读数、一次定位） | ✓ | ✓ | ✓ 首跑 167 帧、漂移 0.14 m、罗盘 ±13°、定位 ±8 m | 北向候选依赖"竖持时 CLHeading = 后摄方位"假设，待日晷验证 |
 | 五个 tab（iPad 上可切侧栏）、Properties List / Map 共用搜索 / 筛选 / 选中、宽窗口分栏、地址补全 | ✓ | ✓ UI `BrowseAndCompareUITests`（iPhone 与 iPad 模拟器） | ✓ iPhone 旧版；分栏待 Lee 在 iPad 上看 | UI/UX 评审 U07 / U09 / U10 |
@@ -105,6 +105,8 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | 发版脚手架（10-03 接入 pwe-tools 组）：`scripts/preflight.sh`（占位文件、冲突副本、干净工作区；接进 `test.sh`）、`scripts/testflight.sh`、`PrivacyInfo.xcprivacy`、版本 / 构建号来自构建设置、`AGENTS.md` | ✓ | 预检 ✓；`testflight.sh --no-upload` 走到归档一次 | — | 上传要 Lee 对构建号的 go，且 CloudKit production schema 先部署 |
 | CloudKit schema：开发环境补全后 10-03 Lee 已部署到 Production（控制台里四个 `CD_` 类型在）；补全器（`PropertyStore.initializeCloudKitSchema`，DEBUG 参数 `-initializeCloudKitSchema`，真机上跑：`xcrun devicectl device process launch --console --terminate-existing --device <id> com.pwegroup.propertyreplay -- -initializeCloudKitSchema`，设备要解锁） | ✓ | — | ✓ 10-03 iPad 上跑过，控制台里四个记录类型的字段齐了 | 控制台里开发环境缺 `CD_originalText`、`CD_property`、`CD_mediaPath`、`CD_notes`：CloudKit 只在字段第一次有值时才建；补全后才能部署 Production |
 | 姿态记录 ≤ 10 Hz + 第一帧 / 锚定帧 / 追踪状态变化帧（ADR-0020；10-03 一次 6.5 分钟扫描曾写出 25 MB） | ✓ | ✓ 单元 `PoseLogRateTests` | ✓ 10-03 晚三次扫描 `PR-20261003-05…07`：10.0 Hz，18–38 秒 0.29–0.59 MB，`pose_gap` ≤ 52 ms，三份都过校验器 | 漂移仍逐帧算；`frames_within / beyond` 按保留帧计 |
+| SceneRecord 0.2.0 与 quality-0.2（ADR-0022）：内联网格与掩膜带长度和 SHA-256、Hero 变换链、太阳圆面候选的有效性、结果 revision、五盏灯全部按证据重算；0.1.0 照旧 | ✓ 两端校验器 | ✓ `scene-v2-cases.json` 57 例（13 接受 / 44 拒绝），Swift 与 Python 的灯与拒绝位置一致；SceneRecord 36 项、Python 96 项 | — | **只是契约**：App 写出的仍是 0.1.0，没有接任何检测器。阈值全是候选 |
+| 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图跑通（`docs/spike/2026-10-04-segmentation-smoke.md`） | — | 真实照片的冒烟等 Lee 给照片；三条接口行为已记：分的是种子所在的对象、被窗框隔开的天空要各自的种子、先跑种子再逐点细化 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
 加了或改了界面文字：`./scripts/strings-sync.sh` 把编译器抽到的键并进 `ios/PropertyReplay/Localizable.xcstrings`，并列出还没有中文的键，然后把中文写进目录（`zh-Hans` → `stringUnit.value`）。包里的字符串（显示名、扫描指引）用 `String(localized:bundle:.module)`，目录手写在包目录下。中文启动看界面：`-AppleLanguages (zh-Hans) -AppleLocale zh_CN`。
@@ -124,7 +126,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- Light Replay（回家在照片上拖时间看光）是下一条主线：方案 v2 在 `proposals/2026-10-04-light-replay-plan-v2.md`（阶段 A 契约与冒烟 → B 可恢复采集 → 闸门 1 分割评估 → C 合成闭环 → D 自家真实闭环 → E 回放体验 → F 独立验证），等 Lee 认可。v1（10-03）被取代。TestFlight 等回放做好再上（Lee 2026-10-03）。
+- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已交付契约部分**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 57 例 fixture、冒烟工具）；A 的退出还差真实照片上的分割冒烟。**下一步是阶段 B**：Hero 静帧 + 帧卷（`04` §12 的契约与十条恢复验收）、记录切到 0.2.0、Light 状态摘要列与旧行迁移（要追加一个 CloudKit 字段并再部署一次）、任务身份改用行 uuid。之后是闸门 1（Lee 用 B 版本拍评估片段）。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -137,9 +139,5 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
-- **[决定] Light Replay 方案 v2 与阶段顺序 A → F** — `proposals/2026-10-04-light-replay-plan-v2.md`（Codex 评审后重写；回应在 `reviews/2026-10-04-light-replay-plan-review-response.md`）；推荐认可，认可后先写 ADR-0021 / 0022 与 ADR-0019 补记再开工 · 不定：回放这条线不动 · 自 2026-10-03
-- **[决定] 第一版的范围：晴天、看得见太阳才有时段，阴天的扫描只是参考（R0）** — 推荐接受；太阳圆面是唯一自带残差检查的方向来源，墙面对齐排在其后 · 不定：要先做墙面对齐，多一个建筑轮廓数据依赖 · 自 2026-10-04
-- **[决定] 太阳确认的通过线** — 推荐 Δ 误差中位 ≤ 2°、P90 ≤ 4°【估】，测之前登记进 `07` §5 · 不定：实验 2 没有判据 · 自 2026-10-04
-- **[决定] TestFlight 分两步** — 推荐：阶段 E 结束且自家对照在预登记线内 → 内部测试；阶段 F 独立 holdout 通过 → 外部测试者 · 不定：按 10-03 的"replay 做好一步到位"理解为 E 结束即上 · 自 2026-10-04
-- **[给料] 5–10 张带天空的随手照片**（窗外、檐下、树下，任何相机）— 给分割冒烟用 · 不给：阶段 A 的实验 0 做不了 · 自 2026-10-04
+- **[给料] 5–10 张带天空的随手照片**（窗外、檐下、树下各几张，任何相机；放进 `field/data/smoke/`，那里不入库）— 推荐现在就给 · 不给：阶段 A 的分割冒烟只有画出来的测试图，实验 1 比哪几条路定不下来 · 自 2026-10-04
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

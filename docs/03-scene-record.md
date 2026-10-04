@@ -130,3 +130,23 @@
 ## 10. 版本迁移
 
 `schema_version` 语义化；破坏性变更写迁移脚本并在 `engine/` 保留旧版校验。
+
+## 11. schema 0.2.0（ADR-0022，2026-10-04）
+
+0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 57 个用例【验】。当前 App 写出的仍是 0.1.0，阶段 B 切换。
+
+| 位置 | 0.2.0 | 校验 |
+|---|---|---|
+| 根 | 新增 `result`：`revision`（0 = 刚保存）、`capture_digest`、`north_digest`、`inputs_hash`、`computed_at` | revision 0 时没有网格、没有分析、没有 hash；≥ 1 时必须有 hash 与时间 |
+| `capture_session.hero_frame.image` | `null` 或 `{storage: "row.photo", native_size, encoded_size, scale, crop, rotation_deg, byte_count, sha256}`；像素在行的照片列 | 裁剪在原图内；`encoded_size` 必须等于 裁剪 × 缩放（旋转 90 / 270 时宽高对调），容差 1 px |
+| `capture_session.frames[].role` | `visibility` 或 `calibration`（确认方向时的帧） | `calibration` 帧不得 `used_for_visibility` |
+| `capture_session.keyframes[]` | 至多 5 项：`frame_id` + `mask` 载荷（`png+base64`） | 必须是用于可见域的帧；PNG 签名与 IHDR 尺寸要对 |
+| `visibility.states` / `confidence` | 取代 `states_ref` / `confidence_ref`：载荷 `{encoding: "deflate+base64", width, height, byte_count, sha256, data}`；一字节一格，行优先，自最低高度角、方位 0 起；状态 0 未知、1 天空、2 遮挡、3 玻璃不确定 | 尺寸等于网格；解压有上限；长度与 SHA-256 是解码后字节的；两者同在或同缺 |
+| `visibility.votes` | `frames_used`、`min_distinct_frames`、`cells: {unknown, sky, blocked, glass}` | `cells` 必须是网格自己的直方图 |
+| `north.candidates[]`（`source: sun_disk`） | `evidence`：`rules: "sundisk-0.1"`、`frame_id`、`time`、`altitude_measured_deg`、`altitude_expected_deg`、`azimuth_expected_deg`、`depth_m`、`sky_ring_fraction`、`user_confirmed`、`tracking_continuous` | 声称有效而证据不过规则（`05` §2a）的记录被拒；无效的候选可以带着证据保留 |
+| `analysis[]` | 新增 `revision`、`totals: {direct_min, sensitive_min, blocked_min, unknown_min}`、`query.representative` | revision 与 `versions.inputs_hash` 必须是 `result` 的；四个分钟数必须等于各段之和（未知不能被算成直射） |
+| `quality.evidence` | `rules: "quality-0.2"`、`horizon`、`lens`、`reflection`（各有 `status` 与原始数值） | 形状与一致性在校验器；灯的规则在 QualityEvaluator（`04` §6） |
+| R1 的证据要求 | 内联网格与置信度、至少一张属于可用帧的关键帧掩膜（取代 0.1 的 `mask_ref`） | 其余同 0.1 |
+
+载荷上限【估】：网格 ≤ 65 160 字节（360 × 181），掩膜 ≤ 400 000 字节，关键帧 ≤ 5。真实样本的体积与读取内存待阶段 C 量。
+"重算"的范围：从网格重新算日照可以；多数帧在分析后删除，从原帧重新分割不可以（ADR-0019 补记）。
