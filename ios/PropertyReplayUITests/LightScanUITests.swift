@@ -18,8 +18,35 @@ final class LightScanUITests: UITestCase {
         XCTAssertTrue(app.staticTexts["Scan saved"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Sunlight not calculated yet"].exists, "a saved scan is not a sunlight result")
         snapshot("3-saved")
+        XCTAssertTrue(element(containing: "frames from this scan are kept on this device for 14 days").exists, "the frames are kept, and for how long is said")
         tap(app.buttons["lightScanDone"])
         XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 8))
+        // Back on the property the scan is a row with its picture; its status is worked out from the scan, and opening
+        // it shows the hero the scan is remembered by.
+        tap(app.navigationBars.buttons.firstMatch)
+        let status = "Light scan · camera covered 100% of the winter sun path · sunlight not calculated"
+        let row = element(containing: status)
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "the row says what the scan is")
+        snapshot("4-row")
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Status"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.images.firstMatch.exists || app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'photo'")).firstMatch.exists, "the hero is on the scan's page")
+        snapshot("5-scan-detail")
+    }
+
+    /// In Chinese the sentence reads "…覆盖了冬季阳光路径的 100%": until 2026-10-04 its two arguments were swapped.
+    func testTheStatusLineReadsRightInChinese() {
+        launch(["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"])
+        openTab("房产")
+        tap(app.staticTexts["12 Example Street"].firstMatch)
+        tap(app.buttons["扫描光线"])
+        tap(app.buttons["开始"])
+        tap(app.buttons["保存"].firstMatch)
+        if app.buttons["仍然保存"].waitForExistence(timeout: 3) { app.buttons["仍然保存"].tap() }
+        tap(app.buttons["lightScanDone"])
+        XCTAssertTrue(element(containing: "路径的 ").waitForExistence(timeout: 10))
+        XCTAssertTrue(element(containing: "光线扫描 · 镜头覆盖了冬季阳光路径的 ").exists, "the question comes before the percentage")
+        snapshot("zh-row")
     }
 
     func testLowCoverageAsksAndDiscardAsks() {

@@ -72,6 +72,16 @@
         }
       }
     },
+    "%lld frames from this scan are kept on this device for 14 days, for that analysis. After that, this spot needs a new scan.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这次扫描有 %lld 帧画面保留在这台设备上 14 天，供那项分析使用。过期之后，这个位置需要重新扫描。"
+          }
+        }
+      }
+    },
     "%lld measurement(s) are waiting for a property that no longer exists.": {
       "localizations": {
         "zh-Hans": {
@@ -1397,22 +1407,6 @@
         }
       }
     },
-    "Light scan · camera covered %lld%% of the %@ path · sunlight not calculated": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Light scan · camera covered %1$lld%% of the %2$@ path · sunlight not calculated"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "光线扫描 · 镜头覆盖了%2$@路径的 %1$lld%% · 日照未计算"
-          }
-        }
-      }
-    },
     "List": {
       "localizations": {
         "zh-Hans": {
@@ -1591,6 +1585,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有可用于转写的音频格式。"
+          }
+        }
+      }
+    },
+    "No frames were kept for that analysis, so this spot will need a new scan.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有保留可供那项分析使用的画面，所以这个位置之后需要重新扫描。"
           }
         }
       }
@@ -2693,12 +2697,12 @@
         }
       }
     },
-    "This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours. When that analysis is ready, this spot may need a new scan.": {
+    "This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这次扫描记下了镜头指向哪里、手机朝向哪边。它还分不清天空和楼房树木，所以没有日照小时数。等分析就绪后，这个位置可能需要重新扫一次。"
+            "value": "这次扫描记录了镜头指向哪里、手机朝向哪边。它还分不清天空与建筑或树木，所以没有日照小时数。"
           }
         }
       }

@@ -99,6 +99,7 @@ struct CaptureValidatorView: View {
     private func begin() {
         stoppedWithoutExport = false
         recorder.viewpointToleranceM = preferencesRows.first?.viewpointToleranceM ?? 0.15
+        recorder.keepsSpool = false   // the validator checks poses; it keeps no frames
         recorder.start()
     }
 
@@ -107,7 +108,7 @@ struct CaptureValidatorView: View {
         let label = property.map { "\($0.shortAddress)\(roomLabel.map { " · \($0)" } ?? "")" } ?? "Capture validator target"
         guard let log = recorder.stop(targetLabel: label, targetHeightM: height) else { return }
         do {
-            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, note: nil, in: context)
+            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, question: nil, sweptCoveragePct: nil, in: context)
             exportURL = outcome.shareURL
             lastError = nil
             pending = outcome.pending

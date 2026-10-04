@@ -3,6 +3,7 @@ import CaptureCore
 import CoreLocation
 import Foundation
 import SunEngine
+import UIKit
 import simd
 
 /// Simulator stand-in for the camera (DEBUG only, never on a device): a scripted sweep over the northern sky so the
@@ -93,10 +94,69 @@ struct SyntheticSweep {
                                       sampledAt: startedAt.addingTimeInterval(t - start)))
     }
 
-    func makeLog(label: String, coordinate: CLLocationCoordinate2D, targetHeightM: Double?) -> CaptureLog? {
-        guard let last = frames.last else { return nil }
+    /// The pretend world, for the frames the pretend camera keeps: sky above a flat horizon, and one block of flats
+    /// to the north-east that stands 25° high. Whether a direction is sky is therefore known exactly, which is what
+    /// lets the analysis be tested end to end in the simulator.
+    static func isSky(azimuthDeg: Double, altitudeDeg: Double) -> Bool {
+        altitudeDeg > ((20...50).contains(azimuthDeg) ? 25 : 0)
+    }
+
+    /// The pretend world as the camera of `frame` sees it, drawn at `scale` of the frame's own size.
+    static func picture(of frame: FrameSample, scale: Double) -> (jpeg: Data, width: Int, height: Int, nativeWidth: Int, nativeHeight: Int)? {
+        let m = frame.cameraTransform, k = frame.intrinsics
+        let nativeWidth = Int((k[6] * 2).rounded()), nativeHeight = Int((k[7] * 2).rounded())
+        let width = max(1, Int(Double(nativeWidth) * scale)), height = max(1, Int(Double(nativeHeight) * scale))
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        for v in 0..<height {
+            for u in 0..<width {
+                // docs/02 §3: the ray of a pixel of the sensor image, in the camera's axes (x right, y up, looking along −z).
+                let x = ((Double(u) + 0.5) / scale - k[6]) / k[0], y = -((Double(v) + 0.5) / scale - k[7]) / k[4]
+                let world = SIMD3(m[0] * x + m[4] * y - m[8], m[1] * x + m[5] * y - m[9], m[2] * x + m[6] * y - m[10])
+                let angles = SkyDirection.angles(of: simd_normalize(world))
+                let at = (v * width + u) * 4
+                if isSky(azimuthDeg: angles.azimuthDeg, altitudeDeg: angles.altitudeDeg) {
+                    let fade = UInt8(min(90, max(0, 90 - angles.altitudeDeg)))   // paler towards the horizon
+                    (pixels[at], pixels[at + 1], pixels[at + 2]) = (70 + fade, 130 + fade, 235)
+                } else if angles.altitudeDeg > 0 {
+                    (pixels[at], pixels[at + 1], pixels[at + 2]) = (96, 92, 86)      // the block of flats
+                } else {
+                    (pixels[at], pixels[at + 1], pixels[at + 2]) = (62, 70, 52)      // ground
+                }
+            }
+        }
+        let image: CGImage? = pixels.withUnsafeMutableBytes { bytes in
+            CGContext(data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)?.makeImage()
+        }
+        guard let image, let jpeg = UIImage(cgImage: image).jpegData(compressionQuality: 0.85) else { return nil }
+        return (jpeg, width, height, nativeWidth, nativeHeight)
+    }
+
+    /// The log, with a hero and a spool drawn from the pretend world: about three frames a second, as on a device.
+    func makeLog(label: String, coordinate: CLLocationCoordinate2D, targetHeightM: Double?) async -> CaptureLog? {
+        guard let last = frames.last, let first = frames.first else { return nil }
         let ended = startedAt.addingTimeInterval(last.t + 0.05)
-        return CaptureLog(sessionID: UUID().uuidString, startedAt: startedAt, endedAt: ended, firstFrameAt: startedAt,
+        let session = UUID().uuidString
+        var kept: (manifest: SpoolManifest?, hero: HeroImage?)?
+        if let writer = try? FrameSpoolWriter(sessionID: session) {
+            if let hero = Self.picture(of: first, scale: 1) {
+                writer.setHero(jpeg: hero.jpeg, width: hero.width, height: hero.height, frameID: first.frameID)
+            }
+            var lastT = -1.0
+            for frame in frames where frame.t - lastT >= SpoolAdmission.intervalS {
+                guard let drawn = Self.picture(of: frame, scale: 0.5) else { continue }
+                let meta = FrameSpoolWriter.Meta(frameID: frame.frameID, timestamp: frame.t, t: frame.t, cameraTransform: frame.cameraTransform,
+                                                 intrinsics: frame.intrinsics, exposureOffset: 0, lensOffsetM: 0, turnRateDegPerSec: Self.speedDegPerSec)
+                while !writer.offer(jpeg: drawn.jpeg, width: drawn.width, height: drawn.height, native: (drawn.nativeWidth, drawn.nativeHeight), meta: meta) {
+                    try? await Task.sleep(for: .milliseconds(5))   // the writer refuses when busy; nothing here is in a hurry
+                    if Task.isCancelled { break }
+                }
+                lastT = frame.t
+            }
+            kept = await writer.finish()
+            if kept?.manifest == nil { writer.discard() }
+        }
+        return CaptureLog(sessionID: session, startedAt: startedAt, endedAt: ended, firstFrameAt: startedAt,
                           timezone: .current,
                           device: DeviceInfo(model: "simulator", os: "iOS simulator", lidar: false, sceneDepth: false, geoTracking: "unavailable"),
                           appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0",
@@ -104,7 +164,8 @@ struct SyntheticSweep {
                           targetLabel: label, targetHeightM: targetHeightM, frames: frames, anchor: .zero,
                           anchorFrameID: frames.first?.frameID, maxDriftM: 0, headings: headings,
                           location: LocationSample(latitude: coordinate.latitude, longitude: coordinate.longitude, altitudeM: nil,
-                                                   horizontalAccuracyM: 5, verticalAccuracyM: nil, capturedAt: startedAt))
+                                                   horizontalAccuracyM: 5, verticalAccuracyM: nil, capturedAt: startedAt),
+                          hero: kept?.hero, spool: kept?.manifest)
     }
 
     private static func wrap(_ az: Double) -> Double {

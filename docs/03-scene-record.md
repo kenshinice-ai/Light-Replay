@@ -133,7 +133,7 @@
 
 ## 11. schema 0.2.0（ADR-0022，2026-10-04）
 
-0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 81 个用例（15 接受、66 拒绝）【验】。当前 App 写出的仍是 0.1.0，阶段 B 切换。
+0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 81 个用例（15 接受、66 拒绝）【验】。App 自阶段 B（2026-10-04）起写 0.2.0：保存时是 revision 0，没有网格与分析，五盏灯由 QualityEvaluator 给出；0.1.0 的旧记录照旧可读。
 
 | 位置 | 0.2.0 | 校验 |
 |---|---|---|

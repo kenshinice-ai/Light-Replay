@@ -78,4 +78,4 @@ Lee：决定、现场、渠道。Paradise Production：采集、真值、Light P
 
 ## 下一步
 
-Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）、Light 扫描界面、SunEngine 与太阳走廊覆盖率、界面评审的三轮修改（大字号、iPad 分栏、复看、同步状态）已在源码与模拟器测试里；相机方向、AR 轨迹对齐、VoiceOver 仍待真机验收。方向融合（NorthResolver）与质量门槛（QualityEvaluator）也已就位，记录里写的灯必须与证据一致。界面英文 + 简体中文；iPhone 可横屏；Compare 的九个维度都有记录入口。下一步是 Light Replay：回家在照片上选日期、拖时间看这个位置有没有直射。按 `docs/proposals/2026-10-04-light-replay-plan-v2.md` 的阶段走——先定记录契约与三个实验（分割、太阳确认），再做可恢复的采集、合成闭环、自家真实闭环、回放界面，最后独立验证（`docs/HANDOFF.md` §7）。
+Phase 1 进行中。地基（资料不丢、不串、不假成功，iCloud 同步）、Light 扫描界面、SunEngine 与太阳走廊覆盖率、界面评审的三轮修改（大字号、iPad 分栏、复看、同步状态）已在源码与模拟器测试里；相机方向、AR 轨迹对齐、VoiceOver 仍待真机验收。方向融合（NorthResolver）与质量门槛（QualityEvaluator）也已就位，记录里写的灯必须与证据一致。界面英文 + 简体中文；iPhone 可横屏；Compare 的九个维度都有记录入口。下一步是 Light Replay：回家在照片上选日期、拖时间看这个位置有没有直射。按 `docs/proposals/2026-10-04-light-replay-plan-v2.md` 的阶段走——先定记录契约与三个实验（分割、太阳确认），再做可恢复的采集、合成闭环、自家真实闭环、回放界面，最后独立验证（`docs/HANDOFF.md` §7）。契约（阶段 A）与可恢复的采集（阶段 B：Hero 静帧、帧卷、0.2.0 记录）已在源码与模拟器测试里；现在等自家评估片段做分割路径的比较。

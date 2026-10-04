@@ -38,7 +38,7 @@ struct ObservationDetailView: View {
                 } else if observation.kind == .photo {
                     photoMissing
                 }
-                if observation.kind != .light || observation.text != nil { wordsSection }
+                if observation.kind != .light || observation.text != nil || observation.lightDigestData != nil { wordsSection }
                 if observation.kind != .light { tagsSection }
                 detailsSection
                 if let saveError {
@@ -129,7 +129,16 @@ struct ObservationDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(wordsTitle).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             if observation.kind == .light {
-                Text(observation.text ?? "").font(.body).textSelection(.enabled)
+                // The status is worked out from the scan; anything in `text` is the buyer's own and is shown as theirs.
+                if let digest = observation.lightDigest {
+                    Text(digest.statusLine).font(.body).textSelection(.enabled)
+                    if let own = observation.text, !own.isEmpty {
+                        Text("Your note").font(.footnote.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+                        Text(own).font(.body).textSelection(.enabled)
+                    }
+                } else {
+                    Text(observation.text ?? "").font(.body).textSelection(.enabled)
+                }
             } else {
                 TextField(observation.kind == .photo ? "Add a caption" : "Your note", text: $words, axis: .vertical)
                     .lineLimit(1...40)

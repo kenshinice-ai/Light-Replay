@@ -258,18 +258,23 @@ public final class FrameSpoolWriter: @unchecked Sendable {
         return true
     }
 
-    /// Takes a picture that is already a JPEG (the simulator's drawn frames).
-    public func offer(jpeg: Data, width: Int, height: Int, meta: Meta) -> Bool {
+    /// Takes a picture that is already a JPEG (the simulator's drawn frames). `native` is the size of the image the
+    /// intrinsics in `meta` describe; nil when the JPEG is that image.
+    public func offer(jpeg: Data, width: Int, height: Int, native: (width: Int, height: Int)? = nil, meta: Meta) -> Bool {
         guard reserve() else { return false }
         queue.async { [self] in
             defer { release() }
             let name = meta.frameID + ".jpg"
             guard (try? jpeg.write(to: folder.appending(path: name), options: .atomic)) != nil else { return }
-            let image = StoredImage(file: name, nativeWidth: width, nativeHeight: height, encodedWidth: width, encodedHeight: height,
-                                    scale: 1, rotationDeg: 0, byteCount: jpeg.count, sha256: Self.sha256(jpeg))
-            append(meta, image: image, depth: nil, depthName: "")
+            append(meta, image: Self.described(jpeg, name: name, width: width, height: height, native: native), depth: nil, depthName: "")
         }
         return true
+    }
+
+    private static func described(_ jpeg: Data, name: String?, width: Int, height: Int, native: (width: Int, height: Int)?) -> StoredImage {
+        let nativeWidth = native?.width ?? width, nativeHeight = native?.height ?? height
+        return StoredImage(file: name, nativeWidth: nativeWidth, nativeHeight: nativeHeight, encodedWidth: width, encodedHeight: height,
+                           scale: Double(width) / Double(nativeWidth), rotationDeg: 0, byteCount: jpeg.count, sha256: sha256(jpeg))
     }
 
     /// Encodes the hero, upright: `rotationDeg` is the clockwise turn that puts the sensor image the way it was seen.
@@ -281,10 +286,9 @@ public final class FrameSpoolWriter: @unchecked Sendable {
         }
     }
 
-    public func setHero(jpeg: Data, width: Int, height: Int, frameID: String) {
+    public func setHero(jpeg: Data, width: Int, height: Int, native: (width: Int, height: Int)? = nil, frameID: String) {
         queue.async { [self] in
-            hero = HeroImage(data: jpeg, image: StoredImage(file: nil, nativeWidth: width, nativeHeight: height, encodedWidth: width, encodedHeight: height,
-                                                             scale: 1, rotationDeg: 0, byteCount: jpeg.count, sha256: Self.sha256(jpeg)), frameID: frameID)
+            hero = HeroImage(data: jpeg, image: Self.described(jpeg, name: nil, width: width, height: height, native: native), frameID: frameID)
         }
     }
 

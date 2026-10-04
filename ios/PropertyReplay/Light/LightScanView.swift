@@ -404,7 +404,12 @@ struct LightResultSheet: View {
         .font(.callout)
         VStack(alignment: .leading, spacing: 6) {
             Label("Sunlight not calculated yet", systemImage: "hourglass").font(.headline)
-            Text("This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours. When that analysis is ready, this spot may need a new scan.")
+            Text("This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            // Said only of frames that are all on disk; what happens to them is said with it (docs/04 §12).
+            Text(result.spoolFrames.map { String(localized: "\($0) frames from this scan are kept on this device for 14 days, for that analysis. After that, this spot needs a new scan.") }
+                 ?? String(localized: "No frames were kept for that analysis, so this spot will need a new scan."))
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

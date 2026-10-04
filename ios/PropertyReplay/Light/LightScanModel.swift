@@ -63,9 +63,8 @@ struct LightScanResult: Equatable, Identifiable {
     var failure: String?
     /// True when the failed scan is still in memory and saving it can be tried again without rescanning (review U22).
     var canRetrySave = false
-
-    /// What the saved observation says about itself.
-    var note: String { String(localized: "Light scan · camera covered \(coveragePct)% of the \(questionName) path · sunlight not calculated") }
+    /// Frames kept on this device for analysis; nil when none were kept.
+    var spoolFrames: Int?
 }
 
 /// The Light scan (docs/04 OneTake): camera, the question's sun path over it, one instruction at a time, and a record
@@ -244,22 +243,29 @@ final class LightScanModel {
         guard phase == .scanning else { return }
         phase = .saving
         let place = property.map { "\($0.shortAddress)\(roomLabel.map { " · \($0)" } ?? "")" } ?? "Unbound scan"
-        var log = recorder?.stop(targetLabel: place, targetHeightM: targetHeightM)
-        #if DEBUG
-        if isSimulated, let coordinate {
-            log = synthetic?.makeLog(label: "Synthetic scan (simulator) · \(place)", coordinate: coordinate, targetHeightM: targetHeightM)
-            synthetic?.reset()
-        }
-        #endif
         var result = LightScanResult(coveragePct: Int((coverage * 100).rounded()), questionName: question.localizedName,
                                      direction: directionText, place: place)
-        guard let log else {
-            result.failure = String(localized: "Nothing was recorded. Try the scan again.")
-            phase = .saved(result)
-            return
+        // Finishing waits for the frames kept for analysis to reach the disk: only then is the scan's input safe.
+        Task { @MainActor in
+            var log: CaptureLog?
+            #if DEBUG
+            if isSimulated, let coordinate {
+                log = await synthetic?.makeLog(label: "Synthetic scan (simulator) · \(place)", coordinate: coordinate, targetHeightM: targetHeightM)
+                synthetic?.reset()
+            } else {
+                log = await recorder?.finish(targetLabel: place, targetHeightM: targetHeightM)
+            }
+            #else
+            log = await recorder?.finish(targetLabel: place, targetHeightM: targetHeightM)
+            #endif
+            guard let log else {
+                result.failure = String(localized: "Nothing was recorded. Try the scan again.")
+                phase = .saved(result)
+                return
+            }
+            unsavedLog = log
+            persist(log, result: result, in: context)
         }
-        unsavedLog = log
-        persist(log, result: result, in: context)
     }
 
     /// Saves the scan that failed to save, without scanning again.
@@ -280,9 +286,11 @@ final class LightScanModel {
                 throw CocoaError(.fileWriteOutOfSpace)   // UI tests: the first save fails, the retry succeeds
             }
             #endif
-            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, note: result.note, in: context)
+            let outcome = try LightCaptureSaver.save(log, property: property, roomLabel: roomLabel, question: question.rawValue,
+                                                     sweptCoveragePct: result.coveragePct, in: context)
             unsavedLog = nil
             pendingCapture = outcome.pending
+            result.spoolFrames = outcome.spoolFrames
             if let error = outcome.attachError {
                 result.pendingNote = String(localized: "Couldn't add it to the property yet (\(error)). It's kept on this device and is added the next time the app opens.")
             }

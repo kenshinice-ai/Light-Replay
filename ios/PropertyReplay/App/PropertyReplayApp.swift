@@ -1,3 +1,4 @@
+import CaptureCore
 import PropertyModel
 import SwiftData
 import SwiftUI
@@ -101,9 +102,30 @@ enum StartupTasks {
             try? PropertyStore.commit(context)
         }
         let pending = PendingCaptures.recover(in: context)
+        // Light rows from before the digest: the status moves out of the buyer's column (ADR-0022).
+        _ = try? LightStatusMigration.migrate(in: context)
+        sweepSpools(in: context)
         if pending.recovered > 0 { StoreHealth.shared.note(String(localized: "Added \(pending.recovered) measurement(s) that weren't saved last time.")) }
         if pending.waiting > 0 { StoreHealth.shared.note(String(localized: "\(pending.waiting) measurement(s) are waiting for a property that no longer exists.")) }
         _ = try? PropertyStore.preferences(in: context)
+    }
+}
+
+extension StartupTasks {
+    /// Frames kept for analysis go when their scan is gone or their keeping time is over (docs/04 §12). A row whose
+    /// frames expired is told, so it never offers an analysis that can no longer run.
+    static func sweepSpools(in context: ModelContext) {
+        let light = ObservationKind.light.rawValue
+        let rows = (try? context.fetch(FetchDescriptor<InspectionObservation>(predicate: #Predicate { $0.kindRaw == light }))) ?? []
+        let live = Set(rows.map(\.uuid.uuidString)).union(PendingCaptures.all().compactMap { $0.observationUUID?.uuidString })
+        let swept = FrameSpool.sweep(keeping: live)
+        guard !swept.expired.isEmpty else { return }
+        for row in rows where swept.expired.contains(row.uuid.uuidString) {
+            guard var digest = row.lightDigest, digest.spoolFrames != nil else { continue }
+            digest.spoolFrames = nil
+            row.lightDigest = digest
+        }
+        try? PropertyStore.commit(context)
     }
 }
 
