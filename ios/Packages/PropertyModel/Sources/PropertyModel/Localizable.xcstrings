@@ -181,6 +181,26 @@
         }
       }
     },
+    "Light scan · camera covered %lld%% of the %@ path · sunlight not calculated": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光线扫描 · 镜头覆盖了%2$@路径的 %1$lld%% · 日照未计算"
+          }
+        }
+      }
+    },
+    "Light scan · sunlight not calculated": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光线扫描 · 日照未计算"
+          }
+        }
+      }
+    },
     "Like": {
       "localizations": {
         "zh-Hans": {
@@ -427,6 +447,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "语音笔记"
+          }
+        }
+      }
+    },
+    "all-year sun": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全年阳光"
+          }
+        }
+      }
+    },
+    "winter sun": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "冬季阳光"
           }
         }
       }

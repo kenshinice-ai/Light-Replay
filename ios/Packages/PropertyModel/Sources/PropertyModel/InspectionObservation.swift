@@ -156,6 +156,9 @@ public final class InspectionObservation {
     public var sceneId: String?
     /// The SceneRecord JSON for `kind == .light`, stored with the row (ADR-0017). Files on disk are export copies only.
     @Attribute(.externalStorage) public var sceneRecordData: Data?
+    /// What a light scan is, small enough to live on the row (`LightDigest`, ADR-0022): lists and Compare read this and
+    /// never the record. The app writes it; the buyer's own words stay in `text`.
+    public var lightDigestData: Data?
     public var inspection: Inspection?
     /// The home a note written away from an inspection belongs to. Nil for everything recorded during one, which
     /// reaches its home through `inspection`.
@@ -228,6 +231,7 @@ public final class InspectionObservation {
     public var headline: String {
         if let text, !text.isEmpty { return text }
         if let summary, !summary.isEmpty { return summary }
+        if kind == .light, let digest = lightDigest { return digest.statusLine }
         switch kind {
         case .photo: return String(localized: "Photo", bundle: .module)
         case .voice: return String(localized: "Voice note", bundle: .module)

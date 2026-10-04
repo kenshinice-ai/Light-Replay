@@ -10,18 +10,34 @@ public struct PendingCapture: Codable, Sendable, Equatable {
     public var roomLabel: String?
     public var capturedAt: Date
     public var record: Data
-    /// What the observation says, e.g. "Light scan · winter sun path 92% seen · analysis pending". Optional so files
-    /// written before it existed still decode.
+    /// Before 2026-10-04: the sentence written into the row's `text`. Captures with a `digest` leave `text` alone.
     public var note: String?
+    /// The identity of the row this becomes, fixed when the scan started (it is the capture's session id). `scene_id`
+    /// is a number for people and can repeat across devices on the same day; this cannot (ADR-0022, review V2-04).
+    /// Nil only in files written before it existed.
+    public var observationUUID: UUID?
+    /// `LightDigest`, encoded.
+    public var digest: Data?
+    /// The hero photo and its thumbnail.
+    public var photo: Data?
+    public var thumbnail: Data?
 
-    public init(sceneID: String, propertyUUID: UUID, roomLabel: String?, capturedAt: Date, record: Data, note: String? = nil) {
+    public init(sceneID: String, propertyUUID: UUID, roomLabel: String?, capturedAt: Date, record: Data, note: String? = nil,
+                observationUUID: UUID? = nil, digest: Data? = nil, photo: Data? = nil, thumbnail: Data? = nil) {
         self.sceneID = sceneID
         self.propertyUUID = propertyUUID
         self.roomLabel = roomLabel
         self.capturedAt = capturedAt
         self.record = record
         self.note = note
+        self.observationUUID = observationUUID
+        self.digest = digest
+        self.photo = photo
+        self.thumbnail = thumbnail
     }
+
+    /// What the pending file is named after: the row's identity when there is one, the scene id for older files.
+    var key: String { observationUUID?.uuidString ?? sceneID }
 }
 
 public enum PendingCaptures {
@@ -29,7 +45,7 @@ public enum PendingCaptures {
 
     public static func write(_ capture: PendingCapture, root: URL = root) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try JSONEncoder().encode(capture).write(to: file(capture.sceneID, root), options: .atomic)
+        try JSONEncoder().encode(capture).write(to: file(capture.key, root), options: .atomic)
     }
 
     public static func all(root: URL = root) -> [PendingCapture] {
@@ -39,8 +55,8 @@ public enum PendingCaptures {
         }
     }
 
-    public static func remove(sceneID: String, root: URL = root) throws {
-        try LegacyFiles.removeUnlessMissing(file(sceneID, root))
+    public static func remove(_ capture: PendingCapture, root: URL = root) throws {
+        try LegacyFiles.removeUnlessMissing(file(capture.key, root))
     }
 
     /// Saves the capture as a light observation on the property's open inspection, then drops the pending file.
@@ -48,17 +64,26 @@ public enum PendingCaptures {
     @MainActor @discardableResult
     public static func commit(_ capture: PendingCapture, to property: Property, in context: ModelContext,
                               root: URL = root) throws -> InspectionObservation {
-        if let existing = try observation(sceneID: capture.sceneID, in: context) {
-            try? remove(sceneID: capture.sceneID, root: root)
+        // Already on a row: by its own identity when the capture has one. Two scans may share a scene id (two devices,
+        // one day); only a file from before identities existed is matched by scene id.
+        let existing = try capture.observationUUID.map { try observation(uuid: $0, in: context) } ?? observation(sceneID: capture.sceneID, in: context)
+        if let existing {
+            try? remove(capture, root: root)
             return existing
         }
         let observation = InspectionObservation(kind: .light, category: .naturalLight, source: .sensor,
                                                 roomLabel: capture.roomLabel, capturedAt: capture.capturedAt)
+        if let uuid = capture.observationUUID { observation.uuid = uuid }
         observation.sceneId = capture.sceneID
         observation.sceneRecordData = capture.record
-        observation.text = capture.note ?? String(localized: "Light measurement recorded (analysis pending)", bundle: .module)
+        if let digest = capture.digest {
+            observation.lightDigestData = digest   // the status is derived from this; `text` stays the buyer's
+        } else {
+            observation.text = capture.note ?? String(localized: "Light measurement recorded (analysis pending)", bundle: .module)
+        }
+        if let photo = capture.photo { observation.attachPhoto(photo, thumbnail: capture.thumbnail) }
         try PropertyStore.record(observation, for: property, in: context)
-        try? remove(sceneID: capture.sceneID, root: root)   // a leftover is recognised by scene_id next time
+        try? remove(capture, root: root)   // a leftover is recognised by its identity next time
         return observation
     }
 
@@ -86,9 +111,14 @@ public enum PendingCaptures {
     }
 
     @MainActor
+    static func observation(uuid: UUID, in context: ModelContext) throws -> InspectionObservation? {
+        try context.fetch(FetchDescriptor<InspectionObservation>(predicate: #Predicate { $0.uuid == uuid })).first
+    }
+
+    @MainActor
     static func observation(sceneID: String, in context: ModelContext) throws -> InspectionObservation? {
         try context.fetch(FetchDescriptor<InspectionObservation>(predicate: #Predicate { $0.sceneId == sceneID })).first
     }
 
-    private static func file(_ sceneID: String, _ root: URL) -> URL { root.appending(path: "\(sceneID).json") }
+    private static func file(_ key: String, _ root: URL) -> URL { root.appending(path: "\(key).json") }
 }
