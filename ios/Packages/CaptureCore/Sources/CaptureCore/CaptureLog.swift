@@ -134,12 +134,16 @@ public struct CaptureLog: Sendable, Equatable {
     public var viewpointToleranceM: Double
     /// ARSession failure or interruption, verbatim, when one happened.
     public var failureReason: String?
+    /// The picture the scan is remembered by: the frame that locked the viewpoint, upright. Nil when none was taken.
+    public var hero: HeroImage?
+    /// The frames kept on this device for analysis (docs/04 §12). Nil when none were kept.
+    public var spool: SpoolManifest?
 
     public init(sessionID: String, startedAt: Date, endedAt: Date, firstFrameAt: Date?, timezone: TimeZone, device: DeviceInfo,
                 appVersion: String, appBuild: String, targetLabel: String, targetHeightM: Double?,
                 frames: [FrameSample], anchor: SIMD3<Double>?, anchorFrameID: String?, maxDriftM: Double?,
                 headings: [HeadingSample], location: LocationSample?, viewpointToleranceM: Double = 0.15,
-                failureReason: String? = nil) {
+                failureReason: String? = nil, hero: HeroImage? = nil, spool: SpoolManifest? = nil) {
         self.sessionID = sessionID
         self.startedAt = startedAt
         self.endedAt = endedAt
@@ -158,6 +162,8 @@ public struct CaptureLog: Sendable, Equatable {
         self.location = location
         self.viewpointToleranceM = viewpointToleranceM
         self.failureReason = failureReason
+        self.hero = hero
+        self.spool = spool
     }
 
     /// The anchor frame if there is one, else the first frame: never a frame the scan is not referenced to.

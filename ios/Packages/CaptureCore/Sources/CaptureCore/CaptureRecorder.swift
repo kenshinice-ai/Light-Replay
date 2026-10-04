@@ -31,8 +31,12 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     @Published public private(set) var latestHeading: HeadingSample?
     @Published public private(set) var location: LocationSample?
     @Published public private(set) var failureReason: String?
+    /// Frames kept for analysis so far in this record.
+    @Published public private(set) var spooledFrames = 0
 
     public let availability: Availability
+    /// Whether a record keeps frames for analysis (docs/04 §12). The capture validator turns it off.
+    public var keepsSpool = true
     public var viewpointToleranceM = 0.15
     /// The orientation the interface is showing. CLHeading is measured from the top edge of the device, so the
     /// location manager has to be told which edge is up, or every landscape reading is 90° off.
@@ -55,6 +59,10 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     private var lastKeptTimestamp: TimeInterval?
     private var headings: [HeadingSample] = []
     private var sessionID = UUID().uuidString
+    private var spool: FrameSpoolWriter?
+    private var lastPose: (timestamp: TimeInterval, forward: SIMD3<Double>)?
+    private var lastSpooled: (timestamp: TimeInterval, forward: SIMD3<Double>)?
+    private var turnRateDegPerSec = 0.0
 
     public override init() {
         if ARWorldTrackingConfiguration.isSupported {
@@ -131,8 +139,25 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         firstFrameAt = nil
         firstFrameTimestamp = nil
         sessionID = UUID().uuidString
+        spool?.discard()
+        spool = keepsSpool ? try? FrameSpoolWriter(sessionID: sessionID) : nil
+        spooledFrames = 0
+        lastPose = nil
+        lastSpooled = nil
+        turnRateDegPerSec = 0
         startedAt = Date()
         isRunning = true
+    }
+
+    /// The clockwise turn that shows the sensor image the way the screen showed it. The sensor image is upright when
+    /// the interface is landscape with the home side on the right.
+    nonisolated public static func heroRotationDeg(for orientation: UIInterfaceOrientation) -> Int {
+        switch orientation {
+        case .landscapeRight: 0
+        case .landscapeLeft: 180
+        case .portraitUpsideDown: 270
+        default: 90
+        }
     }
 
     /// Stops the session without keeping anything. Safe when nothing runs.
@@ -145,10 +170,29 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         isRunning = false
     }
 
-    /// Stops the session and returns the log. Returns nil if nothing was recorded.
+    /// Stops the session and returns the log, without the frames kept for analysis: they are dropped. For a scan
+    /// that is being thrown away, and for the capture validator. Returns nil if nothing was recorded.
     public func stop(targetLabel: String = "Capture validator target", targetHeightM: Double? = nil) -> CaptureLog? {
         guard isRunning, let startedAt else { return nil }
         endPreview()
+        spool?.discard()
+        spool = nil
+        return makeLog(startedAt: startedAt, targetLabel: targetLabel, targetHeightM: targetHeightM, hero: nil, manifest: nil)
+    }
+
+    /// Stops the session, waits for the frames to be written, and returns the log with the hero and the spool's
+    /// manifest. Only after this has returned are the frames safely on disk.
+    public func finish(targetLabel: String, targetHeightM: Double? = nil) async -> CaptureLog? {
+        guard isRunning, let startedAt else { return nil }
+        endPreview()
+        let writer = spool
+        spool = nil
+        let kept = await writer?.finish()
+        if kept?.manifest == nil { writer?.discard() }   // nothing usable: do not leave an empty folder behind
+        return makeLog(startedAt: startedAt, targetLabel: targetLabel, targetHeightM: targetHeightM, hero: kept?.hero, manifest: kept?.manifest)
+    }
+
+    private func makeLog(startedAt: Date, targetLabel: String, targetHeightM: Double?, hero: HeroImage?, manifest: SpoolManifest?) -> CaptureLog {
         let device = DeviceInfo(
             model: Self.modelIdentifier,
             os: "iOS \(UIDevice.current.systemVersion)",
@@ -175,7 +219,9 @@ public final class CaptureRecorder: NSObject, ObservableObject {
             headings: headings,
             location: location,
             viewpointToleranceM: viewpointToleranceM,
-            failureReason: failureReason
+            failureReason: failureReason,
+            hero: hero,
+            spool: manifest
         )
     }
 
@@ -224,9 +270,11 @@ extension CaptureRecorder: ARSessionDelegate {
         let hasDepth = frame.sceneDepth != nil
         let exposure = Double(frame.camera.exposureOffset)
         let timestamp = frame.timestamp
+        // The pixel buffers are handed on only for the few frames the spool keeps; the ARFrame itself never is.
+        let buffers = FrameBuffers(image: frame.capturedImage, depth: frame.sceneDepth?.depthMap, confidence: frame.sceneDepth?.confidenceMap)
         MainActor.assumeIsolated {
             self.record(transform: transform, intrinsics: intrinsics, state: state,
-                        hasDepth: hasDepth, exposure: exposure, timestamp: timestamp)
+                        hasDepth: hasDepth, exposure: exposure, timestamp: timestamp, buffers: buffers)
         }
     }
 
@@ -246,10 +294,22 @@ extension CaptureRecorder: ARSessionDelegate {
         MainActor.assumeIsolated { self.failureReason = (self.failureReason ?? "interrupted") + "; interruption ended" }
     }
 
+    private struct FrameBuffers: @unchecked Sendable {
+        let image: CVPixelBuffer
+        let depth: CVPixelBuffer?
+        let confidence: CVPixelBuffer?
+    }
+
     private func record(transform: [Double], intrinsics: [Double], state: String,
-                        hasDepth: Bool, exposure: Double, timestamp: TimeInterval) {
+                        hasDepth: Bool, exposure: Double, timestamp: TimeInterval, buffers: FrameBuffers? = nil) {
         if trackingState != state { trackingState = state }   // published: only on change, not 60 times a second
         guard isRunning else { return }
+        let forward = SIMD3(-transform[8], -transform[9], -transform[10])
+        if let last = lastPose, timestamp > last.timestamp {
+            let angle = acos(max(-1, min(1, simd_dot(last.forward, forward)))) * 180 / .pi
+            turnRateDegPerSec = 0.8 * turnRateDegPerSec + 0.2 * angle / (timestamp - last.timestamp)
+        }
+        lastPose = (timestamp, forward)
         if firstFrameTimestamp == nil {
             firstFrameTimestamp = timestamp
             firstFrameAt = Date()
@@ -267,12 +327,29 @@ extension CaptureRecorder: ARSessionDelegate {
         currentDriftM = drift
         currentOffset = anchor.map { position - $0 }
         if let drift { maxDriftM = max(maxDriftM ?? 0, drift) }
-        guard Self.keepsFrame(at: timestamp, lastKept: lastKeptTimestamp, stateChanged: frames.last.map { $0.trackingState != state } ?? true,
-                              locksAnchor: locksAnchor) else { return }
+        // A frame kept for analysis is always in the pose log too, so its pose is its own and not a neighbour's.
+        let forSpool = spool != nil && buffers != nil && SpoolAdmission.admits(
+            trackingNormal: state == "normal", lensOffsetM: drift, toleranceM: viewpointToleranceM, turnRateDegPerSec: turnRateDegPerSec,
+            sinceLast: lastSpooled.map { timestamp - $0.timestamp },
+            angleFromLastDeg: lastSpooled.map { acos(max(-1, min(1, simd_dot($0.forward, forward)))) * 180 / .pi })
+        guard forSpool || Self.keepsFrame(at: timestamp, lastKept: lastKeptTimestamp, stateChanged: frames.last.map { $0.trackingState != state } ?? true,
+                                          locksAnchor: locksAnchor) else { return }
         lastKeptTimestamp = timestamp
+        let t = timestamp - (firstFrameTimestamp ?? timestamp)
+        if let buffers, let spool {
+            if locksAnchor {
+                spool.setHero(image: buffers.image, rotationDeg: Self.heroRotationDeg(for: interfaceOrientation), frameID: frameID)
+            }
+            if forSpool, spool.offer(image: buffers.image, depth: buffers.depth, confidence: buffers.confidence,
+                                     meta: .init(frameID: frameID, timestamp: timestamp, t: t, cameraTransform: transform, intrinsics: intrinsics,
+                                                 exposureOffset: exposure, lensOffsetM: drift, turnRateDegPerSec: turnRateDegPerSec)) {
+                lastSpooled = (timestamp, forward)
+                spooledFrames += 1
+            }
+        }
         frames.append(FrameSample(
             frameID: frameID,
-            t: timestamp - (firstFrameTimestamp ?? timestamp),
+            t: t,
             cameraTransform: transform,
             intrinsics: intrinsics,
             trackingState: state,

@@ -47,6 +47,52 @@ final class SceneRecordBuilderTests: XCTestCase {
         XCTAssertEqual(reparsed.fields["analysis"], .array([]))
     }
 
+    /// What Save writes is schema 0.2.0 at revision 0 (ADR-0022): nothing analysed, every check still to run, and
+    /// the lights exactly the ones the evaluator gives for that — which, with the horizon unchecked, blocks `level`.
+    func testTheSavedRecordIsSchema2AtRevisionZero() throws {
+        let document = try SceneRecordBuilder.build(sampleLog(), sceneID: "PR-20261004-01")
+        let fields = try SceneRecordDocument(data: try document.encoded()).fields
+        XCTAssertEqual(fields["schema_version"], .string("0.2.0"))
+        let result = object(fields["result"])
+        XCTAssertEqual(result["revision"], .number(0))
+        XCTAssertEqual(result["inputs_hash"], .null)
+        XCTAssertEqual(result["capture_digest"], .string("no-frames-kept"))
+        let gates = object(object(fields["quality"])["gates"]).mapValues { $0 == .string("blocked") }
+        XCTAssertEqual(gates, ["coverage": true, "north": true, "segmentation": true, "level": true, "lens": true])
+        XCTAssertEqual(object(object(object(fields["quality"])["evidence"])["lens"])["status"], .string("not_run"))
+        let session = object(fields["capture_session"])
+        XCTAssertEqual(session["keyframes"], .array([]))
+        if case .array(let frames)? = session["frames"] {
+            XCTAssertTrue(frames.allSatisfy { object($0)["role"] == .string("visibility") })
+        } else { XCTFail("no frames") }
+        XCTAssertEqual(object(session["hero_frame"])["image"], .null, "no hero was taken in this log")
+        // The same candidates give the same north digest; the time the record was built does not enter it.
+        let later = try SceneRecordBuilder.build(sampleLog(), sceneID: "PR-20261004-01", createdAt: Date().addingTimeInterval(500))
+        XCTAssertEqual(object(later.fields["result"])["north_digest"], result["north_digest"])
+    }
+
+    func testAHeroAndASpoolAreDescribedAndTheRecordStillValidates() throws {
+        var log = sampleLog()
+        let stored = StoredImage(file: nil, nativeWidth: 1920, nativeHeight: 1440, encodedWidth: 1440, encodedHeight: 1920, scale: 1, rotationDeg: 90,
+                                 byteCount: 900_000, sha256: String(repeating: "a", count: 64))
+        log.hero = HeroImage(data: Data(count: 4), image: stored, frameID: "f00000")
+        let picture = StoredImage(file: "f00001.jpg", nativeWidth: 1920, nativeHeight: 1440, encodedWidth: 960, encodedHeight: 720, scale: 0.5,
+                                  rotationDeg: 0, byteCount: 120_000, sha256: String(repeating: "b", count: 64))
+        log.spool = SpoolManifest(sessionID: log.sessionID, createdAt: start, truncated: false,
+                                  frames: [SpoolFrame(frameID: "f00001", timestamp: 10.1, t: 0.1, cameraTransform: identity, intrinsics: intrinsics, image: picture,
+                                                      depth: nil, exposureOffset: 0, lensOffsetM: 0.05, turnRateDegPerSec: 5, role: "visibility")],
+                                  hero: stored, heroFrameID: "f00000", expiresAt: start.addingTimeInterval(FrameSpool.retention))
+        let fields = try SceneRecordDocument(data: try SceneRecordBuilder.build(log, sceneID: "PR-20261004-02").encoded()).fields
+        let image = object(object(object(fields["capture_session"])["hero_frame"])["image"])
+        XCTAssertEqual(image["storage"], .string("row.photo"))
+        XCTAssertEqual(image["rotation_deg"], .number(90))
+        XCTAssertEqual(image["encoded_size"], .array([.number(1440), .number(1920)]))
+        XCTAssertEqual(object(fields["result"])["capture_digest"], .string(log.spool!.digest))
+        // A hero whose stated scale does not give its stated size is refused by the validator, not written.
+        log.hero?.image.scale = 0.5
+        XCTAssertThrowsError(try SceneRecordBuilder.build(log, sceneID: "PR-20261004-03"))
+    }
+
     func testViewpointLockCountsOnlyFramesWithAnOffset() throws {
         // f0 has no offset (pre-lock), then 0.05 … 0.20
         var frames = [frame(0, offset: nil, state: "limited:initializing")]

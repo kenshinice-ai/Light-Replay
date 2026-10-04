@@ -1,11 +1,14 @@
+import CryptoKit
 import Foundation
 import NorthResolver
 import SceneRecord
 
-/// Turns a `CaptureLog` into a capture-only (R0, blocked) SceneRecord document that passes `SceneValidator`.
-/// Visibility, north resolution and analysis are filled in by later modules; this builder never invents them.
+/// Turns a `CaptureLog` into a SceneRecord as it stands at Save (schema 0.2.0, ADR-0022): R0, result revision 0, no
+/// grid and no analysis, every check still to run. It passes `SceneValidator`, and its lights are the ones
+/// `QualityEvaluator` gives for this evidence, never ones the builder chose. Visibility, north resolution beyond the
+/// compass and analysis are filled in by later modules; this builder never invents them.
 public enum SceneRecordBuilder {
-    public static let schemaVersion = "0.1.0"
+    public static let schemaVersion = "0.2.0"
     /// The heading is taken as the true azimuth of the back camera's forward axis (portrait, CLHeading referenced
     /// to the top of the device). This mapping is an assumption until the sundial check in docs/05 §2 (truth group).
     public static let headingAxisAssumption = "CLHeading, referenced to the interface orientation, taken as the back camera's true azimuth; verify against the sundial (docs/05)"
@@ -42,9 +45,24 @@ public enum SceneRecordBuilder {
                 "depth_confidence_ref": .null,
                 "mask_ref": .null,
                 "exposure_offset": num(frame.exposureOffset),
-                "used_for_visibility": .bool(false)
+                "used_for_visibility": .bool(false),
+                "role": .string("visibility")
             ])
         }
+
+        // The hero's pixels go to the row; the record says how they relate to the sensor image (docs/03 §11).
+        let heroImage: JSONValue = log.hero.map { hero in
+            .object([
+                "storage": .string("row.photo"),
+                "native_size": vec([Double(hero.image.nativeWidth), Double(hero.image.nativeHeight)]),
+                "encoded_size": vec([Double(hero.image.encodedWidth), Double(hero.image.encodedHeight)]),
+                "scale": .number(hero.image.scale),
+                "crop": vec([0, 0, Double(hero.image.nativeWidth), Double(hero.image.nativeHeight)]),
+                "rotation_deg": .number(Double(hero.image.rotationDeg)),
+                "byte_count": .number(Double(hero.image.byteCount)),
+                "sha256": .string(hero.image.sha256)
+            ])
+        } ?? .null
 
         let heroValue: JSONValue = hero.map { frame in
             .object([
@@ -53,10 +71,12 @@ public enum SceneRecordBuilder {
                 "timestamp": time(log.frameDate(frame) ?? log.startedAt),
                 "intrinsics": vec(frame.intrinsics),
                 "camera_transform": vec(frame.cameraTransform),
-                "exposure": .null
+                "exposure": .null,
+                "image": heroImage
             ])
         } ?? .null
 
+        let candidates: JSONValue = .array([magneticCandidate(log, time: time)])
         let north = resolvedNorth([magneticCandidate(log, time: time)], time: time, at: createdAt)
 
         let location: JSONValue = log.location.map { loc in
@@ -73,7 +93,13 @@ public enum SceneRecordBuilder {
         var blocked = "Capture validator session: poses recorded, no sky visibility or resolved north yet"
         if let reason = log.failureReason { blocked += "; ARSession: \(reason)" }
 
-        let fields: [String: JSONValue] = [
+        let notRun: JSONValue = .object([
+            "rules": .string(QualityEvaluator.version2),
+            "horizon": .object(["status": .string("not_run"), "residual_deg": .null, "confidence": .null, "frame_id": .null, "detector": .null]),
+            "lens": .object(["status": .string("not_run"), "smudge_confidence": .null, "frame_id": .null, "detector": .null]),
+            "reflection": .object(["status": .string("not_run"), "frames_checked": .number(0), "hits": .number(0), "detector": .null])
+        ])
+        var fields: [String: JSONValue] = [
             "schema_version": .string(schemaVersion),
             "scene_id": .string(sceneID),
             "created_at": time(createdAt),
@@ -107,7 +133,8 @@ public enum SceneRecordBuilder {
                     "frames_within": .number(Double(within)), "frames_beyond": .number(Double(beyond)),
                     "handling": .string(anchorLocked ? "tolerated" : "rejected")
                 ]),
-                "guidance": .object(["question": .string("custom"), "corridor_ref": .null])
+                "guidance": .object(["question": .string("custom"), "corridor_ref": .null]),
+                "keyframes": .array([])
             ]),
             "north": north.value,
             "visibility": .null,
@@ -121,13 +148,36 @@ public enum SceneRecordBuilder {
                                   "lens": .string("blocked")]),
                 "flags": .array(flags),
                 "false_valid_guard": .string("blocked"),
-                "blocked_reason": .string(blocked)
+                "blocked_reason": .string(blocked),
+                "evidence": notRun
+            ]),
+            // Revision 0: saved, never analysed. The two digests are what an analysis started against (ADR-0022 §4).
+            "result": .object([
+                "revision": .number(0),
+                "capture_digest": .string(log.spool?.digest ?? "no-frames-kept"),
+                "north_digest": .string(digest(of: candidates)),
+                "inputs_hash": .null,
+                "computed_at": .null
             ]),
             "sharing": .object(["include_hero": .bool(false), "precise_address": .bool(false),
                                 "revoked": .bool(false), "revoked_at": .null]),
             "context": .object(["address_estimate": .null])
         ]
+        // State the lights as the evidence gives them, all five: the builder has no opinion of its own.
+        if case .object(var quality)? = fields["quality"] {
+            let evaluated = QualityEvaluator.evaluate(fields).gates
+            quality["gates"] = .object(Dictionary(uniqueKeysWithValues: evaluated.map { ($0.key.rawValue, JSONValue.string($0.value.rawValue)) }))
+            fields["quality"] = .object(quality)
+        }
         return try SceneRecordDocument(fields: fields)
+    }
+
+    /// A stable hash of a JSON value: the same candidates always give the same digest.
+    static func digest(of value: JSONValue) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = (try? encoder.encode(value)) ?? Data()
+        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
     /// The magnetic-group candidate (docs/05 §2, §4). Every valid compass reading that can be tied to a pose gives one
