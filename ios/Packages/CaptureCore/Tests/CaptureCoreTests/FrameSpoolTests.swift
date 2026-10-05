@@ -20,13 +20,14 @@ final class FrameSpoolTests: XCTestCase {
 
     func testAdmissionNeedsNormalTrackingTheViewpointAndASteadyHand() {
         func admits(normal: Bool = true, offset: Double? = 0.05, turn: Double = 10, since: TimeInterval? = nil, angle: Double? = nil) -> Bool {
-            SpoolAdmission.admits(trackingNormal: normal, lensOffsetM: offset, toleranceM: 0.15, turnRateDegPerSec: turn, sinceLast: since, angleFromLastDeg: angle)
+            SpoolAdmission.admits(trackingNormal: normal, lensOffsetM: offset, turnRateDegPerSec: turn, sinceLast: since, angleFromLastDeg: angle)
         }
         XCTAssertTrue(admits(), "the first qualifying frame")
         XCTAssertFalse(admits(normal: false))
         XCTAssertFalse(admits(offset: nil), "before the viewpoint is locked")
-        XCTAssertFalse(admits(offset: 0.2), "outside the viewpoint tolerance")
-        XCTAssertTrue(admits(offset: 0.15), "three steps of 0.05 count as 0.15")
+        XCTAssertTrue(admits(offset: 0.3), "off the viewpoint but kept: whether it can be used is the analysis' call")
+        XCTAssertTrue(admits(offset: 0.1 + 0.2 + 0.2), "sums of tenths count as 0.5")
+        XCTAssertFalse(admits(offset: 0.6), "too far from the viewpoint to be about it")
         XCTAssertFalse(admits(turn: 61), "turning too fast: the frame would be smeared")
         XCTAssertFalse(admits(since: 0.1, angle: 20), "never more than five a second")
         XCTAssertFalse(admits(since: 0.25, angle: 2), "neither long enough nor far enough")

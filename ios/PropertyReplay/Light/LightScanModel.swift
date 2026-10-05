@@ -356,6 +356,14 @@ final class LightScanModel {
         let equinox = LocalDay(year: year, month: 3, day: 20)
         let hourStyle = Date.FormatStyle(timeZone: timeZone).hour(.defaultDigits(amPM: .abbreviated))
         let dayStyle = Date.FormatStyle(timeZone: timeZone).day().month(.abbreviated)
+        let monthStyle = Date.FormatStyle(timeZone: timeZone).month(.abbreviated)
+        func start(_ day: LocalDay) -> Date { day.interval(in: timeZone).start }
+        // Each path says what it is. A bare "20 Mar" over the camera read as the app's idea of today (Lee, 2026-10-05).
+        let labels: [LocalDay: String] = [
+            winter: String(localized: "Shortest day · \(start(winter).formatted(dayStyle))"),
+            summer: String(localized: "Longest day · \(start(summer).formatted(dayStyle))"),
+            equinox: String(localized: "Equinoxes · \(start(equinox).formatted(monthStyle)) & \(start(LocalDay(year: year, month: 9, day: 23)).formatted(monthStyle))")
+        ]
         let arcs = [winter, equinox, summer].map { day -> SunArc in
             let samples = SunSampler.samples(on: day, latitude: latitude, longitude: longitude, timeZone: timeZone, stepMinutes: 10)
             let marks = samples.enumerated().compactMap { index, sample -> (index: Int, text: String)? in
@@ -364,7 +372,7 @@ final class LightScanModel {
                 return (index, sample.date.formatted(hourStyle))
             }
             let emphasis: SunArc.Emphasis = question == .allYear || day == winter ? .primary : .context
-            return SunArc(label: day.interval(in: timeZone).start.formatted(dayStyle), emphasis: emphasis, samples: samples, hourMarks: marks)
+            return SunArc(label: labels[day] ?? "", emphasis: emphasis, samples: samples, hourMarks: marks)
         }
         let current = SolarPosition.compute(at: now, latitude: latitude, longitude: longitude)
         return (CorridorProgress(corridor: corridor), arcs, current.elevationDeg > 0 ? current : nil)
@@ -419,7 +427,7 @@ final class LightScanModel {
         status.anchorLocked = locked
         status.driftM = offset.map { simd_length($0) }
 
-        if status.isRecording, trackingState == "normal", (status.driftM ?? 0) <= toleranceM,
+        if status.isRecording, trackingState == "normal", (status.driftM ?? 0) <= max(toleranceM, ScanCoach.driftLimitM),
            status.turnRateDegPerSec <= ScanCoach.fastTurnDegPerSec, time - lastSweepTime >= 0.1 {
             lastSweepTime = time
             sweep.add(camera)
@@ -508,7 +516,7 @@ final class LightScanModel {
         } else if let estimate = liveYaw.estimate {
             text = String(localized: "Compass ±\(Int(estimate.sigmaDeg.rounded()))°")
         } else {
-            text = "Finding north…"
+            text = String(localized: "Finding north…")
         }
         if text != directionText { directionText = text }
     }

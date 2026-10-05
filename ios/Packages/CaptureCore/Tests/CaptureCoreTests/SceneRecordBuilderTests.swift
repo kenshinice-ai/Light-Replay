@@ -211,14 +211,15 @@ final class SceneRecordBuilderTests: XCTestCase {
     }
 
     func testReadingsTakenLookingSteeplyUpAreKeptButNotMerged() throws {
-        let frames = [pose(0, t: 0, azimuth: 10), pose(1, t: 1, azimuth: 10, pitch: 70), pose(2, t: 2, azimuth: 10)]
+        let frames = [pose(0, t: 0, azimuth: 10), pose(1, t: 1, azimuth: 10, pitch: 40), pose(2, t: 2, azimuth: 10)]
         let headings = [heading(40, at: 0), heading(200, at: 1), heading(42, at: 2)]
         let candidate = magnetic(try SceneRecordBuilder.build(sampleLog(frames: frames, headings: headings), sceneID: "PR-20261001-03"))
-        XCTAssertEqual(number(candidate["yaw_deg"]), 31, accuracy: 1e-9, "median of 30 and 32; the reading at 70 degrees of pitch is left out")
+        XCTAssertEqual(number(candidate["yaw_deg"]), 31, accuracy: 1e-9, "median of 30 and 32; the reading at 40 degrees of pitch is left out (PR-20261005: flipped there)")
         let raw = object(candidate["raw"])
         guard case .array(let samples) = raw["samples"] ?? .null else { return XCTFail("samples missing") }
         XCTAssertEqual(samples.map { object($0)["used"] }, [.bool(true), .bool(false), .bool(true)])
-        XCTAssertEqual(number(object(samples[1])["camera_pitch_deg"]), 70, accuracy: 1e-9)
+        XCTAssertEqual(number(object(samples[1])["camera_pitch_deg"]), 40, accuracy: 1e-9)
+        XCTAssertEqual(object(raw["merged"])["max_pitch_deg"], .number(30))
         XCTAssertEqual(object(raw["merged"])["samples_used"], .number(2))
         XCTAssertEqual(object(raw["merged"])["samples_total"], .number(3))
         XCTAssertEqual(object(raw["merged"])["readings_seen"], .number(3))

@@ -94,7 +94,7 @@ public struct SpoolManifest: Codable, Sendable, Equatable {
 }
 
 /// Which frames of a scan are kept for analysis (docs/04 §12). A frame qualifies when tracking is normal, the lens is
-/// within the viewpoint tolerance and the phone is not turning fast; of those, one is kept when enough time has
+/// within `keepRadiusM` of the viewpoint and the phone is not turning fast; of those, one is kept when enough time has
 /// passed or the view has moved enough since the last one kept. This is support from repeated looks, not
 /// statistical independence.
 public enum SpoolAdmission {
@@ -105,12 +105,17 @@ public enum SpoolAdmission {
     /// Kept sooner than `intervalS` only when the view direction moved this far.
     public static let angleDeg = 5.0
     public static let maxTurnRateDegPerSec = 60.0
+    /// Frames this far from the viewpoint are kept, each with its offset. Past the viewpoint tolerance on purpose:
+    /// docs/04 §4 merges frames out to the drift limit (0.40 m) with less weight, and looking up at a summer sun
+    /// moved the phone 0.35–0.5 m in most scans of PR-20261005-01…09. A little past the limit too, so the spike that
+    /// settles the limit has frames on both sides of it. Keeping a frame decides nothing about using it.
+    public static let keepRadiusM = 0.5
     /// About 80 seconds of scanning at the fastest rate; beyond it the spool is marked truncated.
     public static let maxFrames = 400
 
-    public static func admits(trackingNormal: Bool, lensOffsetM: Double?, toleranceM: Double, turnRateDegPerSec: Double,
+    public static func admits(trackingNormal: Bool, lensOffsetM: Double?, turnRateDegPerSec: Double,
                               sinceLast: TimeInterval?, angleFromLastDeg: Double?) -> Bool {
-        guard trackingNormal, let lensOffsetM, lensOffsetM <= toleranceM + 1e-9, turnRateDegPerSec <= maxTurnRateDegPerSec else { return false }
+        guard trackingNormal, let lensOffsetM, lensOffsetM <= keepRadiusM + 1e-9, turnRateDegPerSec <= maxTurnRateDegPerSec else { return false }
         guard let sinceLast else { return true }
         if sinceLast < hardMinIntervalS - 1e-9 { return false }
         return sinceLast >= intervalS - 1e-9 || (angleFromLastDeg ?? 0) >= angleDeg

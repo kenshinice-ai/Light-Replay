@@ -65,3 +65,25 @@ final class TextColorTests: XCTestCase {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 }
+
+/// The paths over the camera are named for what they are. "20 Mar" alone read as the app's idea of today's date
+/// (Lee in Melbourne, 2026-10-05).
+final class SunPathLabelTests: XCTestCase {
+    private func labels(latitude: Double, zone: String) -> [String] {
+        let october = Date(timeIntervalSince1970: 1_791_158_400)   // 2026-10-05
+        return LightScanModel.buildSun(question: .allYear, latitude: latitude, longitude: 144.96,
+                                       timeZone: TimeZone(identifier: zone)!, now: october).arcs.map(\.label)
+    }
+
+    func testEachPathSaysWhichDayItIs() {
+        let south = labels(latitude: -37.81, zone: "Australia/Melbourne")
+        XCTAssertEqual(south.count, 3)
+        XCTAssertTrue(south[0].contains("Shortest day") && south[0].contains("Jun") && south[0].contains("21"), south[0])
+        XCTAssertTrue(south[1].contains("Equinoxes") && south[1].contains("Mar") && south[1].contains("Sep"), south[1])
+        XCTAssertTrue(south[2].contains("Longest day") && south[2].contains("Dec") && south[2].contains("21"), south[2])
+
+        let north = labels(latitude: 51.5, zone: "Europe/London")
+        XCTAssertTrue(north[0].contains("Shortest day") && north[0].contains("Dec"), north[0])
+        XCTAssertTrue(north[2].contains("Longest day") && north[2].contains("Jun"), north[2])
+    }
+}

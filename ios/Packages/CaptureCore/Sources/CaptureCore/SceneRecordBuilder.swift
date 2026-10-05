@@ -291,7 +291,7 @@ public enum SceneRecordBuilder {
         var yawDeg: Double { NorthResolver.mod360(heading.trueHeading - frame.cameraAzimuthAR) }
         /// Sigma rule from docs/05 §2: max(headingAccuracy, prior). The spread across samples is added by the merge.
         var sigmaDeg: Double { max(heading.headingAccuracy, SceneRecordBuilder.magneticPriorSigmaDeg) }
-        /// Steeper than this the compass axis is ambiguous (docs/04 §11); the reading is kept but not merged.
+        /// Steeper than this the heading is about the phone's top edge, not the camera (docs/05 §2); kept but not merged.
         var isLevelEnough: Bool { abs(frame.cameraPitchDeg) <= LiveYaw.maximumPitchDeg }
     }
 

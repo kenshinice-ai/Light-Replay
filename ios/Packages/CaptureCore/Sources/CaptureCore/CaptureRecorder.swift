@@ -329,7 +329,7 @@ extension CaptureRecorder: ARSessionDelegate {
         if let drift { maxDriftM = max(maxDriftM ?? 0, drift) }
         // A frame kept for analysis is always in the pose log too, so its pose is its own and not a neighbour's.
         let forSpool = spool != nil && buffers != nil && SpoolAdmission.admits(
-            trackingNormal: state == "normal", lensOffsetM: drift, toleranceM: viewpointToleranceM, turnRateDegPerSec: turnRateDegPerSec,
+            trackingNormal: state == "normal", lensOffsetM: drift, turnRateDegPerSec: turnRateDegPerSec,
             sinceLast: lastSpooled.map { timestamp - $0.timestamp },
             angleFromLastDeg: lastSpooled.map { acos(max(-1, min(1, simd_dot($0.forward, forward)))) * 180 / .pi })
         guard forSpool || Self.keepsFrame(at: timestamp, lastKept: lastKeptTimestamp, stateChanged: frames.last.map { $0.trackingState != state } ?? true,

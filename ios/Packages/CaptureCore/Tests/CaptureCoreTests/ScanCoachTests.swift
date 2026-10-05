@@ -76,4 +76,39 @@ final class ScanCoachTests: XCTestCase {
         XCTAssertEqual(yaw.estimate?.samples, 4, "invalid and steep readings are ignored")
         XCTAssertNil(LiveYaw().estimate)
     }
+
+    /// What the scans of 2026-10-05 did: level readings first, then the camera goes up to the summer sun and the
+    /// compass answers for the phone's top edge, about 180° round.
+    func testLookingUpDoesNotTurnTheSunPathRound() throws {
+        var yaw = LiveYaw()
+        let now = Date()
+        func add(_ delta: Double, pitch: Double, at i: Int) {
+            yaw.add(HeadingSample(trueHeading: delta + 40, magneticHeading: delta + 28, headingAccuracy: 10, sampledAt: now + Double(i) / 10),
+                    cameraAzimuthARDeg: 40, cameraPitchDeg: pitch)
+        }
+        for i in 0..<40 { add(100 + Double(i % 5) - 2, pitch: 10, at: i) }
+        for i in 40..<140 { add(280, pitch: 31 + Double(i % 50), at: i) }
+        let e = try XCTUnwrap(yaw.estimate)
+        XCTAssertEqual(e.deltaDeg, 100, accuracy: 1)
+        XCTAssertEqual(e.samples, 40)
+        XCTAssertEqual(e.sigmaDeg, 10, accuracy: 0.5, "the flipped readings do not widen it either")
+    }
+
+    /// A window of recent readings follows the compass wherever it wanders; the whole session does not.
+    func testTheWholeSessionOutweighsTheLastFewSeconds() throws {
+        var yaw = LiveYaw()
+        let now = Date()
+        func add(_ delta: Double, at i: Int) {
+            yaw.add(HeadingSample(trueHeading: delta, magneticHeading: delta, headingAccuracy: 10, sampledAt: now + Double(i) / 10),
+                    cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
+        }
+        for i in 0..<200 { add(100, at: i) }
+        for i in 200..<270 { add(130, at: i) }   // seven seconds of a compass that has drifted
+        XCTAssertEqual(try XCTUnwrap(yaw.estimate).deltaDeg, 100, accuracy: 0.001)
+
+        for i in 270..<(LiveYaw.capacity + 400) { add(100, at: i) }
+        let e = try XCTUnwrap(yaw.estimate)
+        XCTAssertLessThanOrEqual(e.samples, LiveYaw.capacity)
+        XCTAssertEqual(e.deltaDeg, 100, accuracy: 0.001, "thinning a long session keeps its answer")
+    }
 }

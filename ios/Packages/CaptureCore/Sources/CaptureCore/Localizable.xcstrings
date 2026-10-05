@@ -1,12 +1,12 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Finding north. Keep the phone upright.": {
+    "Finding north. Aim the phone level for a moment.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在找北。请把手机竖直拿好。"
+            "value": "正在找北。把手机端平，对着前方停一下。"
           }
         }
       }
