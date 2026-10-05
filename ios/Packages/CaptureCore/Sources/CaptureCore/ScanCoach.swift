@@ -113,7 +113,7 @@ public enum ScanCoach {
 
 /// A live estimate of Δ (the true azimuth of the session's −Z axis) from the compass, for placing the sun path while
 /// scanning. Same rule as the magnetic candidate in `SceneRecordBuilder`: `Δ = trueHeading − az_ar(camera)`, merged
-/// over every usable reading of the session so far. It is an on-screen guide only; the record keeps every raw heading
+/// over every usable reading since recording began (before that, since the camera opened). It is an on-screen guide only; the record keeps every raw heading
 /// for NorthResolver (docs/05).
 ///
 /// The whole session, not a recent window: a window follows whatever the compass did last, and the sun path slid
@@ -131,25 +131,36 @@ public struct LiveYaw: Sendable, Equatable {
     /// by about 180° in 20–75% of readings at 40–50° and in nearly all above 50°, in a few at 30–40°, in none below
     /// (same field note).
     public static let maximumPitchDeg = 30.0
-    /// Beyond this many readings every second one is dropped, oldest to newest alike.
-    public static let capacity = 2400
+    /// Up to this many readings the estimate is worked out on every one; past it, on every eighth. Every reading is
+    /// kept and counts once either way: thinning the old ones would let the newest outvote them (review LS02).
+    static let eagerReadings = 512
 
     private var yaws: [Double] = []
     private var accuracies: [Double] = []
+    private var lastOfferedAt: Date?
     public private(set) var estimate: Estimate?
 
     public init() {}
 
+    /// A reading counts once, however many frames it is offered on.
     public mutating func add(_ heading: HeadingSample, cameraAzimuthARDeg: Double, cameraPitchDeg: Double) {
+        guard heading.sampledAt != lastOfferedAt else { return }
+        lastOfferedAt = heading.sampledAt
         guard heading.isValid, abs(cameraPitchDeg) <= Self.maximumPitchDeg else { return }
         yaws.append(NorthResolver.mod360(heading.trueHeading - cameraAzimuthARDeg))
         accuracies.append(heading.headingAccuracy)
-        if yaws.count > Self.capacity {
-            yaws = stride(from: 0, to: yaws.count, by: 2).map { yaws[$0] }
-            accuracies = stride(from: 0, to: accuracies.count, by: 2).map { accuracies[$0] }
-        }
-        guard yaws.count >= 3 else { return }
+        guard yaws.count >= 3, yaws.count <= Self.eagerReadings || yaws.count.isMultiple(of: 8) else { return }
         let merged = NorthResolver.merge(zip(yaws, accuracies).map { (yawDeg: $0, sigmaDeg: $1) })
         estimate = Estimate(deltaDeg: merged.yawDeg, sigmaDeg: merged.sigmaDeg, samples: yaws.count)
+    }
+
+    /// Recording starts: the preview's readings go, because the record starts its own list here and the path on
+    /// screen must come from the same readings as the candidate that is saved (review LS01). `last` is the newest
+    /// reading delivered before the start; it belongs to the preview and is not taken afterwards.
+    public mutating func beginRecording(after last: HeadingSample? = nil) {
+        yaws.removeAll()
+        accuracies.removeAll()
+        estimate = nil
+        if let last { lastOfferedAt = last.sampledAt }
     }
 }

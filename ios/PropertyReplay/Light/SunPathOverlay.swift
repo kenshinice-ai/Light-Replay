@@ -4,8 +4,13 @@ import SwiftUI
 /// read as "point here" without a word. Every stroke has a faint dark halo so it holds up against a bright sky.
 struct SunPathOverlay: View {
     let state: SunPathOverlayState
+    /// Bottom edge of the controls at the top of the screen, in this view's space. A path's name is not put under them.
+    var topClear: CGFloat = 0
 
     static let sun = Color(red: 1, green: 0.82, blue: 0.24)
+    /// Words keep this far from the screen edges and from the dot they belong to.
+    private static let edge: CGFloat = 12
+    private static let gap: CGFloat = 7
 
     var body: some View {
         Canvas { context, size in
@@ -16,21 +21,29 @@ struct SunPathOverlay: View {
                 for mark in state.marks {
                     let dot = Path(ellipseIn: CGRect(x: mark.screen.x - 4, y: mark.screen.y - 4, width: 8, height: 8))
                     layer.fill(dot, with: .color(mark.lit ? Self.sun : .white))
-                    layer.draw(Text(mark.text).font(.caption2.weight(.semibold)).foregroundStyle(.white),
-                               at: CGPoint(x: mark.screen.x, y: mark.screen.y - 15))
+                    // The time sits above its dot and the path's name below the path, each by its own height, so
+                    // they stay apart at any text size (review LS03).
+                    let time = layer.resolve(Text(mark.text).font(.caption2.weight(.semibold)).foregroundStyle(.white))
+                    let height = time.measure(in: size).height
+                    // Half a time showing from under the legend reads as a fault; there the dot stands alone.
+                    guard mark.screen.y - Self.gap - height >= topClear else { continue }
+                    layer.draw(time, at: CGPoint(x: mark.screen.x, y: mark.screen.y - Self.gap), anchor: .bottom)
                 }
                 for line in state.lines where line.emphasis == .primary {
-                    if let anchor = Self.labelPoint(line, width: size.width) {
-                        layer.draw(Text(line.label).font(.caption.weight(.bold)).foregroundStyle(.white),
-                                   at: CGPoint(x: anchor.x, y: anchor.y + 16))
-                    }
+                    guard let anchor = Self.labelPoint(line, width: size.width, below: topClear) else { continue }
+                    let text = layer.resolve(Text(line.label).font(.caption.weight(.bold)).foregroundStyle(.white))
+                    // Measured, so a long name wraps inside the screen instead of running off both sides.
+                    let room = max(1, size.width - 2 * Self.edge)
+                    let box = text.measure(in: CGSize(width: room, height: .infinity))
+                    let x = min(max(anchor.x - box.width / 2, Self.edge), size.width - Self.edge - box.width)
+                    layer.draw(text, in: CGRect(x: x, y: anchor.y + Self.gap, width: box.width, height: box.height))
                 }
                 if let sun = state.sunNow {
                     let disk = Path(ellipseIn: CGRect(x: sun.x - 9, y: sun.y - 9, width: 18, height: 18))
                     layer.fill(disk, with: .color(Self.sun))
                     layer.stroke(disk, with: .color(.white), lineWidth: 2)
                     layer.draw(Text("Now").font(.caption2.weight(.bold)).foregroundStyle(.white),
-                               at: CGPoint(x: sun.x, y: sun.y + 19))
+                               at: CGPoint(x: sun.x, y: sun.y + 9 + Self.gap), anchor: .top)
                 }
             }
         }
@@ -58,9 +71,10 @@ struct SunPathOverlay: View {
         context.stroke(unlit, with: .color(.white.opacity(primary ? 0.85 : 0.45)), style: unlitStyle)
     }
 
-    /// The visible point nearest the middle of the screen, where a label reads best.
-    private static func labelPoint(_ line: SunPathOverlayState.Line, width: CGFloat) -> CGPoint? {
-        line.points.compactMap(\.screen).filter { $0.x > 40 && $0.x < width - 40 }.min { abs($0.x - width / 2) < abs($1.x - width / 2) }
+    /// The visible point nearest the middle of the screen, where a label reads best, and clear of the top controls.
+    private static func labelPoint(_ line: SunPathOverlayState.Line, width: CGFloat, below top: CGFloat) -> CGPoint? {
+        line.points.compactMap(\.screen).filter { $0.x > 40 && $0.x < width - 40 && $0.y + gap >= top }
+            .min { abs($0.x - width / 2) < abs($1.x - width / 2) }
     }
 }
 

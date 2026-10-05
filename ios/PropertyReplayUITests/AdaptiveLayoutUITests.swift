@@ -32,6 +32,14 @@ final class AdaptiveLayoutUITests: UITestCase {
         assertInsideWindow(app.buttons["Close"], "Close")
         assertInsideWindow(app.buttons["Start"], "Start")
         snapshot("large-light-ready")
+        // The paths' names are drawn, not accessible elements: these two pictures are looked at by a person
+        // (review LS03 found "Shortest day · 21 Jun" running off both sides here).
+        tap(app.buttons["Question"])
+        tap(app.buttons["All-year sun"])
+        assertInsideWindow(app.buttons["Start"], "Start")
+        snapshot("large-light-ready-allyear")
+        tap(app.buttons["Question"])
+        tap(app.buttons["Winter sun"])
 
         tap(app.buttons["Start"])
         assertInsideWindow(app.buttons["Save"], "Save")
@@ -47,6 +55,25 @@ final class AdaptiveLayoutUITests: UITestCase {
         snapshot("large-light-result")
         done.tap()
         XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 8))
+    }
+
+    /// The same screen in Chinese, where the names of the paths are other words of other widths.
+    func testLightAtTheLargestTextInChinese() {
+        launch(Self.largestText + ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-syntheticSweepSpeed", "0"])
+        tap(app.buttons["房产"].firstMatch)
+        tap(app.staticTexts["12 Example Street"].firstMatch)
+        let inspect = app.buttons["开始看房"].firstMatch
+        XCTAssertTrue(inspect.waitForExistence(timeout: 8))
+        for _ in 0..<4 where !inspect.isHittable { app.swipeUp() }
+        inspect.tap()
+        allowSystemPrompts()
+        tap(app.buttons["光线"])
+        assertInsideWindow(app.buttons["开始"], "Start")
+        snapshot("large-zh-light-ready")
+        tap(app.buttons["问题"])
+        tap(app.buttons["全年阳光"])
+        assertInsideWindow(app.buttons["开始"], "Start")
+        snapshot("large-zh-light-ready-allyear")
     }
 
     /// Lee, 2026-10-03: the phone may turn, people shoot landscape. Inspect's three actions, the editor's Save and

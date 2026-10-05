@@ -119,7 +119,6 @@ final class LightScanModel {
     @ObservationIgnored private var sunNow: SunPosition?
     @ObservationIgnored private var liveYaw = LiveYaw()
     @ObservationIgnored private var fixedYaw: Double?
-    @ObservationIgnored private var lastHeadingAt: Date?
     @ObservationIgnored private var lastForward: SIMD3<Double>?
     @ObservationIgnored private var lastFrameTime: TimeInterval?
     @ObservationIgnored private var lastCamera: PinholeCamera?
@@ -191,7 +190,9 @@ final class LightScanModel {
         coverage = 0
         reachedTarget = false
         recorder?.viewpointToleranceM = toleranceM
+        let lastOfPreview = recorder?.latestHeading
         recorder?.start()
+        liveYaw.beginRecording(after: lastOfPreview)
         #if DEBUG
         synthetic?.beginRecording(at: Date().timeIntervalSince(syntheticOpened))
         #endif
@@ -217,7 +218,6 @@ final class LightScanModel {
         // A new session resets the AR world frame, so the old Δ and everything measured against it no longer apply.
         if !isSimulated {
             liveYaw = LiveYaw()
-            lastHeadingAt = nil
         }
         sweep = SkySweep()
         lastForward = nil
@@ -398,8 +398,7 @@ final class LightScanModel {
             coordinate = CLLocationCoordinate2D(latitude: fix.latitude, longitude: fix.longitude)
             prepareSun()
         }
-        if normal, let heading = recorder.latestHeading, heading.sampledAt != lastHeadingAt {
-            lastHeadingAt = heading.sampledAt
+        if normal, let heading = recorder.latestHeading {
             let angles = SkyDirection.angles(of: camera.forward)
             liveYaw.add(heading, cameraAzimuthARDeg: angles.azimuthDeg, cameraPitchDeg: angles.altitudeDeg)
         }

@@ -12,6 +12,8 @@ struct LightScanView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// Where the top bar and legend end on screen; the overlay keeps the paths' names out from under them.
+    @State private var topControlsBottom: CGFloat = 0
     @Query(sort: \UserPreferences.createdAt) private var preferencesRows: [UserPreferences]
     @AppStorage("lightScanQuestion") private var questionRaw = LightQuestion.winter.rawValue
     @State private var model: LightScanModel
@@ -31,8 +33,10 @@ struct LightScanView: View {
             GeometryReader { geo in
                 ZStack {
                     camera
-                    SunPathOverlay(state: model.overlay)
+                    SunPathOverlay(state: model.overlay, topClear: topControlsBottom)
                 }
+                // Words drawn over the live picture stop growing where the controls over it do (review LS03).
+                .dynamicTypeSize(...DynamicTypeSize.accessibility2)
                 .onAppear { model.viewSize = geo.size }
                 .onChange(of: geo.size) { _, size in model.viewSize = size }
             }
@@ -43,8 +47,11 @@ struct LightScanView: View {
             } else {
                 if isLive { reticle }
                 VStack(spacing: 12) {
-                    topBar
-                    if model.phase == .ready { legend }
+                    VStack(spacing: 12) {
+                        topBar
+                        if model.phase == .ready { legend }
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { topControlsBottom = $0 }
                     Spacer(minLength: 0)
                     if isLive { promptView }
                     if isLive || model.phase == .saving { bottomBar }

@@ -1,5 +1,6 @@
 import Foundation
 import simd
+import NorthResolver
 import XCTest
 @testable import CaptureCore
 
@@ -72,7 +73,7 @@ final class ScanCoachTests: XCTestCase {
         XCTAssertEqual(e.samples, 4)
 
         yaw.add(HeadingSample(trueHeading: -1, magneticHeading: -1, headingAccuracy: -1, sampledAt: now), cameraAzimuthARDeg: 10, cameraPitchDeg: 0)
-        yaw.add(HeadingSample(trueHeading: 200, magneticHeading: 200, headingAccuracy: 5, sampledAt: now), cameraAzimuthARDeg: 10, cameraPitchDeg: 80)
+        yaw.add(HeadingSample(trueHeading: 200, magneticHeading: 200, headingAccuracy: 5, sampledAt: now + 9), cameraAzimuthARDeg: 10, cameraPitchDeg: 80)
         XCTAssertEqual(yaw.estimate?.samples, 4, "invalid and steep readings are ignored")
         XCTAssertNil(LiveYaw().estimate)
     }
@@ -94,21 +95,68 @@ final class ScanCoachTests: XCTestCase {
         XCTAssertEqual(e.sigmaDeg, 10, accuracy: 0.5, "the flipped readings do not widen it either")
     }
 
+    private func reading(_ delta: Double, at i: Int, from start: Date, accuracy: Double = 10) -> HeadingSample {
+        HeadingSample(trueHeading: delta, magneticHeading: delta, headingAccuracy: accuracy, sampledAt: start + Double(i) / 10)
+    }
+
     /// A window of recent readings follows the compass wherever it wanders; the whole session does not.
     func testTheWholeSessionOutweighsTheLastFewSeconds() throws {
         var yaw = LiveYaw()
         let now = Date()
-        func add(_ delta: Double, at i: Int) {
-            yaw.add(HeadingSample(trueHeading: delta, magneticHeading: delta, headingAccuracy: 10, sampledAt: now + Double(i) / 10),
-                    cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
-        }
-        for i in 0..<200 { add(100, at: i) }
-        for i in 200..<270 { add(130, at: i) }   // seven seconds of a compass that has drifted
+        for i in 0..<200 { yaw.add(reading(100, at: i, from: now), cameraAzimuthARDeg: 0, cameraPitchDeg: 0) }
+        for i in 200..<270 { yaw.add(reading(130, at: i, from: now), cameraAzimuthARDeg: 0, cameraPitchDeg: 0) }   // seven seconds adrift
         XCTAssertEqual(try XCTUnwrap(yaw.estimate).deltaDeg, 100, accuracy: 0.001)
+    }
 
-        for i in 270..<(LiveYaw.capacity + 400) { add(100, at: i) }
+    /// Review LS02: 2400 readings one way, then 1201 another. A third of the readings must not carry the answer,
+    /// however long the scan runs; thinning the early ones while the late ones kept full weight once made it 130.
+    func testALongScanStillCountsEveryReadingOnce() throws {
+        var yaw = LiveYaw()
+        let now = Date()
+        var all: [(yawDeg: Double, sigmaDeg: Double)] = []
+        for i in 0..<3601 {
+            // Early readings straddle north (355…5), late ones sit 30° on, so the seam is in the test too.
+            let delta = i < 2400 ? [355.0, 0, 5][i % 3] : 30
+            let accuracy = i < 2400 ? 10.0 : 14
+            yaw.add(reading(delta, at: i, from: now, accuracy: accuracy), cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
+            all.append((delta, accuracy))
+            // Worked out on every reading up to 512, then on every eighth: at those counts it is the full merge.
+            guard i + 1 >= 3, i + 1 <= 512 || (i + 1).isMultiple(of: 8) else { continue }
+            let e = try XCTUnwrap(yaw.estimate), full = NorthResolver.merge(all)
+            XCTAssertEqual(e.samples, i + 1)
+            XCTAssertEqual(e.deltaDeg, full.yawDeg, accuracy: 1e-9, "after \(i + 1) readings")
+            XCTAssertEqual(e.sigmaDeg, full.sigmaDeg, accuracy: 1e-9, "after \(i + 1) readings")
+        }
         let e = try XCTUnwrap(yaw.estimate)
-        XCTAssertLessThanOrEqual(e.samples, LiveYaw.capacity)
-        XCTAssertEqual(e.deltaDeg, 100, accuracy: 0.001, "thinning a long session keeps its answer")
+        XCTAssertEqual(e.samples, 3600, "at most seven readings behind")
+        // 800 readings each at 355, 0 and 5, then 1200 at 30: the middle one of 3600 is a 5.
+        XCTAssertEqual(e.deltaDeg, 5, accuracy: 1e-9, "the early two thirds still decide; thinned, it said 30")
+    }
+
+    /// Review LS01: the record starts its list of readings at Start; so does the path on screen.
+    func testRecordingStartsFromItsOwnReadings() throws {
+        var yaw = LiveYaw()
+        let now = Date()
+        for i in 0..<400 { yaw.add(reading(115, at: i, from: now), cameraAzimuthARDeg: 0, cameraPitchDeg: 0) }   // a long, biased preview
+        XCTAssertEqual(try XCTUnwrap(yaw.estimate).deltaDeg, 115, accuracy: 1e-9)
+
+        let lastOfPreview = reading(115, at: 400, from: now)   // delivered, not yet offered when Start is tapped
+        yaw.beginRecording(after: lastOfPreview)
+        XCTAssertNil(yaw.estimate, "no reading of this recording yet: nothing is drawn rather than the preview's guess")
+        yaw.add(lastOfPreview, cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
+        yaw.add(lastOfPreview, cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
+        XCTAssertNil(yaw.estimate, "the preview's last reading is not taken after the start")
+
+        var recorded: [(yawDeg: Double, sigmaDeg: Double)] = []
+        for i in 401..<601 {
+            let sample = reading(100, at: i, from: now)
+            yaw.add(sample, cameraAzimuthARDeg: 0, cameraPitchDeg: 0)
+            yaw.add(sample, cameraAzimuthARDeg: 0, cameraPitchDeg: 0)   // the same reading on the next frame
+            recorded.append((100, 10))
+        }
+        let e = try XCTUnwrap(yaw.estimate)
+        XCTAssertEqual(e.samples, 200, "each reading once")
+        XCTAssertEqual(e.deltaDeg, NorthResolver.merge(recorded).yawDeg, accuracy: 1e-9)
+        XCTAssertEqual(e.deltaDeg, 100, accuracy: 1e-9)
     }
 }

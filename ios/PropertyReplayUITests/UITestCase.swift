@@ -19,7 +19,8 @@ class UITestCase: XCTestCase {
     }
 
     func launch(_ extra: [String] = []) {
-        app.launchArguments = ["-uitest"] + extra
+        // The last question chosen is remembered between launches; a test starts from the default whatever ran before it.
+        app.launchArguments = ["-uitest", "-lightScanQuestion", "winter"] + extra
         app.launch()
     }
 
