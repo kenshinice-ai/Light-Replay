@@ -62,7 +62,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 - `light_replay_history/` 与 `field/data/`：不入库。
 - 不改写共享历史；只在 Lee 要求时 commit / push。
 
-## 7. 当前状态（2026-10-03）
+## 7. 当前状态（2026-10-05）
 
 状态词分四档，不混用：**源码**（代码在仓库里）→ **测试**（模拟器或包测试通过）→ **真机**（Lee 或 Claude 在 iPhone 17 Pro / iOS 27.0.1 上走过）→ **现场**（有 `field/` 记录编号）。没有任何一项到"现场"。
 
@@ -75,7 +75,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | Compare：关注维度 × 房产，格子来自买家自己的标签与扫描，各种"没有"分开写，不打分 | ✓ | ✓ 单元 `CompareSummaryTests` + UI | — | U14；School / Commute / Price comfort 的来源是回家补记的笔记（见下） |
 | 相机方向：预览与拍照角度由 RotationCoordinator 分别给出 | ✓ | — | ✓ 10-03 Lee 横持拍的照片存成 2048×1536，像素方向正确；iPad 四向待看 | U03；模拟器无相机 |
 | Inspect：拍照、按住说话、Like / Concern / Ask、Light 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | Measure 在界面上改名 Light（ADR-0015 修订） |
-| Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | 已装 iPhone / iPad，待 Lee 实测 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。真机上要看：弧线是否落在天空对的位置、罗盘 σ、转一圈后覆盖率能否到 90% |
+| Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | ✓ 10-05 Lee 扫 9 段（`PR-20261005-01…09`，All-year）：只有 4 段到 90%，用了 39–87 秒。三个原因与改法在 `spike/2026-10-05-scan-coverage.md`：路径随最近 60 条罗盘读数滑动（改为整场中位数）、镜头抬过 40° 后罗盘读数转 180°（俯仰上限 50° → 30°）、实时覆盖按 0.15 m 截断而规范是 0.40 m（已对齐）。**改后的版本待 Lee 再扫**：重放只说明同样的动作怎么计，不说明路径稳定后人会不会扫得更好 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。All-year 要转 240°、抬到近乎头顶，本身就比 Winter 难（同样 9 段按 Winter 计，8 段里 6 段在 13–28 秒到线）。弧线标签写明是哪一天（10-05：只写 "20 Mar" 被读成今天的日期）|
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
 | PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
 | iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ iPhone → iPad：两台真机数据库逐表计数一致，照片与测量记录字节已同步 | 离线再上线、删除传播待测 |
@@ -99,15 +99,15 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | SunEngine：太阳位置、3×3 日盘判定、全年时段（Δ 不确定度 64 次抽样）、太阳走廊覆盖率 | ✓ | ✓ 13 项合成天空与解析解对照；SPA 算例；独立算法 0.011°；太阳位置 Swift / Python 1e-7°；走廊、时段与随机数流 Swift / Python 逐分钟、逐比特一致（`sun-bands.json`，2026-10-03） | — | `ios/Packages/SunEngine`；全年计算 0.05 秒（Release，Mac） |
 | NorthResolver 融合（组内中位数、两两一致性、最大一致组合、佐证、方向灯；ADR-0009、ADR-0018） | ✓ | ✓ 22 个按文档手写的情形 + 200 个随机输入，Swift / Python 1e-9° | — | `ios/Packages/NorthResolver`，`northresolver-0.2`。候选目前只有罗盘一组：一组且 σ > 6° 是阻断，真机 σ 10–20°，所以方向灯是**阻断**、记录停在 R0（10-04 更正：此前写成"最多黄灯"是错的，评审 R04） |
 | QualityEvaluator：走廊覆盖、方向、分割三盏灯按证据重算，校验器拒绝写入值与证据不符的记录（复审 R08） | ✓ | ✓ 29 个用例，Swift / Python 同一份；复审的六个探针全部拒绝 | — | 水平与追踪、镜头两盏灯在 schema 0.1.0 里没有可重算的证据，按写入值；"反射未识别"未判。见复审回应的 10-01 补记 |
-| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | ✓ 10-03 三份记录（`PR-20261003-01…03`，Lee 家客厅）：σ 10° / 17° / 11°，CLHeading 精度 10–22°，三份都过 Python 校验器且重算的灯与写入值一致；方向灯阻断（一组且 σ > 6°），按规则该如此 | 俯仰超过 50° 的读数保留但不参与合并 |
+| 罗盘读数全部保留（`raw.samples`），候选取中位数，σ 含扫动中的分散 | ✓ | ✓ CaptureCore 6 例 | ✓ 10-03 三份记录（`PR-20261003-01…03`，Lee 家客厅）：σ 10° / 17° / 11°，CLHeading 精度 10–22°，三份都过 Python 校验器且重算的灯与写入值一致；方向灯阻断（一组且 σ > 6°），按规则该如此 | 俯仰超过 30° 的读数保留但不参与合并（10-05 起；此前 50°，40–50° 一档有 41% 的读数转了 180°，把候选 σ 撑到 25–53°）。新规则下的 σ 等新版扫出的记录 |
 | 照片缩略图存在行上、字节数守卫：列表不再为画缩略图加载照片；外部存储文件丢了（SwiftData 回 38 字节引用而非 nil）详情页写"照片还没到这台设备"而不是坏图；旧行启动时分批补缩略图 | ✓ | ✓ 单元 `ObservationTests` 两例（丢字节识别、谓词只找没缩略图的照片） | 待 Lee 装新版后看旧照片列表 | 组记忆 swiftdata-external-storage-original-bytes |
 | ⌘D 口述改为场景命令（iPad 菜单栏可见，不进辅助树）；`-uitestEmpty` 空库启动；UI 测试启动关 UIKit 动画 | ✓ | ✓ UI `testEveryTabAnswersInLandscape`：空库横屏五个 tab 15 s 内应答，地图横屏搜索有结果 | — | 组记忆 swiftui-keyboard-shortcuts-as-commands、swiftui-searchable-empty-state-landscape-freeze |
 | 发版脚手架（10-03 接入 pwe-tools 组）：`scripts/preflight.sh`（占位文件、冲突副本、干净工作区；接进 `test.sh`）、`scripts/testflight.sh`、`PrivacyInfo.xcprivacy`、版本 / 构建号来自构建设置、`AGENTS.md` | ✓ | 预检 ✓；`testflight.sh --no-upload` 走到归档一次 | — | 上传要 Lee 对构建号的 go，且 CloudKit production schema 先部署 |
 | CloudKit schema：开发环境补全后 10-03 Lee 已部署到 Production（控制台里四个 `CD_` 类型在）；补全器（`PropertyStore.initializeCloudKitSchema`，DEBUG 参数 `-initializeCloudKitSchema`，真机上跑：`xcrun devicectl device process launch --console --terminate-existing --device <id> com.pwegroup.propertyreplay -- -initializeCloudKitSchema`，设备要解锁） | ✓ | — | ✓ 10-03 iPad 上跑过，控制台里四个记录类型的字段齐了 | 控制台里开发环境缺 `CD_originalText`、`CD_property`、`CD_mediaPath`、`CD_notes`：CloudKit 只在字段第一次有值时才建；补全后才能部署 Production |
 | 姿态记录 ≤ 10 Hz + 第一帧 / 锚定帧 / 追踪状态变化帧（ADR-0020；10-03 一次 6.5 分钟扫描曾写出 25 MB） | ✓ | ✓ 单元 `PoseLogRateTests` | ✓ 10-03 晚三次扫描 `PR-20261003-05…07`：10.0 Hz，18–38 秒 0.29–0.59 MB，`pose_gap` ≤ 52 ms，三份都过校验器 | 漂移仍逐帧算；`frames_within / beyond` 按保留帧计 |
 | SceneRecord 0.2.0 与 quality-0.2（ADR-0022）：内联网格与掩膜带长度和 SHA-256、Hero 变换链、太阳圆面候选的有效性、结果 revision、五盏灯全部按证据重算；0.1.0 照旧 | ✓ 两端校验器 | ✓ `scene-v2-cases.json` 57 例（13 接受 / 44 拒绝），Swift 与 Python 的灯与拒绝位置一致；SceneRecord 36 项、Python 96 项 | — | **只是契约**：App 写出的仍是 0.1.0，没有接任何检测器。阈值全是候选 |
-| Light 扫描保留分析所需的输入（阶段 B，`04` §12）：Hero 静帧转正存在行上；帧卷（同帧的图像、姿态、内参、深度）落在 `Application Support/LightSpool/<行 uuid>/`，不同步不备份，14 天；记录写 0.2.0 revision 0；行的身份 = 采集会话 uuid | ✓ | ✓ CaptureCore 31 项（入选规则、写出与读回、四个方向的 Hero 角点、深度往返、清理）；PropertyModel 38 项；UI `LightScanUITests`（保存后行上有缩略图、详情页有 Hero、"N 帧保留 14 天"）；模拟器假相机按已知天空的假世界出帧 | 两台已装；**Hero 方向与深度是否写出待 Lee 扫一次后取回帧卷核对** | 分析任务（阶段 C）还没有，所以帧卷现在只存不算 |
-| Light 行的状态来自摘要列 `lightDigestData`，不再写进买家的 `text`；旧行启动时迁移（只动整句与模板全等且未编辑的） | ✓ | ✓ 单元 `LightDigestTests` 6 例 + UI 中英文 | 待 Lee 看旧扫描行的文字还在 | 新增一个 CloudKit 字段，要再部署一次（见等 Lee）。同时修了四句中文的参数顺序（此前显示成"镜头覆盖了94路径的 冬季阳光%"） |
+| Light 扫描保留分析所需的输入（阶段 B，`04` §12）：Hero 静帧转正存在行上；帧卷（同帧的图像、姿态、内参、深度）落在 `Application Support/LightSpool/<行 uuid>/`，不同步不备份，14 天；记录写 0.2.0 revision 0；行的身份 = 采集会话 uuid | ✓ | ✓ CaptureCore 31 项（入选规则、写出与读回、四个方向的 Hero 角点、深度往返、清理）；PropertyModel 38 项；UI `LightScanUITests`（保存后行上有缩略图、详情页有 Hero、"N 帧保留 14 天"）；模拟器假相机按已知天空的假世界出帧 | ✓ 10-05 九段：Hero 竖持横持都转正；帧卷文件哈希与清单一致、重算摘要等于记录里的 `capture_digest`；每帧有深度且解得开；1.7–3.3 fps，每段 3–73 MB。发热耗电未量 | 分析任务（阶段 C）还没有，所以帧卷现在只存不算。10-05 起帧卷留到离视点 0.50 m（此前 0.15 m，抬头的帧没留下），每帧带偏移量 |
+| Light 行的状态来自摘要列 `lightDigestData`，不再写进买家的 `text`；旧行启动时迁移（只动整句与模板全等且未编辑的） | ✓ | ✓ 单元 `LightDigestTests` 6 例 + UI 中英文 | 待 Lee 看旧扫描行的文字还在 | 新增的 CloudKit 字段 `CD_lightDigestData`：Lee 10-05 说已部署到 Production（我没能进控制台复核，登录过期）。同时修了四句中文的参数顺序（此前显示成"镜头覆盖了94路径的 冬季阳光%"） |
 | 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图 + Codex 按 Lee 授权下载的 9 张真实网络照片【验】（`docs/spike/2026-10-04-segmentation-smoke.md` 同日补记） | — | 输入、来源、逐图日志、掩膜和失败观察在 `field/data/smoke/`；只是普通照片的接口冒烟，不替代 App 帧卷评估。细枝天空只返回局部小块，自动种子与真机性能未测 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
@@ -129,6 +129,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 仍然开着的：
 - Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已退出**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 81 例 fixture、冒烟工具；Codex 的 A01–A04 已修，回应在 `reviews/2026-10-04-stage-a-delivery-review-response.md`；网络照片的接口冒烟由 Codex 按 Lee 授权补齐，读法在 spike 补记）。**阶段 B 已实现**（见状态表两行与 `04` §12 末段）。**现在卡在闸门 1**：Lee 用这一版在自家拍评估片段，我从设备取回帧卷做实验 1（三条分割路径的比较）。不等闸门可以并行做的是阶段 C 的纯算法部分：VisibilityCore（采样、深度重投影、按不同帧计票）与分析任务的骨架，用模拟器假世界的已知天空验。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
+- Light 扫描（10-05 排错后留下的，详见 `spike/2026-10-05-scan-coverage.md` §4）：0.40 m 漂移上限仍是候选，放不放宽要等阶段 C 量过深度重投影的误差后用 ADR 定；All-year 是否分两遍引导等新版数据；罗盘读数与姿态约 0.17 s 的时间差没有修正。复算脚本 `engine/scripts/scan_postmortem.py <记录.json…>`，取回的设备数据在本机 `~/Library/Application Support/propertyreplay-field/`（不在仓库目录里，仓库在 iCloud）。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -139,8 +140,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
-- **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 的 AR 弧线对齐、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
-- **[给料] 用 10-04 晚的版本在自家扫评估片段** — 约 20 段、每段 20–30 秒，存到任意一套房下：开敞庭院、檐下、树冠下各几段；隔玻璃几段；对着天花板 / 完全没有天空的 1–2 段；有反光玻璃或镜面的 1–2 段。扫完告诉我，我从手机取回帧卷（不用你导出） · 不给：闸门 1 过不了，分割路径定不下来 · 自 2026-10-04
-- **[动手] CloudKit 再部署一次（追加字段 `CD_lightDigestData`）** — 我已在设备上补全开发环境后，CloudKit Console › Deploy Schema Changes… › Deploy · 不做：TestFlight 版本同步不了 Light 行的状态；现在的直装版本不受影响 · 自 2026-10-04
+- **[给料] 用 10-05 的版本再扫评估片段** — 已收到 9 段（`PR-20261005-01…09`，已取回本机）。还差约 10 段：隔玻璃有反光或镜面的 1–2 段、树冠下 3–4 段、檐下 2–3 段、开敞庭院 2–3 段。问题选 Winter 或 All-year 都行，不必扫到 90%；每段开头先把手机端平停一秒（找北）。扫完告诉我，我从手机取回 · 不给：闸门 1 过不了，分割路径定不下来；10-05 改的指引有没有用也无从知道 · 自 2026-10-04
+- **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 里晴天把手机端平对着太阳看 "Now" 圆点压不压在太阳上、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

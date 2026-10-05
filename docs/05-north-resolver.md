@@ -10,7 +10,7 @@ ARKit 给的是重力对齐但 yaw 任意的世界坐标。要判断太阳是否
 
 | 来源 | 独立组 | 条件 | 典型 σ（估） | 备注 |
 |---|---|---|---|---|
-| 磁罗盘（CoreLocation `trueHeading`） | magnetic | 始终 | 5–15°，室内更差 | `headingAccuracy` 负值即无效；σ 取 `max(headingAccuracy, 组内分散, 先验)`，`headingAccuracy` 按 1σ 处理（候选，spike 用日晷真值校准）；`gravityAndHeading` 的 yaw 同源，不另算一份 |
+| 磁罗盘（CoreLocation `trueHeading`） | magnetic | 始终 | 5–15°，室内更差 | `headingAccuracy` 负值即无效；σ 取 `max(headingAccuracy, 组内分散, 先验)`，`headingAccuracy` 按 1σ 处理（候选，spike 用日晷真值校准）；`gravityAndHeading` 的 yaw 同源，不另算一份。相机俯仰超过 30° 的读数保留但不参与合并：镜头朝天时 Core Location 的航向改参照机身顶边，40–50° 有 41%、50° 以上有 94% 的读数转了约 180°，30° 以下 5518 条里 2 条【验】（iPhone 17 Pro，`PR-20261005-01…09`，`spike/2026-10-05-scan-coverage.md`；此前上限是 50°）。读数与姿态之间另有约 0.17 s 的时间差【估】，快转时朝转动方向偏 9°，来回扫时抵消，未修正 |
 | 墙面对齐 | map | 检测到竖直平面 + 有建筑轮廓 + 用户指认哪面墙 | 2–5° | 轮廓是 footprint 还是 roofprint 不影响边的方向；风险是非矩形平面与选错边 |
 | 窗光斑校准 | solar | 晴天，地面有光斑，窗几何已知（LiDAR/RoomPlan 或点四角） | 1–3° | 光斑边与窗边一一对应，太阳方向唯一可解 |
 | 太阳圆面校准 | solar | 太阳在画面内 | 1–2° | 短曝光帧；不要求用户直视太阳 |
