@@ -6,7 +6,8 @@
 
 | 名词 | 定义 |
 |---|---|
-| **Property Replay** | 产品名（ADR-0016）。Replay 是功能族：Light Replay、Space Replay |
+| **Property Replay** | 产品名（ADR-0016）。Replay 是功能族：Light Replay、Space Replay。property-replay-ai 仓库将改名，不再使用这个名字（Lee，2026-10-07）。 |
+| **Guide** | AI 引导层（原名 Assist；2026-10-07 改名，避免和 pwe-ai-bots 的 PWE Assist 撞名）。不要用：Assist |
 | **Property** | 产品对象：一套房及其持续生长的记录（ADR-0012） |
 | **Inspection** | 一次到场看房；隶属 Property |
 | **Room** | 用户标注的房间（L0 手工）；隶属 Inspection |

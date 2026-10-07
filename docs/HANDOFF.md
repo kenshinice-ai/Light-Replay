@@ -46,7 +46,7 @@ Property Replay：iOS App。把 20 分钟看房变成一份可以回放、比较
 - 线 B 原型：五屏是否只服务三个任务；有没有任何数字来自模型；证据等级是否可见。
 - 线 C：三个小 spike 的通过线是否被诚实统计（分母含失败）。
 
-**Phase 2 起**：每个 PR 过 `docs/14-design-principles.md` §8 的六问；每次涉及数字的改动过 Assist 回归（`02` §6）。
+**Phase 2 起**：每个 PR 过 `docs/14-design-principles.md` §8 的六问；每次涉及数字的改动过 Guide 回归（`02` §6）。
 
 ## 5. 评审输出格式
 
