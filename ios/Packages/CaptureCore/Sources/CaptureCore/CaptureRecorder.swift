@@ -58,6 +58,14 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     private var frames: [FrameSample] = []
     private var lastKeptTimestamp: TimeInterval?
     private var headings: [HeadingSample] = []
+    /// Surfaces of the running session, by anchor. The session's, not the recording's: one found during the preview
+    /// is in the same world frame and still there when the recording ends.
+    private var planes: [UUID: SpoolPlane] = [:]
+    /// "2 wall, 1 window", for the scan screen's diagnostics and the device probe.
+    public var planeSummary: String {
+        let counts = Dictionary(grouping: planes.values, by: \.classification).mapValues(\.count)
+        return counts.isEmpty ? "none" : counts.sorted { $0.key < $1.key }.map { "\($0.value) \($0.key)" }.joined(separator: ", ")
+    }
     private var lastHeadingKeptAt: Date?
     private var sessionID = UUID().uuidString
     private var spool: FrameSpoolWriter?
@@ -117,6 +125,9 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
+        // Walls, windows and doors: the spool keeps them so the analysis can tell a pane from a wall (docs/04 §12).
+        configuration.planeDetection = [.vertical]
+        planes.removeAll()
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
         if CLLocationManager.headingAvailable() { locationManager.startUpdatingHeading() }
@@ -191,7 +202,7 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         endPreview()
         let writer = spool
         spool = nil
-        let kept = await writer?.finish()
+        let kept = await writer?.finish(planes: Array(planes.values), planeClassification: ARPlaneAnchor.isClassificationSupported)
         if kept?.manifest == nil { writer?.discard() }   // nothing usable: do not leave an empty folder behind
         return makeLog(startedAt: startedAt, targetLabel: targetLabel, targetHeightM: targetHeightM, hero: kept?.hero, manifest: kept?.manifest)
     }
@@ -280,6 +291,44 @@ extension CaptureRecorder: ARSessionDelegate {
             self.record(transform: transform, intrinsics: intrinsics, state: state,
                         hasDepth: hasDepth, exposure: exposure, timestamp: timestamp, buffers: buffers)
         }
+    }
+
+    nonisolated public func session(_ session: ARSession, didAdd anchors: [ARAnchor]) { keep(anchors) }
+    nonisolated public func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) { keep(anchors) }
+
+    nonisolated public func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+        let gone = anchors.map(\.identifier)
+        MainActor.assumeIsolated { for id in gone { self.planes[id] = nil } }
+    }
+
+    nonisolated private func keep(_ anchors: [ARAnchor]) {
+        let found = anchors.compactMap { $0 as? ARPlaneAnchor }.map { ($0.identifier, Self.plane($0)) }
+        guard !found.isEmpty else { return }
+        MainActor.assumeIsolated { for (id, plane) in found { self.planes[id] = plane } }
+    }
+
+    /// The plain values of a plane anchor: the anchor itself must not outlive the callback.
+    nonisolated static func plane(_ anchor: ARPlaneAnchor) -> SpoolPlane {
+        let label: String, status: String
+        switch anchor.classification {
+        case .wall: (label, status) = ("wall", "known")
+        case .floor: (label, status) = ("floor", "known")
+        case .ceiling: (label, status) = ("ceiling", "known")
+        case .table: (label, status) = ("table", "known")
+        case .seat: (label, status) = ("seat", "known")
+        case .window: (label, status) = ("window", "known")
+        case .door: (label, status) = ("door", "known")
+        case .none(.notAvailable): (label, status) = ("none", "not_available")
+        case .none(.undetermined): (label, status) = ("none", "undetermined")
+        case .none(.unknown): (label, status) = ("none", "unknown")
+        @unknown default: (label, status) = ("none", "unknown")
+        }
+        let extent = anchor.planeExtent
+        return SpoolPlane(id: anchor.identifier.uuidString, alignment: anchor.alignment == .vertical ? "vertical" : "horizontal",
+                          classification: label, classificationStatus: status, transform: flatten(anchor.transform),
+                          center: [Double(anchor.center.x), Double(anchor.center.y), Double(anchor.center.z)],
+                          widthM: Double(extent.width), heightM: Double(extent.height), rotationOnYAxis: Double(extent.rotationOnYAxis),
+                          boundary: anchor.geometry.boundaryVertices.map { [Double($0.x), Double($0.y), Double($0.z)] })
     }
 
     nonisolated public func session(_ session: ARSession, didFailWithError error: any Error) {

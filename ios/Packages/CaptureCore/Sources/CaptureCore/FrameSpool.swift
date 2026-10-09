@@ -66,6 +66,43 @@ public struct SpoolFrame: Codable, Sendable, Equatable {
     public var role: String
 }
 
+/// A flat surface ARKit found during the scan, as it stood when the scan ended (docs/04 §12). Kept because the
+/// depth map reads a window as a near surface (1.4–1.6 m, experiment 1), so sky behind glass is never found from
+/// depth: the analysis has to know which near surface is a pane. Whether ARKit's labels are good enough for that is
+/// what these are recorded to find out; nothing reads them yet.
+public struct SpoolPlane: Codable, Sendable, Equatable {
+    public var id: String
+    /// "vertical" or "horizontal".
+    public var alignment: String
+    /// ARKit's label: "window", "door", "wall", "floor", "ceiling", "table", "seat", or "none" when it gave none.
+    public var classification: String
+    /// Why there is no label, when there is none: "not_available", "undetermined" or "unknown"; "known" otherwise.
+    public var classificationStatus: String
+    /// Plane to world, column-major like a frame's camera transform. The plane lies in its own x–z; y is its normal.
+    public var transform: [Double]
+    /// Centre and size of the plane's rectangle in its own frame, metres; `rotationOnYAxis` turns the rectangle in the plane.
+    public var center: [Double]
+    public var widthM: Double
+    public var heightM: Double
+    public var rotationOnYAxis: Double
+    /// The outline ARKit traced, in the plane's own frame, metres.
+    public var boundary: [[Double]]
+
+    public init(id: String, alignment: String, classification: String, classificationStatus: String, transform: [Double],
+                center: [Double], widthM: Double, heightM: Double, rotationOnYAxis: Double, boundary: [[Double]]) {
+        self.id = id
+        self.alignment = alignment
+        self.classification = classification
+        self.classificationStatus = classificationStatus
+        self.transform = transform
+        self.center = center
+        self.widthM = widthM
+        self.heightM = heightM
+        self.rotationOnYAxis = rotationOnYAxis
+        self.boundary = boundary
+    }
+}
+
 /// What a spool folder holds. Written once, when the scan ends; a folder without it is an unfinished scan.
 public struct SpoolManifest: Codable, Sendable, Equatable {
     public var version = 1
@@ -79,6 +116,10 @@ public struct SpoolManifest: Codable, Sendable, Equatable {
     public var heroFrameID: String?
     /// After this the frames are deleted, analysed or not (docs/04 §12; 14 days, a candidate).
     public var expiresAt: Date
+    /// Surfaces ARKit found, sorted by id. Nil for a scan made before planes were recorded; empty when it looked and
+    /// found none. `planeClassification` is false on a device that cannot label them.
+    public var planes: [SpoolPlane]?
+    public var planeClassification: Bool?
 
     /// What this capture's input was, for the record's `result.capture_digest`: the frames in order with the hashes
     /// of their pictures and depth, and the hero. Two scans never share it; one scan always gives the same.
@@ -89,6 +130,13 @@ public struct SpoolManifest: Codable, Sendable, Equatable {
             hash.update(data: Data("|\(frame.frameID):\(frame.image.sha256):\(frame.depth?.sha256 ?? "-")".utf8))
         }
         hash.update(data: Data("|hero:\(hero?.sha256 ?? "-")".utf8))
+        // Only when planes were recorded, so a spool from before they were keeps the digest its record holds.
+        if let planes {
+            hash.update(data: Data("|planes:\(planes.count)".utf8))
+            for plane in planes {
+                hash.update(data: Data("|\(plane.id):\(plane.alignment):\(plane.classification):\(plane.boundary.count)".utf8))
+            }
+        }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 }
@@ -299,12 +347,14 @@ public final class FrameSpoolWriter: @unchecked Sendable {
 
     /// Waits for the encoder to drain, writes the manifest and returns it with the hero. After this the folder is a
     /// finished spool: "saved, ready to analyse" may only be said once this has returned a manifest.
-    public func finish() async -> (manifest: SpoolManifest?, hero: HeroImage?) {
+    /// `planes` is nil when the scan did not look for surfaces (the simulator's drawn frames).
+    public func finish(planes: [SpoolPlane]? = nil, planeClassification: Bool? = nil) async -> (manifest: SpoolManifest?, hero: HeroImage?) {
         await withCheckedContinuation { continuation in
             queue.async { [self] in
                 let manifest = SpoolManifest(sessionID: sessionID, createdAt: createdAt, truncated: truncated,
                                              frames: frames.sorted { $0.timestamp < $1.timestamp }, hero: hero?.image,
-                                             heroFrameID: hero?.frameID, expiresAt: createdAt.addingTimeInterval(FrameSpool.retention))
+                                             heroFrameID: hero?.frameID, expiresAt: createdAt.addingTimeInterval(FrameSpool.retention),
+                                             planes: planes?.sorted { $0.id < $1.id }, planeClassification: planeClassification)
                 let encoder = JSONEncoder()
                 encoder.dateEncodingStrategy = .iso8601
                 encoder.outputFormatting = [.sortedKeys]

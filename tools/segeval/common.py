@@ -37,6 +37,11 @@ def spool(record):
     return folder, json.load(open(os.path.join(folder, "manifest.json")))
 
 
+def planes(record):
+    """The surfaces ARKit labelled during the scan (docs/04 §12), or None for a spool from before they were kept."""
+    return spool(record)[1].get("planes")
+
+
 def quarter_turns(record):
     """How many clockwise quarter turns make the native (landscape) picture upright."""
     hero = (record["capture_session"].get("hero_frame") or {}).get("image") or {}

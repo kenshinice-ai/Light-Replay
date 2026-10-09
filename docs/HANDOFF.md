@@ -108,6 +108,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | SceneRecord 0.2.0 与 quality-0.2（ADR-0022）：内联网格与掩膜带长度和 SHA-256、Hero 变换链、太阳圆面候选的有效性、结果 revision、五盏灯全部按证据重算；0.1.0 照旧 | ✓ 两端校验器 | ✓ `scene-v2-cases.json` 57 例（13 接受 / 44 拒绝），Swift 与 Python 的灯与拒绝位置一致；SceneRecord 36 项、Python 96 项 | — | **只是契约**：App 写出的仍是 0.1.0，没有接任何检测器。阈值全是候选 |
 | Light 扫描保留分析所需的输入（阶段 B，`04` §12）：Hero 静帧转正存在行上；帧卷（同帧的图像、姿态、内参、深度）落在 `Application Support/LightSpool/<行 uuid>/`，不同步不备份，14 天；记录写 0.2.0 revision 0；行的身份 = 采集会话 uuid | ✓ | ✓ CaptureCore 31 项（入选规则、写出与读回、四个方向的 Hero 角点、深度往返、清理）；PropertyModel 38 项；UI `LightScanUITests`（保存后行上有缩略图、详情页有 Hero、"N 帧保留 14 天"）；模拟器假相机按已知天空的假世界出帧 | ✓ 10-05 九段：Hero 竖持横持都转正；帧卷文件哈希与清单一致、重算摘要等于记录里的 `capture_digest`；每帧有深度且解得开；1.7–3.3 fps，每段 3–73 MB。发热耗电未量 | 分析任务（阶段 C）还没有，所以帧卷现在只存不算。10-05 起帧卷留到离视点 0.50 m（此前 0.15 m，抬头的帧没留下），每帧带偏移量 |
 | Light 行的状态来自摘要列 `lightDigestData`，不再写进买家的 `text`；旧行启动时迁移（只动整句与模板全等且未编辑的） | ✓ | ✓ 单元 `LightDigestTests` 6 例 + UI 中英文 | 待 Lee 看旧扫描行的文字还在 | 新增的 CloudKit 字段 `CD_lightDigestData`：Lee 10-05 说已部署到 Production（我没能进控制台复核，登录过期）。同时修了四句中文的参数顺序（此前显示成"镜头覆盖了94路径的 冬季阳光%"） |
+| 帧卷加存 ARKit 竖直平面与标签（ADR-0019 2026-10-09 补记，`04` §12）：给"哪块近表面是玻璃"留输入 | ✓ | ✓ CaptureCore：清单读写、摘要、旧清单兼容 | 两台已装；`-probePlanes` 实测两台都支持平面分类（2026-10-09）。**未核实：真实的窗会不会被标成 `window`**，要等 Lee 扫 | 分析还没有读它。多开平面检测的耗电、发热、帧率未量 |
 | 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图 + Codex 按 Lee 授权下载的 9 张真实网络照片【验】（`docs/spike/2026-10-04-segmentation-smoke.md` 同日补记） | — | 输入、来源、逐图日志、掩膜和失败观察在 `field/data/smoke/`；只是普通照片的接口冒烟，不替代 App 帧卷评估。细枝天空只返回局部小块，自动种子与真机性能未测 |
 | 实验 1 · 分割评估第一轮（`tools/segeval/`，`spike/2026-10-09-experiment-1-segmentation.md`）：84 帧、四条路径，片段分两半，留出半区只算一次 | ✓ 工具 | — | 输入是真机帧卷；评分在 Mac | **开发结果，真值是 Claude 的初稿，Lee 未抽看。** "深度选点 + Vision"留出半区合并 IoU 0.944、走廊内假天空 0.1%、无天空帧 0 / 23；隔玻璃的天空 0%（深度图读的是玻璃面）。iPhone 上的延迟未量 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
@@ -120,7 +121,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 发版（TestFlight）：`scripts/testflight.sh --no-upload` 走完预检（iCloud 占位文件、冲突副本、干净工作区）、纯算法测试、模拟器单元测试、每个字符串都有中文、归档；去掉 `--no-upload` 才上传并打 `testflight/<版本>-<构建号>` 标签。上传要 Lee 对这个构建号的一句"可以"（组规矩，每个构建都要），且第一次之前要在 CloudKit Console 把 schema 部署到 Production（脚本没看到 `PR_CLOUDKIT_SCHEMA_DEPLOYED=1` 就停）。签名用 Xcode 里登录的 Apple ID 或 ASC API key 三个环境变量（在 Lee 的 `~/.zshrc`，只加载不打印）。构建号是 git 提交数，版本号在 `ios/project.yml` 的 `MARKETING_VERSION`。隐私清单 `ios/PropertyReplay/PrivacyInfo.xcprivacy`（目前只有 UserDefaults CA92.1；加了新 API 要补）。
 
-真机排错：崩溃报告从配对的设备取 `xcrun devicectl device info files --device <id> --domain-type systemCrashLogs` / `device copy from`；App 容器文件 `--domain-type appDataContainer --domain-identifier com.pwegroup.propertyreplay`；看 `os.Logger` 输出用 `device process launch --console --environment-variables '{"OS_ACTIVITY_DT_MODE": "YES"}' … -- -参数`（参数放 `--` 后）。CloudKit 在模拟器上不可用（Lee 的账户开了高级数据保护），同步只能真机验。
+真机排错：崩溃报告从配对的设备取 `xcrun devicectl device info files --device <id> --domain-type systemCrashLogs` / `device copy from`；App 容器文件 `--domain-type appDataContainer --domain-identifier com.pwegroup.propertyreplay`；DEBUG 诊断参数（输出一行后可终止）：`-probeCompass`（罗盘读数频率）、`-probePlanes`（设备能否给平面打标签、几秒内找到什么）；看 `os.Logger` 输出用 `device process launch --console --environment-variables '{"OS_ACTIVITY_DT_MODE": "YES"}' … -- -参数`（参数放 `--` 后）。CloudKit 在模拟器上不可用（Lee 的账户开了高级数据保护），同步只能真机验。
 
 将来加 Share Extension（ADR-0014）时：**数据库不进 App Group**（`groupContainer: .none`），扩展只往收件箱写文件——同组 PWE Receipts 的 1.0 因为 CloudKit 镜像在挂起时持有共享容器里的 SQLite 锁被 0xdead10cc 杀掉（组记忆 swiftdata-app-group-store-dead10cc）。
 
@@ -143,9 +144,8 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
-- **[给料] 抽看实验 1 的 10 帧真值初稿** — 对照页已发给你（`experiment-1-review.html`，只在本机）。回"第几帧、哪里不对" · 不给：实验 1 的数字停在"初稿真值" · 自 2026-10-09
-- **[决定] 室内隔玻璃怎么认窗** — 推荐：先加存 ARKit 平面锚点（含 `window` / `door` 分类），用你家的窗看它认不认得出，再决定要不要让买家点窗。成本：采集多开竖直平面检测，耗电与发热要量 · 不定：室内的扫描得不到天空证据，回放只能在露天用 · 自 2026-10-09
-- **[给料] 用 10-09 的版本扫两三段，看点 Start 后弧线多久出来** — 10-09 改了罗盘不过滤（此前端平不动时没有读数，弧线要等 8–12 秒）。静置设备上实测有读数，真实扫描里没验 · 不给：这处修改停在"设备静置核对过" · 自 2026-10-09
+- **[给料] 用 10-09 晚的版本在室内对着窗扫 3–4 段** — 每段 30–60 秒，站在离窗 1–3 米处，慢慢扫过整面窗和两侧的墙。扫客厅朝院子的窗、朝天井的玻璃门各一两段。扫完说一声，我取回后看 ARKit 把窗标成了什么。顺带看点 Start 后弧线多久出来（10-09 改了罗盘不过滤，真实扫描里没验） · 不给：室内怎么认窗定不下来，回放只能在露天用 · 自 2026-10-09
+- **[给料] 抽看实验 1 的 10 帧真值初稿** — 对照页已发（`experiment-1-review.html`，只在本机）。回"第几帧、哪里不对" · 不给：实验 1 的数字停在"初稿真值" · 自 2026-10-09
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 里晴天把手机端平对着太阳看 "Now" 圆点压不压在太阳上、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

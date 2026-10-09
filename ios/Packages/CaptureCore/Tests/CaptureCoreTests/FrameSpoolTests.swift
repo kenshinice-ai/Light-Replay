@@ -2,6 +2,7 @@ import CoreGraphics
 import CoreVideo
 import ImageIO
 import SceneRecord
+import CryptoKit
 import XCTest
 @testable import CaptureCore
 
@@ -160,6 +161,53 @@ final class FrameSpoolTests: XCTestCase {
         let writer = try FrameSpoolWriter(sessionID: "SESSION-C", root: root)
         let result = await writer.finish()
         XCTAssertNil(result.manifest, "no frames: nothing to say is ready")
+    }
+
+    private func plane(_ id: String, _ label: String, status: String = "known") -> SpoolPlane {
+        SpoolPlane(id: id, alignment: "vertical", classification: label, classificationStatus: status,
+                   transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0.25, 1.5, -2.125, 1], center: [0.1, 0, -0.05],
+                   widthM: 1.2, heightM: 2.1, rotationOnYAxis: 0.3, boundary: [[-0.6, 0, -1], [0.6, 0, -1], [0.6, 0, 1], [-0.6, 0, 1]])
+    }
+
+    /// Experiment 1: the depth map reads a window as a wall 1.5 m away, so the surfaces ARKit labels are kept with
+    /// the frames. They are part of what the scan's input was.
+    func testSurfacesAreKeptWithTheFramesAndCountInTheDigest() async throws {
+        func spool(_ id: String, planes: [SpoolPlane]?) async throws -> SpoolManifest {
+            let writer = try FrameSpoolWriter(sessionID: id, root: root)
+            XCTAssertTrue(writer.offer(jpeg: Data("picture".utf8), width: 4, height: 3, meta: meta("f00000", at: 100)))
+            let finished = await writer.finish(planes: planes, planeClassification: planes == nil ? nil : true)
+            return try XCTUnwrap(finished.manifest)
+        }
+        let window = plane("B-PLANE", "window"), wall = plane("A-PLANE", "wall")
+        let kept = try await spool("SESSION-P", planes: [window, wall])
+        XCTAssertEqual(kept.planes, [wall, window], "sorted by id, whatever order ARKit reported them in")
+        XCTAssertEqual(kept.planeClassification, true)
+        let read = try XCTUnwrap(FrameSpool.manifest(for: "SESSION-P", root: root))
+        XCTAssertEqual(read, kept, "what is read back is what was written")
+        XCTAssertEqual(read.digest, kept.digest)
+
+        // The same frames with another answer about the window are another input.
+        let relabelled = try await spool("SESSION-P", planes: [plane("B-PLANE", "none", status: "undetermined"), wall])
+        XCTAssertNotEqual(relabelled.digest, kept.digest)
+        let looked = try await spool("SESSION-P", planes: [])
+        let never = try await spool("SESSION-P", planes: nil)
+        XCTAssertEqual(looked.planes, [])
+        XCTAssertNil(never.planes)
+        XCTAssertNotEqual(looked.digest, never.digest, "looked and found none is not the same as never looked")
+    }
+
+    /// A spool written before surfaces were recorded has no such key, and its record already holds its digest.
+    func testASpoolFromBeforeSurfacesKeepsItsDigest() throws {
+        let old = """
+        {"createdAt":"2026-10-05T00:00:00Z","expiresAt":"2026-10-19T00:00:00Z","frames":[{"cameraTransform":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],        "frameID":"f00000","image":{"byteCount":7,"encodedHeight":3,"encodedWidth":4,"file":"f00000.jpg","nativeHeight":3,"nativeWidth":4,        "rotationDeg":0,"scale":1,"sha256":"aa"},"intrinsics":[1,0,0,0,1,0,0,0,1],"role":"visibility","t":0,"timestamp":100,"turnRateDegPerSec":0}],        "sessionID":"OLD","truncated":false,"version":1}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let manifest = try decoder.decode(SpoolManifest.self, from: Data(old.utf8))
+        XCTAssertNil(manifest.planes)
+        var hash = SHA256()
+        hash.update(data: Data("OLD|f00000:aa:-|hero:-".utf8))
+        XCTAssertEqual(manifest.digest, hash.finalize().map { String(format: "%02x", $0) }.joined())
     }
 
     func testTheSameScanAlwaysHasTheSameDigestAndAnotherScanAnother() async throws {

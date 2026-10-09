@@ -26,6 +26,7 @@ struct PropertyReplayApp: App {
             }
         }
         if ProcessInfo.processInfo.arguments.contains("-probeCompass") { CompassProbe.shared.run() }
+        if ProcessInfo.processInfo.arguments.contains("-probePlanes") { PlaneProbe.shared.run() }
         #endif
     }
 
