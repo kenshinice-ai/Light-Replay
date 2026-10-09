@@ -62,7 +62,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 - `light_replay_history/` 与 `field/data/`：不入库。
 - 不改写共享历史；只在 Lee 要求时 commit / push。
 
-## 7. 当前状态（2026-10-05）
+## 7. 当前状态（2026-10-09）
 
 状态词分四档，不混用：**源码**（代码在仓库里）→ **测试**（模拟器或包测试通过）→ **真机**（Lee 或 Claude 在 iPhone 17 Pro / iOS 27.0.1 上走过）→ **现场**（有 `field/` 记录编号）。没有任何一项到"现场"。
 
@@ -75,7 +75,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | Compare：关注维度 × 房产，格子来自买家自己的标签与扫描，各种"没有"分开写，不打分 | ✓ | ✓ 单元 `CompareSummaryTests` + UI | — | U14；School / Commute / Price comfort 的来源是回家补记的笔记（见下） |
 | 相机方向：预览与拍照角度由 RotationCoordinator 分别给出 | ✓ | — | ✓ 10-03 Lee 横持拍的照片存成 2048×1536，像素方向正确；iPad 四向待看 | U03；模拟器无相机 |
 | Inspect：拍照、按住说话、Like / Concern / Ask、Light 入口 | ✓ | ✓ 照片路径 | ✓ 拍照、中英文转写 | Measure 在界面上改名 Light（ADR-0015 修订） |
-| Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | ✓ 10-05 Lee 扫 9 段（`PR-20261005-01…09`，All-year）：只有 4 段到 90%，用了 39–87 秒。三个原因与改法在 `spike/2026-10-05-scan-coverage.md`：路径随最近 60 条罗盘读数滑动（改为 Start 之后全部读数的中位数；起点与不抽稀是 Codex 同日评审 LS01 / LS02 后补的，回应在 `reviews/2026-10-05-light-scan-algorithm-review-response.md`）、镜头抬过 40° 后罗盘读数转 180°（俯仰上限 50° → 30°）、实时覆盖按 0.15 m 截断而规范是 0.40 m（已对齐）。**改后的版本待 Lee 再扫**：重放只说明同样的动作怎么计，不说明路径稳定后人会不会扫得更好 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。All-year 要转 240°、抬到近乎头顶，本身就比 Winter 难（同样 9 段按 Winter 计，8 段里 6 段在 13–28 秒到线）。弧线标签写明是哪一天（10-05：只写 "20 Mar" 被读成今天的日期）|
+| Light scan：全屏 AR 相机、太阳路径叠加、单行指引、走廊覆盖率、保存到房产（`04` §11） | ✓ | ✓ 单元（`SkyGeometryTests`、`ScanCoachTests`）+ UI（`LightScanUITests`：保存、覆盖不足询问、丢弃、切换问题重算、保存失败重试；模拟器假相机） | ✓ 10-05 Lee 扫 9 段（`PR-20261005-01…09`，All-year）：只有 4 段到 90%，用了 39–87 秒。三个原因与改法在 `spike/2026-10-05-scan-coverage.md`：路径随最近 60 条罗盘读数滑动（改为 Start 之后全部读数的中位数；起点与不抽稀是 Codex 同日评审 LS01 / LS02 后补的，回应在 `reviews/2026-10-05-light-scan-algorithm-review-response.md`）、镜头抬过 40° 后罗盘读数转 180°（俯仰上限 50° → 30°）、实时覆盖按 0.15 m 截断而规范是 0.40 m（已对齐）。10-09 Lee 用改后的版本扫 7 段（`PR-20261009-01…07`，`spike/2026-10-09-scans-after-the-fix.md`）：路径在一次扫描里的移动从 27–204° 降到 ±6°，候选 σ 从 25–53° 降到 10–15°，6 段有效扫描里 5 段到 91–96%。同一批数据发现手机不动时罗盘不发读数（默认 1° 过滤），已改为不过滤 + 10 Hz 取样，两台设备静置实测有读数，真实扫描待验 | 不出日照小时：没有天空分割，记录仍是 R0，结果面板明说"Sunlight not calculated yet"。All-year 要转 240°、抬到近乎头顶，本身就比 Winter 难（同样 9 段按 Winter 计，8 段里 6 段在 13–28 秒到线）。弧线标签写明是哪一天（10-05：只写 "20 Mar" 被读成今天的日期）|
 | 端侧 Foundation Models 结构化笔记 | ✓ | — | ✓ 能力 Available | 准确率、幻觉回归未评估 |
 | PCC | entitlement ✓，业务未调用 | — | ✓ 能力 Available | 先做端侧 / 模板闭环，再做合成输入 smoke |
 | iCloud 私有库同步（ADR-0017） | ✓ | ✓ 无账号降级 | ✓ iPhone → iPad：两台真机数据库逐表计数一致，照片与测量记录字节已同步 | 离线再上线、删除传播待测 |
@@ -128,7 +128,7 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已退出**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 81 例 fixture、冒烟工具；Codex 的 A01–A04 已修，回应在 `reviews/2026-10-04-stage-a-delivery-review-response.md`；网络照片的接口冒烟由 Codex 按 Lee 授权补齐，读法在 spike 补记）。**阶段 B 已实现**（见状态表两行与 `04` §12 末段）。**现在卡在闸门 1**：Lee 用这一版在自家拍评估片段，我从设备取回帧卷做实验 1（三条分割路径的比较）。不等闸门可以并行做的是阶段 C 的纯算法部分：VisibilityCore（采样、深度重投影、按不同帧计票）与分析任务的骨架，用模拟器假世界的已知天空验。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
+- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已退出**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 81 例 fixture、冒烟工具；Codex 的 A01–A04 已修，回应在 `reviews/2026-10-04-stage-a-delivery-review-response.md`；网络照片的接口冒烟由 Codex 按 Lee 授权补齐，读法在 spike 补记）。**阶段 B 已实现**（见状态表两行与 `04` §12 末段）。**闸门 1 的片段已够开始**（10-09：16 段取回本机，可用 14 段，阴天晴天各一批）；下一步是实验 1（三条分割路径的比较），先要天际线真值（见等 Lee）。不等闸门可以并行做的是阶段 C 的纯算法部分：VisibilityCore（采样、深度重投影、按不同帧计票）与分析任务的骨架，用模拟器假世界的已知天空验。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
 - Light 扫描（10-05 排错后留下的，详见 `spike/2026-10-05-scan-coverage.md` §4）：0.40 m 漂移上限仍是候选，放不放宽要等阶段 C 量过深度重投影的误差后用 ADR 定；All-year 是否分两遍引导等新版数据；罗盘读数与姿态约 0.17 s 的时间差没有修正。复算脚本 `engine/scripts/scan_postmortem.py <记录.json…>`，取回的设备数据在本机 `~/Library/Application Support/propertyreplay-field/`（不在仓库目录里，仓库在 iCloud）。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
@@ -140,7 +140,8 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
-- **[给料] 用 10-05 午后的版本（`acb48cf`）再扫评估片段** — 已收到 9 段（`PR-20261005-01…09`，已取回本机）。还差约 10 段：隔玻璃有反光或镜面的 1–2 段、树冠下 3–4 段、檐下 2–3 段、开敞庭院 2–3 段。问题选 Winter 或 All-year 都行，不必扫到 90%；每段点 Start 之后先把手机端平停一秒（找北）。其中四段各带一种拍法（Codex 10-05 评审要的）：打开后等十秒再点 Start；从端平慢慢抬到头顶；中途竖横换一次；一段扫满两分钟。扫完告诉我，我从手机取回 · 不给：闸门 1 过不了，分割路径定不下来；10-05 改的指引有没有用也无从知道 · 自 2026-10-04
+- **[给料] 用 10-09 的版本扫两三段，看点 Start 后弧线多久出来** — 10-09 改了罗盘不过滤（此前端平不动时没有读数，弧线要等 8–12 秒）。静置设备上实测有读数，真实扫描里没验 · 不给：这处修改停在"设备静置核对过" · 自 2026-10-09
+- **[决定] 实验 1 的天际线由谁描** — 推荐：我先在约 40 帧上描出初稿并做成一页可看的对照图，你抽看 10 帧，说哪里不对。计划原文写的是手工描 · 不定：实验 1 没有真值，三条分割路径比不出来 · 自 2026-10-09
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 里晴天把手机端平对着太阳看 "Now" 圆点压不压在太阳上、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30

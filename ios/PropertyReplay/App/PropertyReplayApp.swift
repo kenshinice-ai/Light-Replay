@@ -25,6 +25,7 @@ struct PropertyReplayApp: App {
                 await MainActor.run { StoreHealth.shared.note(outcome) }
             }
         }
+        if ProcessInfo.processInfo.arguments.contains("-probeCompass") { CompassProbe.shared.run() }
         #endif
     }
 

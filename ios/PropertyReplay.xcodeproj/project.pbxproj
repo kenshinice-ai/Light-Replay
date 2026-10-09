@@ -45,6 +45,7 @@
 		A2D8D4172D63CAEFF3DC4C3E /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FECAC15F959E4604B7FAB7 /* CameraPreview.swift */; };
 		A74D93499E926CD365B7DD2A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BFA4909BFB1862F1CDE6C9A6 /* PrivacyInfo.xcprivacy */; };
 		AA229D4FA9D0A3B94BC2C345 /* CapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461BC9634B827B56DD4D17F7 /* CapabilitiesView.swift */; };
+		AC3301AD67DB9A160012C12E /* CompassProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B58D2AA410DCA53E7FA0191 /* CompassProbe.swift */; };
 		B120201FA882F4571FDE3A10 /* SceneRecord in Frameworks */ = {isa = PBXBuildFile; productRef = D8B964529E5CA08E021EA05F /* SceneRecord */; };
 		B427E1DD4071416C584EBF8D /* CaptureValidatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D70CE8B87C522C85E41685 /* CaptureValidatorView.swift */; };
 		BA5DCF34B08605E8DEB7EBE6 /* SyntheticSweep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2F63EC82C7EBED7F338256 /* SyntheticSweep.swift */; };
@@ -97,6 +98,7 @@
 		2DF2F63DEA547278E3954CB6 /* LightQuestion+Text.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LightQuestion+Text.swift"; sourceTree = "<group>"; };
 		3768FD260FC5F5BAF417CC7A /* UITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestCase.swift; sourceTree = "<group>"; };
 		37B1830A573DEADACEC96EE1 /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
+		3B58D2AA410DCA53E7FA0191 /* CompassProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompassProbe.swift; sourceTree = "<group>"; };
 		3FD44AE2D932E26335EA457B /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		40FE22733933A9B661B22466 /* LightScanModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightScanModel.swift; sourceTree = "<group>"; };
 		43937B8CCFECD332E5455D50 /* PropertyReplay.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PropertyReplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -219,6 +221,7 @@
 		69B4D26F671E78B08C123E65 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				3B58D2AA410DCA53E7FA0191 /* CompassProbe.swift */,
 				3FD44AE2D932E26335EA457B /* Formatting.swift */,
 				A02148C43C2069A9944AC1B4 /* PropertyReplayApp.swift */,
 				0809539599BF3A1A871EBFE3 /* RootView.swift */,
@@ -494,6 +497,7 @@
 				2BA915DB229B1ADFDBA8A9BB /* Chips.swift in Sources */,
 				A27437C895CBBDED4458FACA /* Commands.swift in Sources */,
 				FF2BB062AEBB8C6346D6F6BD /* CompareView.swift in Sources */,
+				AC3301AD67DB9A160012C12E /* CompassProbe.swift in Sources */,
 				1EC280BE6E104DD15D126F6D /* DeleteWithConfirmation.swift in Sources */,
 				46AFB0B3FDD6F64860637AC2 /* DraftEditor.swift in Sources */,
 				57BF59FCE80BBA6F96CCA7A3 /* FlowLayout.swift in Sources */,

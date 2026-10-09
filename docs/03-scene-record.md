@@ -71,7 +71,7 @@
 }
 ```
 
-`magnetometer` 候选的 `raw` 另有两项（review R08）：`samples[]` 保留本次采集里每一条能与姿态对上的罗盘读数（`sampled_at`、`true_heading`、`magnetic_heading`、`heading_accuracy`、`device_orientation`（读数参考的设备方向，`headingOrientation`）、对上的 `frame_id`、`camera_az_ar_deg`、`camera_pitch_deg`、`pose_gap_s`、该条读数给出的 `yaw_deg`、是否参与合并 `used`），`merged` 记合并方法与统计（`method`、`readings_seen` 收到的全部读数、`readings_valid` 其中有效的、`samples_total` 能与姿态对上的、`samples_used` 参与合并的、`spread_deg`、`prior_sigma_deg`、`max_pitch_deg`）。候选的 `yaw_deg` 是参与合并读数的圆周中位数，`sigma_deg` 取读数 σ 的中位数与读数分散（RMS）的较大者；`raw` 顶层的四个字段仍是第一条参与合并的读数。
+`magnetometer` 候选的 `raw` 另有两项（review R08）：`samples[]` 保留本次采集里每一条能与姿态对上的罗盘读数（读数本身按 ≤ 10 Hz 取样，ADR-0020 补记；`sampled_at`、`true_heading`、`magnetic_heading`、`heading_accuracy`、`device_orientation`（读数参考的设备方向，`headingOrientation`）、对上的 `frame_id`、`camera_az_ar_deg`、`camera_pitch_deg`、`pose_gap_s`、该条读数给出的 `yaw_deg`、是否参与合并 `used`），`merged` 记合并方法与统计（`method`、`readings_seen` 收到的全部读数、`readings_valid` 其中有效的、`samples_total` 能与姿态对上的、`samples_used` 参与合并的、`spread_deg`、`prior_sigma_deg`、`max_pitch_deg`）。候选的 `yaw_deg` 是参与合并读数的圆周中位数，`sigma_deg` 取读数 σ 的中位数与读数分散（RMS）的较大者；`raw` 顶层的四个字段仍是第一条参与合并的读数。
 
 `resolved` 只在方向灯不是阻断时写入；需要确认的方向（冲突、或只有一组且 σ > 6°）保持 `null`。
 

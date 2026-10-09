@@ -58,6 +58,7 @@ public final class CaptureRecorder: NSObject, ObservableObject {
     private var frames: [FrameSample] = []
     private var lastKeptTimestamp: TimeInterval?
     private var headings: [HeadingSample] = []
+    private var lastHeadingKeptAt: Date?
     private var sessionID = UUID().uuidString
     private var spool: FrameSpoolWriter?
     private var lastPose: (timestamp: TimeInterval, forward: SIMD3<Double>)?
@@ -76,6 +77,9 @@ public final class CaptureRecorder: NSObject, ObservableObject {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.headingOrientation = .portrait
+        // Every reading, not only those a degree away from the last one (the default filter): a phone held level and
+        // still — what "finding north" asks for — otherwise sends none. PR-20261009-01 and -03 waited 10 s for one.
+        locationManager.headingFilter = kCLHeadingFilterNone
     }
 
     /// UIInterfaceOrientation and CLDeviceOrientation name landscape from opposite sides: an interface shown in
@@ -375,6 +379,16 @@ extension CaptureRecorder {
     }
 }
 
+extension CaptureRecorder {
+    /// Compass readings are thinned like poses (ADR-0020): one per 1/`poseLogHz` seconds, for the screen and the record
+    /// alike, so both merge the same readings. Unfiltered they arrive faster than they carry anything new.
+    nonisolated public static func keepsHeading(at sampledAt: Date, lastKept: Date?) -> Bool {
+        guard let lastKept else { return true }
+        let gap = sampledAt.timeIntervalSince(lastKept)
+        return gap >= 1 / poseLogHz - 1e-6 || gap < 0   // a clock that stepped back must not silence the compass
+    }
+}
+
 extension CaptureRecorder: CLLocationManagerDelegate {
     nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
         let trueHeading = newHeading.trueHeading, magneticHeading = newHeading.magneticHeading
@@ -382,6 +396,8 @@ extension CaptureRecorder: CLLocationManagerDelegate {
         MainActor.assumeIsolated {
             let sample = HeadingSample(trueHeading: trueHeading, magneticHeading: magneticHeading, headingAccuracy: accuracy,
                                        sampledAt: sampledAt, deviceOrientation: Self.name(self.locationManager.headingOrientation))
+            guard Self.keepsHeading(at: sampledAt, lastKept: self.lastHeadingKeptAt) else { return }
+            self.lastHeadingKeptAt = sampledAt
             self.latestHeading = sample
             if self.isRunning { self.headings.append(sample) }
         }
