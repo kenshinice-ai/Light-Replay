@@ -1,0 +1,7 @@
+{
+  "g-0007#2": {"verdict": "generator_error", "note": "Labelled rewrite_number, but the only change from the compliant text is dropping 约; every number is unchanged."},
+  "g-0012#2": {"verdict": "generator_error", "note": "Labelled round_number; the text still says 2.5 hours and adds only 'about' before a tool time. No number changed."},
+  "g-0200#0": {"verdict": "generator_error", "note": "Labelled compliant, but it merges the winter solstice direct and sensitive segments into 07:10–09:30 and drops 09:10. The checker is right to flag it."},
+  "g-0251#1": {"verdict": "generator_error", "note": "Labelled round_number; 4 小时 is kept and only 约 is added. The generator's own note says no number changed."},
+  "g-0275#2": {"verdict": "generator_error", "note": "Labelled round_number with note 'Placeholder'; every number equals the tool's (约 only added before 60°)."}
+}

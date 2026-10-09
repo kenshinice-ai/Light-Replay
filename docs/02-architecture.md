@@ -69,7 +69,7 @@ ARSession ──帧──► CaptureCore ──► SceneRecord.capture_session�
 | 坐标约定 | 物理对照夹具：按 `gravityAndHeading` 构造的合成场景 Δ = 0；−Z 朝东的合成场景中，朝西的窗得到下午直射；水平相机画面上沿像素的高度角等于半个垂直视场角。期望值来自物理事实，不来自规范 | 模拟器 / CI |
 | CaptureCore | 真机：帧同步、追踪丢失、漂移记录 | 真机 |
 | 分割路径 | 20 帧人工标注天际线：IoU、每帧延迟、失败可识别率（ADR-0010） | 真机 |
-| Guide 回归 | 合成工具结果，检查模型输出是否改写数字或把未知说成确定；命中即阻断 | 模拟器 / CI |
+| Guide 回归 | 检查器 `GuideRegressionCheck.check(text:against:)`（`ios/Packages/GuideCore`）。规则：工具数字逐字带单位，不多不少；未知和玻璃不确定不说成确定；不加工具没给的方位。夹具：`ios/Packages/GuideCore/Tests/Fixtures/guide-regression.json`，由 `scripts/generate-guide-regression.mjs` 生成（合成工具结果 + 候选文本）。命中即阻断 | macOS `swift test` / CI |
 | 端到端 | 现场延时对照（`08-ground-truth-protocol.md`） | 现场 |
 
 ## 7. 性能预算（估，spike 校准）
