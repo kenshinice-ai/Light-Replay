@@ -23,7 +23,7 @@ ios/
     ├── VisibilityCore/          天空分割适配（Vision 交互式分割 + 几何种子）、可见域累积、深度重投影、走廊覆盖
     ├── NorthResolver/           方向候选、独立组、鲁棒融合、σ 输出（docs/05，ADR-0009）
     ├── SunEngine/               太阳位置、时区、采样、时段分级（docs/06）
-    ├── Assist/                  LLMProvider 抽象（端侧 FM / PCC / 模板）；语音结构化；教练句；文案（ADR-0010）
+    ├── Guide/                   LLMProvider 抽象（端侧 FM / PCC / 模板）；语音结构化；教练句；文案（ADR-0010）
     └── GeometryCore/            RoomPlan windows、AR 平面、R2 投影（Phase 3）
 ```
 
