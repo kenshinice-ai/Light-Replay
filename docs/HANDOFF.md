@@ -109,6 +109,7 @@ cd ios && xcodegen generate && xcodebuild test -project PropertyReplay.xcodeproj
 | Light 扫描保留分析所需的输入（阶段 B，`04` §12）：Hero 静帧转正存在行上；帧卷（同帧的图像、姿态、内参、深度）落在 `Application Support/LightSpool/<行 uuid>/`，不同步不备份，14 天；记录写 0.2.0 revision 0；行的身份 = 采集会话 uuid | ✓ | ✓ CaptureCore 31 项（入选规则、写出与读回、四个方向的 Hero 角点、深度往返、清理）；PropertyModel 38 项；UI `LightScanUITests`（保存后行上有缩略图、详情页有 Hero、"N 帧保留 14 天"）；模拟器假相机按已知天空的假世界出帧 | ✓ 10-05 九段：Hero 竖持横持都转正；帧卷文件哈希与清单一致、重算摘要等于记录里的 `capture_digest`；每帧有深度且解得开；1.7–3.3 fps，每段 3–73 MB。发热耗电未量 | 分析任务（阶段 C）还没有，所以帧卷现在只存不算。10-05 起帧卷留到离视点 0.50 m（此前 0.15 m，抬头的帧没留下），每帧带偏移量 |
 | Light 行的状态来自摘要列 `lightDigestData`，不再写进买家的 `text`；旧行启动时迁移（只动整句与模板全等且未编辑的） | ✓ | ✓ 单元 `LightDigestTests` 6 例 + UI 中英文 | 待 Lee 看旧扫描行的文字还在 | 新增的 CloudKit 字段 `CD_lightDigestData`：Lee 10-05 说已部署到 Production（我没能进控制台复核，登录过期）。同时修了四句中文的参数顺序（此前显示成"镜头覆盖了94路径的 冬季阳光%"） |
 | 分割冒烟工具 `tools/segsmoke`（Mac 命令行，Vision 迭代分割） | ✓ | 自测图 + Codex 按 Lee 授权下载的 9 张真实网络照片【验】（`docs/spike/2026-10-04-segmentation-smoke.md` 同日补记） | — | 输入、来源、逐图日志、掩膜和失败观察在 `field/data/smoke/`；只是普通照片的接口冒烟，不替代 App 帧卷评估。细枝天空只返回局部小块，自动种子与真机性能未测 |
+| 实验 1 · 分割评估第一轮（`tools/segeval/`，`spike/2026-10-09-experiment-1-segmentation.md`）：84 帧、四条路径，片段分两半，留出半区只算一次 | ✓ 工具 | — | 输入是真机帧卷；评分在 Mac | **开发结果，真值是 Claude 的初稿，Lee 未抽看。** "深度选点 + Vision"留出半区合并 IoU 0.944、走廊内假天空 0.1%、无天空帧 0 / 23；隔玻璃的天空 0%（深度图读的是玻璃面）。iPhone 上的延迟未量 |
 | 天空分割（相机帧 → 可见域网格）、日照结果页与回放 | — | — | — | 第三批剩余；方案在 `proposals/2026-10-03-sky-segmentation-plan.md`，三件事 10-03 已按 ADR-0019 定（累积网格 + 3–5 张关键帧掩膜、Save 之后算、W1 评估集 Lee 自家拍）；VisibilityCore 的累积层不等真机就能做 |
 
 加了或改了界面文字：`./scripts/strings-sync.sh` 把编译器抽到的键并进 `ios/PropertyReplay/Localizable.xcstrings`，并列出还没有中文的键，然后把中文写进目录（`zh-Hans` → `stringUnit.value`）。包里的字符串（显示名、扫描指引）用 `String(localized:bundle:.module)`，目录手写在包目录下。中文启动看界面：`-AppleLanguages (zh-Hans) -AppleLocale zh_CN`。
@@ -128,8 +129,9 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 第二轮复审的逐条回应：`reviews/2026-09-30-progress-reaudit-response.md`。
 
 仍然开着的：
-- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已退出**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 81 例 fixture、冒烟工具；Codex 的 A01–A04 已修，回应在 `reviews/2026-10-04-stage-a-delivery-review-response.md`；网络照片的接口冒烟由 Codex 按 Lee 授权补齐，读法在 spike 补记）。**阶段 B 已实现**（见状态表两行与 `04` §12 末段）。**闸门 1 的片段已够开始**（10-09：16 段取回本机，可用 14 段，阴天晴天各一批）；下一步是实验 1（三条分割路径的比较），先要天际线真值（见等 Lee）。不等闸门可以并行做的是阶段 C 的纯算法部分：VisibilityCore（采样、深度重投影、按不同帧计票）与分析任务的骨架，用模拟器假世界的已知天空验。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
+- Light Replay（回家在照片上拖时间看光）是当前主线：方案 v2（`proposals/2026-10-04-light-replay-plan-v2.md`，Lee 10-04 认可，按 Codex 的 v2 复审修订）。**阶段 A 已退出**（ADR-0021 / 0022、`03` §11、`04` §6 与 §12、`05` §2a、`07` §5 与 §5a、两端校验器与 81 例 fixture、冒烟工具；Codex 的 A01–A04 已修，回应在 `reviews/2026-10-04-stage-a-delivery-review-response.md`；网络照片的接口冒烟由 Codex 按 Lee 授权补齐，读法在 spike 补记）。**阶段 B 已实现**（见状态表两行与 `04` §12 末段）。**闸门 1 第一轮已跑**（10-09：16 段、可用 14 段、84 帧；结果见状态表与 `spike/2026-10-09-experiment-1-segmentation.md`）：分割路径定为"深度选点 + Vision"，不走自训模型；露天够用，**隔玻璃的天空完全找不到**，室内要另加一条"窗"的路径（平面分类 / RoomPlan / 买家点窗，候选），帧卷要加存平面锚点。真值等 Lee 抽看后定稿再重算一次。不等闸门可以并行做的是阶段 C 的纯算法部分：VisibilityCore（采样、深度重投影、按不同帧计票）与分析任务的骨架，用模拟器假世界的已知天空验。逐条回应在 `reviews/2026-10-04-light-replay-plan-v2-review-response.md`。TestFlight 等回放做好再上（Lee 10-03）；内测 / 外测分步与内部测试者名单到阶段 E 再请 Lee 定。
 - Light 扫描（10-05 排错后留下的，详见 `spike/2026-10-05-scan-coverage.md` §4）：0.40 m 漂移上限仍是候选，放不放宽要等阶段 C 量过深度重投影的误差后用 ADR 定；All-year 是否分两遍引导等新版数据；罗盘读数与姿态约 0.17 s 的时间差没有修正。复算脚本 `engine/scripts/scan_postmortem.py <记录.json…>`，取回的设备数据在本机 `~/Library/Application Support/propertyreplay-field/`（不在仓库目录里，仓库在 iCloud）。
+- 实验 1 留下的（`spike/2026-10-09-experiment-1-segmentation.md` §5）：`sundisk-0.1` 的"亮斑处没有深度回波 `depth_m == null`"前提不成立——ARKit 深度图在天空处读约 24 m，不是空；阶段 D 之前把这条检查改成"深度 ≥ 远阈值"，连同 `05` §2a 与两端校验器。VisibilityCore 里"近深度 + 高置信"不能直接记遮挡，玻璃面后面默认"玻璃不确定"。iPhone 上的分割延迟、内存、发热未量。
 - QualityEvaluator 没有重算的两盏灯（水平与追踪、镜头）和"反射未识别"：要先给 schema 加检测器证据字段。
 - 佐证门槛 15°（ADR-0018）是候选值，日晷 spike 校准（`07` 第 5 节）。
 - 方向候选只有罗盘一组；墙面对齐、窗光斑、太阳圆面、VPS 的采集未做。
@@ -140,8 +142,9 @@ UI 测试用 `-uitest` 启动参数：内存库 + 虚构样例，模拟器上用
 
 ## 等 Lee
 
+- **[给料] 抽看实验 1 的 10 帧真值初稿** — 对照页已发给你（`experiment-1-review.html`，只在本机）。回"第几帧、哪里不对" · 不给：实验 1 的数字停在"初稿真值" · 自 2026-10-09
+- **[决定] 室内隔玻璃怎么认窗** — 推荐：先加存 ARKit 平面锚点（含 `window` / `door` 分类），用你家的窗看它认不认得出，再决定要不要让买家点窗。成本：采集多开竖直平面检测，耗电与发热要量 · 不定：室内的扫描得不到天空证据，回放只能在露天用 · 自 2026-10-09
 - **[给料] 用 10-09 的版本扫两三段，看点 Start 后弧线多久出来** — 10-09 改了罗盘不过滤（此前端平不动时没有读数，弧线要等 8–12 秒）。静置设备上实测有读数，真实扫描里没验 · 不给：这处修改停在"设备静置核对过" · 自 2026-10-09
-- **[决定] 实验 1 的天际线由谁描** — 推荐：我先在约 40 帧上描出初稿并做成一页可看的对照图，你抽看 10 帧，说哪里不对。计划原文写的是手工描 · 不定：实验 1 没有真值，三条分割路径比不出来 · 自 2026-10-09
 - **[动手] 真机验收清单（10-01 起）** — You › 隐私与数据的同步行、用真实地址选一条建议、Light 里晴天把手机端平对着太阳看 "Now" 圆点压不压在太阳上、VoiceOver 口述一条笔记 · 不做：HANDOFF 状态表这几行停在"待真机" · 自 2026-10-01
 - **[给料] 日晷真值** — 推荐：spike W2 按 `08` 协议采几组 solar + map 同在的场景 · 不给：ADR-0018 的 15° 佐证门槛只能停在候选 · 自 2026-10-03
 - **[决定] 正式商标意见、域名、仓库是否改名** — 上架前 · 自 2026-09-30
