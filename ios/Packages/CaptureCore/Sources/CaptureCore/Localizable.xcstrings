@@ -1,0 +1,176 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Finding north. Aim the phone level for a moment.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在找北。把手机端平，对着前方停一下。"
+          }
+        }
+      }
+    },
+    "Finding where you are, to place the sun…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在定位，好把太阳放对位置…"
+          }
+        }
+      }
+    },
+    "Hold still for a moment.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先别动。"
+          }
+        }
+      }
+    },
+    "Move back to where you started. Keep the dot in the circle.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回到开始的位置。让圆点留在圈里。"
+          }
+        }
+      }
+    },
+    "Point at the room for a moment, not a blank wall.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先对着房间看一会儿，不要对着空白的墙。"
+          }
+        }
+      }
+    },
+    "Slow down.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢一点。"
+          }
+        }
+      }
+    },
+    "Slower. Let the camera see the sky.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再慢一点。让镜头看到天空。"
+          }
+        }
+      }
+    },
+    "Stand where you'd sit. Hold the phone at eye height, then tap Start.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "站在你会坐的位置。把手机举到眼睛的高度，然后点\"开始\"。"
+          }
+        }
+      }
+    },
+    "Starting the camera…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在启动相机…"
+          }
+        }
+      }
+    },
+    "Sun path covered. Tap Save.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "太阳路径已覆盖。点\"保存\"。"
+          }
+        }
+      }
+    },
+    "Sweep slowly along the sun path.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沿着太阳路径慢慢扫。"
+          }
+        }
+      }
+    },
+    "The %@ passes there.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@从那里经过。"
+          }
+        }
+      }
+    },
+    "Tilt down. %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向下压。%@"
+          }
+        }
+      }
+    },
+    "Tilt up. %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向上抬。%@"
+          }
+        }
+      }
+    },
+    "Turn left. %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向左转。%@"
+          }
+        }
+      }
+    },
+    "Turn right. %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向右转。%@"
+          }
+        }
+      }
+    },
+    "Working out the sun path…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在计算太阳路径…"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

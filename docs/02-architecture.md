@@ -9,7 +9,8 @@
 | **SceneRecord** | 数据模型、JSON 编解码、版本迁移、来源字段 | 存业务逻辑 | Spike |
 | **CaptureCore** | ARSession 封装；Hero frame；逐帧姿态、内参、时间戳；深度与置信度；镜头锚点与漂移；曝光控制；质量状态 | 把不同时间戳的照片、深度、姿态硬拼成一个事实 | Spike |
 | **VisibilityCore** | 天空 / 遮挡 / 未知 / 玻璃不确定 四态分割适配（首选 Vision `GenerateIterativeSegmentationRequest` + 几何种子；备选 CoreAI 自训模型）；像素到方向；深度重投影到目标点；可见域网格累积；走廊覆盖率 | 把反射或未扫区域默认为天空 | Spike |
-| **NorthResolver** | 方向候选采集；独立组；鲁棒融合；冲突检测；yaw 分布 | 把同一磁传感器的两个读数当独立证据 | Spike |
+| **NorthResolver** | 方向候选采集；独立组；鲁棒融合；冲突检测；yaw 分布。融合是纯算法包 `ios/Packages/NorthResolver`（Python 对照 `engine/lightreplay/north.py`）；候选的采集目前在 CaptureCore（罗盘），墙面 / 光斑 / VPS 待做 | 把同一磁传感器的两个读数当独立证据 | Spike |
+| **QualityEvaluator** | 按记录里的证据把能重算的灯（走廊覆盖、方向、分割）重算一遍；写入值与证据不符的记录不成立（`04` 第 6 节，ADR-0009）。放在 SceneRecord 包里，由校验器最后调用：这样任何一份能读进来的 SceneRecord 都已经过这一关，不依赖调用方记得再查一次 | 相信文件里写的 `pass`；替没有证据的灯给出结论 | Spike |
 | **SunEngine** | 太阳位置（SPA）；时区与夏令时；采样；走廊生成；直射状态；时段分级 | 用语言模型算太阳 | Spike |
 | **GeometryCore** | RoomPlan windows；AR 平面；R2 投影 | 让 LiDAR 假装看见邻楼 | V2 |
 | **Guide** | 关键帧反射与过曝标记（FM 图像理解）；补采提示（guided generation）；结果与报告文案（数字来自 Tool）；`LLMProvider` 抽象（端侧 / PCC / 模板） | 生成或改写任何数字；进入太阳、北向、可见域、投影计算（ADR-0010） | V1 |

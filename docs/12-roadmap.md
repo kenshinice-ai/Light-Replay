@@ -19,7 +19,8 @@
 - [x] SceneRecord Swift 包与 Python 参考实现并入主线（iOS 27；时区别名修正；`scripts/test.sh`）
 - [x] Xcode 工程（xcodegen）：App target `PropertyReplay`，bundle `com.pwegroup.propertyreplay`，iOS 27；CaptureCore 包（CaptureLog、SceneRecordBuilder、CaptureRecorder）与 W1 采集验证器界面；模拟器上构建、运行、测试通过（2026-09-30）
 - [x] App 壳：五个 tab、PropertyModel（SwiftData）、Properties List / Map、添加房产、Inspect 选房、Compare 骨架、You（2026-09-30）
-- [ ] PCC entitlement 申请状态（Lee）
+- [x] 线 B 第一版 Inspect 屏：Capture / Note / Measure、观察落库、Your inspection（2026-09-30，PR #2；真机路径待验证）
+- [x] PCC entitlement（2026-09-30 获批并写入 App ID；真机 Device capabilities 显示 Available；业务调用尚未接入）
 - [ ] 正式商标意见（上架前）
 
 ## Phase 1 · 并行验证（第 1–3 周）
@@ -84,4 +85,4 @@ Domain API（仅当有商务谈判且条款允许）；planning context（只链
 
 ## 下一步
 
-Phase 0 剩余：Xcode 工程。然后 Phase 1 W1：采集验证器（`07-spike-plan.md`）与原型 A 同时开工。
+Phase 0 已完成；Phase 1 进行中，当前状态以 `HANDOFF.md` §7 为准（不在这里重复）。下一条主线是 Light Replay：`proposals/2026-10-04-light-replay-plan-v2.md` 的阶段 A → F，其中 F 即线 A 的 W2 / W3 与汇合门。

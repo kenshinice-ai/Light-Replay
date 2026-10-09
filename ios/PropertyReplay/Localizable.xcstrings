@@ -1,0 +1,3357 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+      "shouldTranslate" : false
+    },
+    "%@ It is hidden now and will be removed the next time the library saves." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 它现在已隐藏，下次资料库保存时会被移除。"
+          }
+        }
+      }
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%@"
+          }
+        }
+      }
+    },
+    "%@, %@: %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@: %3$@%4$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，%@：%@%@"
+          }
+        }
+      }
+    },
+    "%@, approximate" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，近似"
+          }
+        }
+      }
+    },
+    "%@, compass within about %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, compass within about %2$lld°"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，罗盘误差约 %lld°"
+          }
+        }
+      }
+    },
+    "%lld frames from this scan are kept on this device for 14 days, for that analysis. After that, this spot needs a new scan." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这次扫描有 %lld 帧画面保留在这台设备上 14 天，供那项分析使用。过期之后，这个位置需要重新扫描。"
+          }
+        }
+      }
+    },
+    "%lld measurement(s) are waiting for a property that no longer exists." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 条测量在等待一套已不存在的房产。"
+          }
+        }
+      }
+    },
+    "%lld of %lld homes match." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld homes match."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 套符合，共 %lld 套。"
+          }
+        }
+      }
+    },
+    "%lld of %lld on the map. %lld need a pin: see the list." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld on the map. %3$lld need a pin: see the list."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图上有 %lld 套，共 %lld 套。%lld 套还没有定位：请看列表。"
+          }
+        }
+      }
+    },
+    "%lld percent" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百分之 %lld"
+          }
+        }
+      }
+    },
+    "%lld recorded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已记录 %lld 条"
+          }
+        }
+      }
+    },
+    "%lld%% of the %@ path" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld%% of the %2$@ path"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$@路径的 %1$lld%%"
+          }
+        }
+      }
+    },
+    ". Anything recorded since may still be on its way." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "。此后记录的内容可能还在路上。"
+          }
+        }
+      }
+    },
+    "A fact you confirmed, or licensed data with a source." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确认过的事实，或有来源的授权数据。"
+          }
+        }
+      }
+    },
+    "A model's estimate. Worth verifying." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型的估计。值得核实。"
+          }
+        }
+      }
+    },
+    "A note here counts under %@ for %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A note here counts under %1$@ for %2$@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在这里写的笔记会计入 %2$@ 的\"%1$@\"。"
+          }
+        }
+      }
+    },
+    "ARSession: %@" : {
+      "shouldTranslate" : false
+    },
+    "About" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于什么"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加"
+          }
+        }
+      }
+    },
+    "Add a caption" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加一句说明"
+          }
+        }
+      }
+    },
+    "Add a note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写笔记"
+          }
+        }
+      }
+    },
+    "Add a note about this" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "为这一项写笔记"
+          }
+        }
+      }
+    },
+    "Add a property" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加房产"
+          }
+        }
+      }
+    },
+    "Add a property first" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先添加一套房产"
+          }
+        }
+      }
+    },
+    "Add properties first, in the Properties tab." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先在\"房产\"里添加房子。"
+          }
+        }
+      }
+    },
+    "Add property" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加房产"
+          }
+        }
+      }
+    },
+    "Add sample properties (fictional)" : {
+      "shouldTranslate" : false
+    },
+    "Add test note (simulator)" : {
+      "shouldTranslate" : false
+    },
+    "Add test photo (simulator)" : {
+      "shouldTranslate" : false
+    },
+    "Add the homes you plan to inspect. If you already use Property Replay on another device, your homes arrive here once iCloud catches up; that can take a few minutes." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把准备去看的房子加进来。如果你在另一台设备上用过 Property Replay，等 iCloud 同步完成，房子就会出现在这里，可能需要几分钟。"
+          }
+        }
+      }
+    },
+    "Add the homes you plan to inspect. They stay on this device." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把准备去看的房子加进来。它们只保存在这台设备上。"
+          }
+        }
+      }
+    },
+    "Added %lld measurement(s) that weren't saved last time." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "补上了 %lld 条上次没保存的测量。"
+          }
+        }
+      }
+    },
+    "Address" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址"
+          }
+        }
+      }
+    },
+    "Address or suburb" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址或区名"
+          }
+        }
+      }
+    },
+    "Addresses go to Apple Maps only to place a pin. Properties, photos, notes and measurements stay on this device and, with iCloud sync on, in your private iCloud so your iPad sees them too. No one else, including us, can read them. Nothing else is uploaded unless you share a page." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地址只发给 Apple 地图用来放图钉。房产、照片、笔记和测量都留在这台设备上；开了 iCloud 同步，也会在你的私人 iCloud 里，这样 iPad 上也能看到。没有别人能读到它们，包括我们。除非你主动分享，不会上传任何其他内容。"
+          }
+        }
+      }
+    },
+    "All %lld recorded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部 %lld 条记录"
+          }
+        }
+      }
+    },
+    "All statuses" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部状态"
+          }
+        }
+      }
+    },
+    "All-year sun" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全年阳光"
+          }
+        }
+      }
+    },
+    "Anchor" : {
+      "shouldTranslate" : false
+    },
+    "Backyard" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后院"
+          }
+        }
+      }
+    },
+    "Balcony" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阳台"
+          }
+        }
+      }
+    },
+    "Bathroom" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卫生间"
+          }
+        }
+      }
+    },
+    "Bedroom 1" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卧室 1"
+          }
+        }
+      }
+    },
+    "Bedroom 2" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卧室 2"
+          }
+        }
+      }
+    },
+    "Bedroom 3" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卧室 3"
+          }
+        }
+      }
+    },
+    "Camera access is off. Enable it in Settings to capture photos." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相机权限已关闭。到\"设置\"里打开才能拍照。"
+          }
+        }
+      }
+    },
+    "Camera covered" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "镜头覆盖"
+          }
+        }
+      }
+    },
+    "Camera has looked here" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "镜头看过这里"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        }
+      }
+    },
+    "Caption" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "说明"
+          }
+        }
+      }
+    },
+    "Capture" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照"
+          }
+        }
+      }
+    },
+    "Capture failed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照失败：%@"
+          }
+        }
+      }
+    },
+    "Capture validator" : {
+      "shouldTranslate" : false
+    },
+    "Capture validator (unbound)" : {
+      "shouldTranslate" : false
+    },
+    "Choose a home" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选一套房"
+          }
+        }
+      }
+    },
+    "Choose up to three." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最多选三套。"
+          }
+        }
+      }
+    },
+    "Choose what you care about" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择你在意的事"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
+    "Close photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭照片"
+          }
+        }
+      }
+    },
+    "Close without saving" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不保存并关闭"
+          }
+        }
+      }
+    },
+    "Compare" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "比较"
+          }
+        }
+      }
+    },
+    "Compare shows the things you said you care about. You haven't chosen any yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"比较\"只比你说在意的事。你还没有选。"
+          }
+        }
+      }
+    },
+    "Compass ±%lld°" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "罗盘 ±%lld°"
+          }
+        }
+      }
+    },
+    "Could not start the microphone: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能启动麦克风：%@"
+          }
+        }
+      }
+    },
+    "Couldn't %@ iCloud at %@: %@. Your records are safe on this device and the app keeps trying." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't %1$@ iCloud at %2$@: %3$@. Your records are safe on this device and the app keeps trying."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ iCloud 在 %@ 失败：%@。记录在这台设备上是安全的，App 会继续尝试。"
+          }
+        }
+      }
+    },
+    "Couldn't add it to the property yet (%@). It's kept on this device and is added the next time the app opens." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没能加到这套房上（%@）。它保存在这台设备上，下次打开 App 时会加上。"
+          }
+        }
+      }
+    },
+    "Couldn't check the iCloud account. Your records are on this device." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能检查 iCloud 账户。记录在这台设备上。"
+          }
+        }
+      }
+    },
+    "Couldn't close the inspection: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能结束这次看房：%@"
+          }
+        }
+      }
+    },
+    "Couldn't delete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能删除"
+          }
+        }
+      }
+    },
+    "Couldn't delete everything" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能全部删除"
+          }
+        }
+      }
+    },
+    "Couldn't find this address on the map. Check the spelling or add the suburb, or save it without a pin and place it later from the property page." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图上找不到这个地址。检查拼写或加上区名，或者先不定位保存，之后在房产页里再放图钉。"
+          }
+        }
+      }
+    },
+    "Couldn't find this address on the map. Check the spelling or add the suburb, or save it without a pin." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图上找不到这个地址。检查拼写或加上区名，或者不定位保存。"
+          }
+        }
+      }
+    },
+    "Couldn't find where you are" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到你的位置"
+          }
+        }
+      }
+    },
+    "Couldn't move older files into the library yet: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没能把旧文件移入资料库：%@"
+          }
+        }
+      }
+    },
+    "Couldn't reach Apple Maps. You can still save the address as you typed it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连不上 Apple 地图。你仍可以按输入的原样保存。"
+          }
+        }
+      }
+    },
+    "Couldn't remove it" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能移除"
+          }
+        }
+      }
+    },
+    "Couldn't save the scan: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能保存这次扫描：%@"
+          }
+        }
+      }
+    },
+    "Couldn't save this change yet: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这处修改还没能保存：%@"
+          }
+        }
+      }
+    },
+    "Couldn't save: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能保存：%@"
+          }
+        }
+      }
+    },
+    "Couldn't save: %@. Nothing was added; try again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能保存：%@。什么都没有加进来，请再试一次。"
+          }
+        }
+      }
+    },
+    "Couldn't save: %@. Your draft is still here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能保存：%@。草稿还在。"
+          }
+        }
+      }
+    },
+    "Couldn't save: %@. Your note is still here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没能保存：%@。笔记还在。"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
+        }
+      }
+    },
+    "Delete every property, note and scan on this device and in your iCloud?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除这台设备和你 iCloud 里的全部房产、笔记和扫描？"
+          }
+        }
+      }
+    },
+    "Delete every property, note and scan on this device?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除这台设备上的全部房产、笔记和扫描？"
+          }
+        }
+      }
+    },
+    "Delete everything" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除全部"
+          }
+        }
+      }
+    },
+    "Delete this %@?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除这条%@？"
+          }
+        }
+      }
+    },
+    "Deleting didn't finish saving (%@); it completes with the next save." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除没有保存完成（%@）；下次保存时会完成。"
+          }
+        }
+      }
+    },
+    "Details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
+        }
+      }
+    },
+    "Developer" : {
+      "shouldTranslate" : false
+    },
+    "Device capabilities" : {
+      "shouldTranslate" : false
+    },
+    "Dictate note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "口述笔记"
+          }
+        }
+      }
+    },
+    "Dictate note shortcut" : {
+      "shouldTranslate" : false
+    },
+    "Dining" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "餐厅"
+          }
+        }
+      }
+    },
+    "Direction" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方向"
+          }
+        }
+      }
+    },
+    "Direction: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方向：%@"
+          }
+        }
+      }
+    },
+    "Directions in Maps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在地图中导航"
+          }
+        }
+      }
+    },
+    "Discard" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丢弃"
+          }
+        }
+      }
+    },
+    "Discard this scan?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丢弃这次扫描？"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        }
+      }
+    },
+    "Double tap to zoom" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "双击缩放"
+          }
+        }
+      }
+    },
+    "Each box is what you recorded at that home. Nothing here is a score." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每一格都是你在那套房记下的东西。这里没有评分。"
+          }
+        }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
+          }
+        }
+      }
+    },
+    "Edit property" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑房产"
+          }
+        }
+      }
+    },
+    "Entry" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "玄关"
+          }
+        }
+      }
+    },
+    "Equinoxes · %@ & %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Equinoxes · %1$@ & %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "春分 / 秋分 · %1$@、%2$@"
+          }
+        }
+      }
+    },
+    "Evidence labels" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "证据标签"
+          }
+        }
+      }
+    },
+    "Facing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "朝向"
+          }
+        }
+      }
+    },
+    "Finding north…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在找北…"
+          }
+        }
+      }
+    },
+    "Finding where you are…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在定位…"
+          }
+        }
+      }
+    },
+    "Finishing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束中"
+          }
+        }
+      }
+    },
+    "Finishing…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在结束…"
+          }
+        }
+      }
+    },
+    "Follow phone (%@)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随手机（%@）"
+          }
+        }
+      }
+    },
+    "Garage" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "车库"
+          }
+        }
+      }
+    },
+    "Getting ready" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备中"
+          }
+        }
+      }
+    },
+    "Getting ready to listen%@… The microphone is not on yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备聆听%@…麦克风还没有打开。"
+          }
+        }
+      }
+    },
+    "Haptics" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "触感"
+          }
+        }
+      }
+    },
+    "Haptics mark a photo taken, a note started and finished, and a light scan locking on and being covered. Light scan height is where you hold the phone: 1.15 m is eye height when seated." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "触感提示：拍下照片、笔记开始和结束、光线扫描锁定和覆盖完成。光线扫描高度是你拿手机的高度：1.15 米是坐着时眼睛的高度。"
+          }
+        }
+      }
+    },
+    "Heading" : {
+      "shouldTranslate" : false
+    },
+    "Hold to note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住说话"
+          }
+        }
+      }
+    },
+    "Hold to speak and release to finish. With VoiceOver, double tap to start and double tap again to finish." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住说话，松开结束。使用旁白时，双击开始，再双击结束。"
+          }
+        }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首页"
+          }
+        }
+      }
+    },
+    "Homes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "房子"
+          }
+        }
+      }
+    },
+    "How we know" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依据"
+          }
+        }
+      }
+    },
+    "Indicative" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅供参考"
+          }
+        }
+      }
+    },
+    "Inspect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看房"
+          }
+        }
+      }
+    },
+    "Inspect now" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始看房"
+          }
+        }
+      }
+    },
+    "Inspect starts from a property in your list." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看房从列表里的一套房开始。"
+          }
+        }
+      }
+    },
+    "Inspection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看房"
+          }
+        }
+      }
+    },
+    "Inspection %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看房 %@"
+          }
+        }
+      }
+    },
+    "Inspection booked" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已约看房"
+          }
+        }
+      }
+    },
+    "It arrives with iCloud sync, or it was lost on the device that took it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它会随 iCloud 同步送到；如果在拍照的那台设备上已经丢失，就不会再来了。"
+          }
+        }
+      }
+    },
+    "Its photos, notes and light scans show here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "它的照片、笔记和光线扫描会显示在这里。"
+          }
+        }
+      }
+    },
+    "Keep scanning" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续扫描"
+          }
+        }
+      }
+    },
+    "Kept on this device only" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只保存在这台设备上"
+          }
+        }
+      }
+    },
+    "Kept with %@ as your own note, and counted in Compare under %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Kept with %1$@ as your own note, and counted in Compare under %2$@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作为你自己的笔记保存在 %@ 下，并在\"比较\"里计入 %@。"
+          }
+        }
+      }
+    },
+    "Kitchen" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "厨房"
+          }
+        }
+      }
+    },
+    "Last record" : {
+      "shouldTranslate" : false
+    },
+    "Last sent %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近发送 %@"
+          }
+        }
+      }
+    },
+    "Lens drift" : {
+      "shouldTranslate" : false
+    },
+    "Light" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线"
+          }
+        }
+      }
+    },
+    "Light scan" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线扫描"
+          }
+        }
+      }
+    },
+    "Light scan height" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线扫描高度"
+          }
+        }
+      }
+    },
+    "Light scan needs a camera" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线扫描需要相机"
+          }
+        }
+      }
+    },
+    "Light scan needs an iPhone or iPad with ARKit world tracking." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线扫描需要支持 ARKit 世界追踪的 iPhone 或 iPad。"
+          }
+        }
+      }
+    },
+    "List" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表"
+          }
+        }
+      }
+    },
+    "Listening%@…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在聆听%@…"
+          }
+        }
+      }
+    },
+    "Living" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "客厅"
+          }
+        }
+      }
+    },
+    "Location" : {
+      "shouldTranslate" : false
+    },
+    "Location is off for Property Replay, so the homes are in the order you added them." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Property Replay 没有定位权限，房子按添加顺序排列。"
+          }
+        }
+      }
+    },
+    "Longest day · %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "夏至 · %@"
+          }
+        }
+      }
+    },
+    "Looking for matches…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在查找…"
+          }
+        }
+      }
+    },
+    "Map" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图"
+          }
+        }
+      }
+    },
+    "Map showing %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 %@ 的地图"
+          }
+        }
+      }
+    },
+    "Measured on site by the sensors and passed the quality gates." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "传感器在现场测得，并通过了质量门槛。"
+          }
+        }
+      }
+    },
+    "Measured on site, passed the quality checks" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现场实测，通过了质量检查"
+          }
+        }
+      }
+    },
+    "Microphone access is off. Enable it in Settings to dictate notes." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "麦克风权限已关闭。到\"设置\"里打开才能口述笔记。"
+          }
+        }
+      }
+    },
+    "Moved %lld photos and %lld measurements into the library." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moved %1$lld photos and %2$lld measurements into the library."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已把 %lld 张照片和 %lld 条测量移入资料库。"
+          }
+        }
+      }
+    },
+    "Nearest first" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近的在前"
+          }
+        }
+      }
+    },
+    "Needs a real iPhone" : {
+      "shouldTranslate" : false
+    },
+    "Next inspection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一次看房"
+          }
+        }
+      }
+    },
+    "No Australian matches yet. Keep typing, or save the address as you typed it." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有匹配的澳洲地址。继续输入，或按你输入的原样保存。"
+          }
+        }
+      }
+    },
+    "No English or Chinese transcription locales reported by this phone yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这部手机还没有报告可用的英文或中文转写语言。"
+          }
+        }
+      }
+    },
+    "No camera available on this device." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这台设备没有可用的相机。"
+          }
+        }
+      }
+    },
+    "No compatible audio format for transcription." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可用于转写的音频格式。"
+          }
+        }
+      }
+    },
+    "No frames were kept for that analysis, so this spot will need a new scan." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有保留可供那项分析使用的画面，所以这个位置之后需要重新扫描。"
+          }
+        }
+      }
+    },
+    "No inspection booked. Add a time to a home and it shows here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有约好的看房。给一套房加上时间，就会显示在这里。"
+          }
+        }
+      }
+    },
+    "No inspection time set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未安排看房时间"
+          }
+        }
+      }
+    },
+    "No location yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有定位"
+          }
+        }
+      }
+    },
+    "No photo captured." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有拍到照片。"
+          }
+        }
+      }
+    },
+    "No properties yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有房产"
+          }
+        }
+      }
+    },
+    "None chosen" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有选"
+          }
+        }
+      }
+    },
+    "Not added to the property yet" : {
+      "shouldTranslate" : false
+    },
+    "Not attached to a property. The record can be shared but is not remembered." : {
+      "shouldTranslate" : false
+    },
+    "Not being saved (storage problem)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有在保存（存储出了问题）"
+          }
+        }
+      }
+    },
+    "Not enough information. Shown, never hidden." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "信息不足。照样显示，不隐藏。"
+          }
+        }
+      }
+    },
+    "Not on the map yet. Edit to place the pin." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没在地图上。编辑后放图钉。"
+          }
+        }
+      }
+    },
+    "Not set" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未设置"
+          }
+        }
+      }
+    },
+    "Not yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记"
+          }
+        }
+      }
+    },
+    "Note language" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记语言"
+          }
+        }
+      }
+    },
+    "Notes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记"
+          }
+        }
+      }
+    },
+    "Nothing has been sent or received since the app opened." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 App 以来没有发送或接收任何内容。"
+          }
+        }
+      }
+    },
+    "Nothing recorded for this yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这一项还没有记录。"
+          }
+        }
+      }
+    },
+    "Nothing recorded yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有记录"
+          }
+        }
+      }
+    },
+    "Nothing recorded yet. Use Inspect when you are at the property, or write a note from here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有记录。到了房子用\"看房\"，或者在这里写一条笔记。"
+          }
+        }
+      }
+    },
+    "Nothing was recorded. Try the scan again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "什么都没有记录下来。请再扫一次。"
+          }
+        }
+      }
+    },
+    "Nothing you add will survive quitting the app." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你添加的内容在退出 App 后不会保留。"
+          }
+        }
+      }
+    },
+    "Now" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
+        }
+      }
+    },
+    "Observed · measured" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现场实测"
+          }
+        }
+      }
+    },
+    "Observed · noted" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现场记录"
+          }
+        }
+      }
+    },
+    "On the sun path, a solid line is where the camera has looked, a dashed line is where it hasn't yet." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "太阳路径上，实线是镜头看过的地方，虚线是还没看过的。"
+          }
+        }
+      }
+    },
+    "On-device model unavailable (%@). Pick the category yourself." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端侧模型不可用（%@）。请自己选择类别。"
+          }
+        }
+      }
+    },
+    "On-device transcription does not support %@ on this phone. Pick another note language in You › Preferences." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这部手机的端侧转写不支持%@。到\"我 › 偏好\"里换一种笔记语言。"
+          }
+        }
+      }
+    },
+    "Only the address you type is sent to Apple Maps, to suggest matches and place the pin. The property is kept on this device and, with iCloud sync on, in your iCloud." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有你输入的地址会发给 Apple 地图，用来提示匹配和放图钉。房产保存在这台设备上；开了 iCloud 同步，也在你的 iCloud 里。"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置"
+          }
+        }
+      }
+    },
+    "Opens the photo full screen to zoom" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全屏打开照片，可以缩放"
+          }
+        }
+      }
+    },
+    "Opens this home" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开这套房"
+          }
+        }
+      }
+    },
+    "Persistent store unavailable, using memory: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持久存储不可用，改用内存：%@"
+          }
+        }
+      }
+    },
+    "Photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片"
+          }
+        }
+      }
+    },
+    "Photo not on this device yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片还没到这台设备"
+          }
+        }
+      }
+    },
+    "Photo%@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片%@"
+          }
+        }
+      }
+    },
+    "Pick two or three homes to see them side by side." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选两到三套房，并排来看。"
+          }
+        }
+      }
+    },
+    "Pick up to %lld. Compare shows only these. Nothing here becomes a score." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最多选 %lld 项。\"比较\"只比这些。这里的任何东西都不会变成评分。"
+          }
+        }
+      }
+    },
+    "Pin placed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图钉已放"
+          }
+        }
+      }
+    },
+    "Pin placed in %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图钉放在 %@"
+          }
+        }
+      }
+    },
+    "Place" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地点"
+          }
+        }
+      }
+    },
+    "Place the pin" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放图钉"
+          }
+        }
+      }
+    },
+    "Pose samples" : {
+      "shouldTranslate" : false
+    },
+    "Preferences" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "偏好"
+          }
+        }
+      }
+    },
+    "Priorities" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "优先事项"
+          }
+        }
+      }
+    },
+    "Privacy & data" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私与数据"
+          }
+        }
+      }
+    },
+    "Profile" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人"
+          }
+        }
+      }
+    },
+    "Properties" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "房产"
+          }
+        }
+      }
+    },
+    "Property" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "房产"
+          }
+        }
+      }
+    },
+    "Property Replay" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Property Replay"
+          }
+        }
+      }
+    },
+    "Put the nearest home first" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把最近的房子排在前面"
+          }
+        }
+      }
+    },
+    "Question" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "问题"
+          }
+        }
+      }
+    },
+    "Recent" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近"
+          }
+        }
+      }
+    },
+    "Recorded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录时间"
+          }
+        }
+      }
+    },
+    "Recorded on site. Sunlight not calculated yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现场记录。日照还没有计算"
+          }
+        }
+      }
+    },
+    "Records every pose, the heading readings and one location fix into a capture-only (R0) SceneRecord. No sky, no north, no sun yet." : {
+      "shouldTranslate" : false
+    },
+    "Release to finish" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "松开结束"
+          }
+        }
+      }
+    },
+    "Remember what mattered. Replay what you couldn't see." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记住在意的，回放看不到的。"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
+        }
+      }
+    },
+    "Remove %@ and everything recorded for it?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除 %@ 以及为它记录的一切？"
+          }
+        }
+      }
+    },
+    "Remove property" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除房产"
+          }
+        }
+      }
+    },
+    "Removing a property didn't finish saving (%@); it completes with the next save." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除房产没有保存完成（%@）；下次保存时会完成。"
+          }
+        }
+      }
+    },
+    "Room" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "房间"
+          }
+        }
+      }
+    },
+    "Runtime checks only. Nothing here is a promise about accuracy; it says which paths can run on this phone." : {
+      "shouldTranslate" : false
+    },
+    "SAMPLE" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示例"
+          }
+        }
+      }
+    },
+    "Sample property, fictional" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示例房产，虚构"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
+          }
+        }
+      }
+    },
+    "Save anyway" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仍然保存"
+          }
+        }
+      }
+    },
+    "Save without pin" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不定位也保存"
+          }
+        }
+      }
+    },
+    "Scan again" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新扫描"
+          }
+        }
+      }
+    },
+    "Scan light" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描光线"
+          }
+        }
+      }
+    },
+    "Scan not saved" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描未保存"
+          }
+        }
+      }
+    },
+    "Scan saved" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描已保存"
+          }
+        }
+      }
+    },
+    "Scan the sky to see where the sun passes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描天空，看太阳从哪里经过"
+          }
+        }
+      }
+    },
+    "See beyond the inspection." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "看见看房时看不见的。"
+          }
+        }
+      }
+    },
+    "Session" : {
+      "shouldTranslate" : false
+    },
+    "Several sources agree." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多个来源一致。"
+          }
+        }
+      }
+    },
+    "Share scene.json" : {
+      "shouldTranslate" : false
+    },
+    "Shortest day · %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冬至 · %@"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示"
+          }
+        }
+      }
+    },
+    "Showing %lld of %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Showing %1$lld of %2$lld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 %lld 套，共 %lld 套。"
+          }
+        }
+      }
+    },
+    "Shows what you recorded" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示你记录的内容"
+          }
+        }
+      }
+    },
+    "Simulator · pretend camera" : {
+      "shouldTranslate" : false
+    },
+    "Something you photographed, said or tagged on site." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在现场拍下、说出、标记或写下的。"
+          }
+        }
+      }
+    },
+    "Speech model is not installed: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音模型没有安装：%@"
+          }
+        }
+      }
+    },
+    "Stand where you'd sit and scan the sky to see where the sun passes through the year." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "站在你会坐的位置扫一遍天空，看一年里太阳从哪里经过。"
+          }
+        }
+      }
+    },
+    "Start" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始"
+          }
+        }
+      }
+    },
+    "Start OneTake" : {
+      "shouldTranslate" : false
+    },
+    "Start inspecting" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始看房"
+          }
+        }
+      }
+    },
+    "Start typing an address" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入地址"
+          }
+        }
+      }
+    },
+    "Starting camera…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在启动相机…"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        }
+      }
+    },
+    "Still couldn't add it (%@). It stays on this device and is added next launch." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仍然没能加上（%@）。它留在这台设备上，下次启动时会加上。"
+          }
+        }
+      }
+    },
+    "Stop and export" : {
+      "shouldTranslate" : false
+    },
+    "Stopped when you left the screen; nothing exported." : {
+      "shouldTranslate" : false
+    },
+    "Storage problem: nothing you add will survive quitting the app. See You › Privacy & data." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储出了问题：你添加的内容在退出 App 后不会保留。见\"我 › 隐私与数据\"。"
+          }
+        }
+      }
+    },
+    "Storage problem: saving is disabled until the app can write to disk." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储出了问题：在 App 能写入磁盘之前，无法保存。"
+          }
+        }
+      }
+    },
+    "Storage problem: this can't be saved right now." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存储出了问题：现在无法保存。"
+          }
+        }
+      }
+    },
+    "Strong indication" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多方印证"
+          }
+        }
+      }
+    },
+    "Study" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "书房"
+          }
+        }
+      }
+    },
+    "Suggested by the on-device model · Indicative until you confirm" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端侧模型的建议 · 你确认前仅供参考"
+          }
+        }
+      }
+    },
+    "Summary by the on-device model · Indicative" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "端侧模型的摘要 · 仅供参考"
+          }
+        }
+      }
+    },
+    "Sun path the camera has covered" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "镜头已覆盖的太阳路径"
+          }
+        }
+      }
+    },
+    "Sunlight not calculated yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日照还没有计算"
+          }
+        }
+      }
+    },
+    "Syncing with your private iCloud" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在与你的私人 iCloud 同步"
+          }
+        }
+      }
+    },
+    "Tags" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标签"
+          }
+        }
+      }
+    },
+    "Talking to iCloud…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接 iCloud…"
+          }
+        }
+      }
+    },
+    "The camera covered only %lld%% of the %@ path" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The camera covered only %1$lld%% of the %2$@ path"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "镜头只覆盖了%2$@路径的 %1$lld%%"
+          }
+        }
+      }
+    },
+    "The parts the camera didn't cover will stay unknown." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "镜头没有覆盖的部分会保持未知。"
+          }
+        }
+      }
+    },
+    "The photo you just took" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你刚拍的照片"
+          }
+        }
+      }
+    },
+    "The pin was for the previous address. Edit to place it again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图钉是按旧地址放的。编辑后重新放置。"
+          }
+        }
+      }
+    },
+    "The record %@ is kept on this phone and is added automatically the next time the app opens." : {
+      "shouldTranslate" : false
+    },
+    "The scan itself is still here. You can try saving it again; you don't need to scan again." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这次扫描还在。可以再试一次保存，不用重新扫。"
+          }
+        }
+      }
+    },
+    "The switch takes effect the next time you open the app." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个开关下次打开 App 时生效。"
+          }
+        }
+      }
+    },
+    "These tags were suggested by the on-device model." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这些标签是端侧模型建议的。"
+          }
+        }
+      }
+    },
+    "They're right" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没错"
+          }
+        }
+      }
+    },
+    "This device isn't signed in to iCloud. Your records stay here until it is." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这台设备没有登录 iCloud。登录之前，记录只留在这里。"
+          }
+        }
+      }
+    },
+    "This scan recorded where the camera pointed and which way the phone faced. It can't yet tell sky from buildings or trees, so there are no sunlight hours." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这次扫描记录了镜头指向哪里、手机朝向哪边。它还分不清天空与建筑或树木，所以没有日照小时数。"
+          }
+        }
+      }
+    },
+    "Three chosen. Remove one to add another." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选三套。先去掉一套，才能再加。"
+          }
+        }
+      }
+    },
+    "Three homes are already chosen" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已经选了三套房"
+          }
+        }
+      }
+    },
+    "Tracking" : {
+      "shouldTranslate" : false
+    },
+    "Transcription stopped: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转写中断：%@"
+          }
+        }
+      }
+    },
+    "Try adding it again" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再试一次加上去"
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再试一次"
+          }
+        }
+      }
+    },
+    "Try saving again" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再试一次保存"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知"
+          }
+        }
+      }
+    },
+    "Update my location" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新我的位置"
+          }
+        }
+      }
+    },
+    "Use Inspect when you are at the property." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到了房子用\"看房\"。"
+          }
+        }
+      }
+    },
+    "Use the original again" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复原文"
+          }
+        }
+      }
+    },
+    "Validation" : {
+      "shouldTranslate" : false
+    },
+    "Verified" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已核实"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
+        }
+      }
+    },
+    "View" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "视图"
+          }
+        }
+      }
+    },
+    "Viewpoint tolerance" : {
+      "shouldTranslate" : false
+    },
+    "What do you want to remember?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想记住什么？"
+          }
+        }
+      }
+    },
+    "What the evidence labels mean" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "证据标签的含义"
+          }
+        }
+      }
+    },
+    "What you care about" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在意的事"
+          }
+        }
+      }
+    },
+    "What you said" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你说的话"
+          }
+        }
+      }
+    },
+    "When" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间"
+          }
+        }
+      }
+    },
+    "Which home are you at?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在哪套房？"
+          }
+        }
+      }
+    },
+    "Winter sun" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冬季阳光"
+          }
+        }
+      }
+    },
+    "You" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我"
+          }
+        }
+      }
+    },
+    "You corrected this. The first version is kept." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你改过这段话。第一版仍然保留。"
+          }
+        }
+      }
+    },
+    "You liked" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你喜欢的"
+          }
+        }
+      }
+    },
+    "You marked this on site" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在现场标的"
+          }
+        }
+      }
+    },
+    "You photographed this on site" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在现场拍的"
+          }
+        }
+      }
+    },
+    "You said this on site" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在现场说的"
+          }
+        }
+      }
+    },
+    "You said this on site, then corrected the words" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你在现场说的，之后改过文字"
+          }
+        }
+      }
+    },
+    "You want to confirm" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你要确认的"
+          }
+        }
+      }
+    },
+    "You were unsure about" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你有顾虑的"
+          }
+        }
+      }
+    },
+    "You wrote this down" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你写下的"
+          }
+        }
+      }
+    },
+    "Your inspection" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的看房记录"
+          }
+        }
+      }
+    },
+    "Your name (optional)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的名字（可选）"
+          }
+        }
+      }
+    },
+    "Your note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的笔记"
+          }
+        }
+      }
+    },
+    "all-year sun" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全年阳光"
+          }
+        }
+      }
+    },
+    "east" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "东"
+          }
+        }
+      }
+    },
+    "iCloud is restricted on this device. Your records stay here." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这台设备上 iCloud 受限。记录只留在这里。"
+          }
+        }
+      }
+    },
+    "iCloud sync" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步"
+          }
+        }
+      }
+    },
+    "iCloud sync couldn't start this time, so nothing is being sent." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这次 iCloud 同步没能启动，所以没有任何内容被发送。"
+          }
+        }
+      }
+    },
+    "iCloud sync is on" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步已开"
+          }
+        }
+      }
+    },
+    "iCloud sync is on, but not working on this device" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步已开，但在这台设备上没有生效"
+          }
+        }
+      }
+    },
+    "iCloud sync is on, but the last attempt failed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步已开，但上一次尝试失败了"
+          }
+        }
+      }
+    },
+    "iCloud sync unavailable, keeping data on this device: %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 同步不可用，数据留在这台设备上：%@"
+          }
+        }
+      }
+    },
+    "last received %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近接收 %@"
+          }
+        }
+      }
+    },
+    "light scan" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光线扫描"
+          }
+        }
+      }
+    },
+    "north" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "北"
+          }
+        }
+      }
+    },
+    "north-east" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "东北"
+          }
+        }
+      }
+    },
+    "north-west" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "西北"
+          }
+        }
+      }
+    },
+    "note" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记"
+          }
+        }
+      }
+    },
+    "photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片"
+          }
+        }
+      }
+    },
+    "receive from" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接收自"
+          }
+        }
+      }
+    },
+    "send to" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到"
+          }
+        }
+      }
+    },
+    "set up" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接"
+          }
+        }
+      }
+    },
+    "south" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "南"
+          }
+        }
+      }
+    },
+    "south-east" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "东南"
+          }
+        }
+      }
+    },
+    "south-west" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "西南"
+          }
+        }
+      }
+    },
+    "tag" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标签"
+          }
+        }
+      }
+    },
+    "west" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "西"
+          }
+        }
+      }
+    },
+    "winter sun" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冬季阳光"
+          }
+        }
+      }
+    },
+    "· %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· %@"
+          }
+        }
+      }
+    },
+    "· model-suggested" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· 模型建议"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

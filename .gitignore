@@ -42,3 +42,6 @@ ios/*.xcodeproj/project.xcworkspace/xcuserdata/
 
 # iCloud conflict copies of the generated project
 ios/* 2.xcodeproj/
+
+# Claude Code per-machine settings (auto-memory group wiring)
+**/.claude/settings.local.json

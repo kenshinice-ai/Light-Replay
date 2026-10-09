@@ -4,6 +4,17 @@ import SwiftUI
 /// Inspect (during, centred so it is one tap from anywhere), Compare (after), You (priorities, settings, data).
 struct RootView: View {
     var body: some View {
+        VStack(spacing: 0) {
+            if !StoreHealth.shared.isPersistent {
+                Text("Storage problem: nothing you add will survive quitting the app. See You › Privacy & data.")
+                    .font(.footnote.weight(.medium)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(8).background(Color.problemFill)
+            }
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView {
             Tab("Home", systemImage: "house") { HomeView() }
             Tab("Properties", systemImage: "list.bullet.rectangle") { PropertiesView() }
@@ -11,6 +22,8 @@ struct RootView: View {
             Tab("Compare", systemImage: "rectangle.split.2x1") { CompareView() }
             Tab("You", systemImage: "person.crop.circle") { YouView() }
         }
+        // iPhone: the tab bar. iPad: a tab bar that can become a sidebar, as the window allows (UI/UX review U07).
+        .tabViewStyle(.sidebarAdaptable)
     }
 }
 

@@ -1,0 +1,108 @@
+import XCTest
+
+/// Walks the Inspect draft paths the way a buyer does: capture, tag, save, discard, correct a note, read it back.
+/// Added after the 2026-09-30 21:24 device crash on Save/Discard, which no unit test could reach.
+final class InspectFlowUITests: UITestCase {
+    func testPhotoAndNoteSaveDiscardAndDone() {
+        launch()
+        openInspect()
+
+        // Photo → Save.
+        tap(app.buttons["Add test photo (simulator)"])
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 5))
+
+        // Note → Discard, then Note → tag → Save (the model suggestion may land while the editor is up).
+        tap(app.buttons["Add test note (simulator)"])
+        tap(app.buttons["Discard"])
+        XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 5))
+        tap(app.buttons["Add test note (simulator)"])
+        tap(app.buttons["Like"])
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["2 recorded"].waitForExistence(timeout: 5))
+
+        // Done closes the inspection and returns to the property.
+        tap(app.buttons["Done"])
+        XCTAssertTrue(app.buttons["Inspect now"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(containing: "All 2 recorded").waitForExistence(timeout: 5))
+    }
+
+    /// Review U04: the words can be corrected and the first version is kept; the photo opens large.
+    func testCorrectedNoteKeepsItsOriginalAndThePhotoOpensLarge() {
+        launch()
+        openInspect()
+        tap(app.buttons["Add test note (simulator)"])
+        let note = app.textViews["Your note"].exists ? app.textViews["Your note"] : app.textFields["Your note"]
+        tap(note)
+        note.typeText(" Checked twice.")
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 5))
+        tap(app.buttons["Add test photo (simulator)"])
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["2 recorded"].waitForExistence(timeout: 5))
+        tap(app.buttons["Done"])
+
+        tap(element(containing: "All 2 recorded"))
+        // Found by the note's own words: simulator typing can drop keystrokes, so the typed text is not a reliable handle.
+        tap(element(containing: "living room felt darker"))
+        XCTAssertTrue(element(containing: "You corrected this").waitForExistence(timeout: 5), "the first version is kept and said so")
+        XCTAssertTrue(element(containing: "You said this on site, then corrected the words").exists)
+        snapshot("note-detail")
+        goBack()
+
+        tap(app.staticTexts["Photo"].firstMatch)
+        tap(element(containing: "Photo, Living"))
+        XCTAssertTrue(app.buttons["Close photo"].waitForExistence(timeout: 5), "the photo opens full screen")
+        snapshot("photo-viewer")
+        app.buttons["Close photo"].tap()
+        XCTAssertTrue(element(containing: "You photographed this on site").waitForExistence(timeout: 5))
+    }
+
+    /// Review U12: booking details live behind Edit; the page says plainly when there is no inspection time.
+    func testEditingAPropertyChangesTheInspectionTimeNotTheAddress() {
+        launch()
+        openProperty("8 Sample Avenue")
+        XCTAssertTrue(element(containing: "Inspection ").waitForExistence(timeout: 5))
+        tap(app.buttons["Edit"])
+        let booked = app.switches["Inspection booked"]
+        XCTAssertTrue(booked.waitForExistence(timeout: 5))
+        booked.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["No inspection time set"].waitForExistence(timeout: 8))
+        XCTAssertTrue(element(containing: "8 Sample Avenue, Box Hill").exists, "the address is untouched")
+    }
+
+    /// Deleting is physical and reaches iCloud, so it asks first, names what goes, and the question sits on the row.
+    func testSwipeDeleteAsksAndNamesWhatGoes() {
+        launch()
+        openInspect()
+        tap(app.buttons["Add test photo (simulator)"])
+        tap(app.buttons["Save"])
+        XCTAssertTrue(app.staticTexts["1 recorded"].waitForExistence(timeout: 5))
+        tap(app.buttons["Done"])
+        tap(element(containing: "All 1 recorded"))
+        let row = app.cells.containing(.staticText, identifier: "Photo").firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.swipeLeft()
+        tap(app.buttons["Delete"].firstMatch)
+        XCTAssertTrue(app.staticTexts["Delete this photo?"].waitForExistence(timeout: 5), "the swipe asks instead of deleting")
+        XCTAssertTrue(app.staticTexts["Your inspection"].exists, "still on the list: the question belongs to the row")
+        snapshot("delete-asks")
+        confirmButton("Delete").tap()
+        XCTAssertTrue(app.staticTexts["Nothing recorded yet"].waitForExistence(timeout: 8))
+    }
+
+    func testRemovingAHomeAsksByName() {
+        launch()
+        openProperty("3/21 Placeholder Road")
+        tap(app.buttons["Edit"])
+        let remove = app.buttons["Remove property"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        for _ in 0..<3 where !remove.isHittable { app.swipeUp() }
+        remove.tap()
+        XCTAssertTrue(element(containing: "Remove 3/21 Placeholder Road and everything recorded for it?").waitForExistence(timeout: 5))
+        confirmButton("Remove").tap()
+        XCTAssertTrue(app.staticTexts["12 Example Street"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.staticTexts["3/21 Placeholder Road"].exists, "the home is gone from the list")
+    }
+}

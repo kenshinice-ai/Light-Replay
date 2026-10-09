@@ -1,0 +1,2 @@
+image_id,source,scene_class,seed_strategy,quality_level,outcome,mask_fraction,seconds,assets_status,notes
+SMOKE-0001,plain_photo,window_sky,single_point_in_sky,accurate,sky|empty|wrong_object|error,0.00,0.0,ready,example row: delete before use

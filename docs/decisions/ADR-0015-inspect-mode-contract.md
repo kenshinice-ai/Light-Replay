@@ -23,3 +23,11 @@
 
 ## 后果
 - 01 §4 按此重写；15 的 Observation 模型；11 §3 加 push-to-talk 与不保存音频；Phase 1 小 spike C3（语音 → 结构化）设通过线。
+
+## 修订（2026-10-01，Lee）
+
+- 界面上 Measure 动作改名 **Light**（太阳图标）。理由：它是核心功能之一，名字要直接说出它测什么；"Measure" 不说测什么，Lee 实测时找不到入口（`reviews/2026-09-30-apple-design-review.md` 发现 1–3）。
+- 概念与数据流不变：Light = OneTake → SceneRecord → `LightObservation`；文档里 "Measure" 指同一个动作。
+- 入口两处：Inspect 底栏右侧；房产详情的 Light 区块（"Scan the light here"），不必先进 Inspect。
+- 扫描界面的行为写在 `04-capture-protocol.md` 第 11 节。
+

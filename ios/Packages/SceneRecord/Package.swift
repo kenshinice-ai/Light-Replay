@@ -8,8 +8,10 @@ let package = Package(
         .library(name: "SceneRecord", targets: ["SceneRecord"]),
         .executable(name: "scene-record-check", targets: ["SceneRecordCheck"])
     ],
+    dependencies: [.package(path: "../NorthResolver")],
     targets: [
-        .target(name: "SceneRecord"),
+        // NorthResolver is here for QualityEvaluator: the north light is worked out again from the candidates.
+        .target(name: "SceneRecord", dependencies: ["NorthResolver"]),
         .executableTarget(name: "SceneRecordCheck", dependencies: ["SceneRecord"]),
         .testTarget(name: "SceneRecordTests", dependencies: ["SceneRecord"])
     ]

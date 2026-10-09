@@ -21,7 +21,7 @@
   "created_at": "2026-09-21T10:42:13+10:00",
   "timezone": "Australia/Melbourne",
   "app": { "version": "0.1.0", "build": "12",
-           "algorithms": { "sun": "sunengine-0.1", "segmentation": "skyseg-0.1", "north": "northresolver-0.1", "visibility": "viscore-0.1" } },
+           "algorithms": { "sun": "sunengine-0.1", "segmentation": "skyseg-0.1", "north": "northresolver-0.2", "visibility": "viscore-0.1" } },
   "device": { "model": "iPhone16,1", "os": "iOS 18.6", "lidar": true, "scene_depth": true, "geo_tracking": "unavailable" },
   "location": { "lat": -37.8136, "lon": 144.9631, "alt_m": 31.0, "h_acc_m": 8.0, "v_acc_m": 5.0,
                 "source": "core_location", "captured_at": "2026-09-21T10:41:58+10:00" },
@@ -46,11 +46,11 @@
 | `started_at`, `ended_at` | datetime | |
 | `world_alignment` | enum | `gravity`（推荐）或 `gravityAndHeading`；后者的 yaw 只是磁来源候选，不作真北 |
 | `hero_frame` | object | `frame_id`、`image_ref`、`timestamp`、`intrinsics`、`camera_transform`（16 个数，列主序）、`exposure` |
-| `frames[]` | array | 每帧：`frame_id`、`t`、`camera_transform`、`intrinsics`、`tracking_state`（`normal` / `limited:<reason>` / `not_available`）、`lens_offset_m`（与锚点距离）、`depth_ref`、`depth_confidence_ref`、`mask_ref`、`exposure_offset`、`used_for_visibility` |
+| `frames[]` | array | 每帧：`frame_id`、`t`（自首帧起的秒数，来自 ARFrame 时间戳，≤ `ended_at − started_at`）、`camera_transform`、`intrinsics`、`tracking_state`（`normal` / `limited:<reason>` / `not_available`）、`lens_offset_m`（与锚点距离；锚点锁定前为 null）、`depth_ref`、`depth_confidence_ref`、`mask_ref`、`exposure_offset`、`used_for_visibility` |
 | `viewpoint_lock` | object | `anchor_world`、`tolerance_m`、`max_drift_m`、`frames_within`、`frames_beyond`、`handling`（`depth_recentered` / `tolerated` / `rejected`）|
 | `guidance` | object | `question`（`winter_breakfast` / `full_year` / `west_afternoon` / `custom`）、`corridor_ref` |
 
-帧记录频率：姿态每帧；掩膜与深度按分割频率（5–10 fps）；其余帧 `mask_ref: null`。
+帧记录频率：姿态 ≤ 10 Hz【估】，另外总是保留第一帧、锚定帧和追踪状态变化的帧（ADR-0020；漂移逐帧算，`max_drift_m` 不受取样影响，`frames_within / frames_beyond` 按保留帧计）；分割按 3–5 fps 取帧【估】，但记录里只保留 3–5 张关键帧的掩膜（ADR-0019），其余帧 `mask_ref: null`。
 
 ## 4. north
 
@@ -70,6 +70,10 @@
                 "conflict": false, "conflict_detail": null, "resolved_at": "…" }
 }
 ```
+
+`magnetometer` 候选的 `raw` 另有两项（review R08）：`samples[]` 保留本次采集里每一条能与姿态对上的罗盘读数（读数本身按 ≤ 10 Hz 取样，ADR-0020 补记；`sampled_at`、`true_heading`、`magnetic_heading`、`heading_accuracy`、`device_orientation`（读数参考的设备方向，`headingOrientation`）、对上的 `frame_id`、`camera_az_ar_deg`、`camera_pitch_deg`、`pose_gap_s`、该条读数给出的 `yaw_deg`、是否参与合并 `used`），`merged` 记合并方法与统计（`method`、`readings_seen` 收到的全部读数、`readings_valid` 其中有效的、`samples_total` 能与姿态对上的、`samples_used` 参与合并的、`spread_deg`、`prior_sigma_deg`、`max_pitch_deg`）。候选的 `yaw_deg` 是参与合并读数的圆周中位数，`sigma_deg` 取读数 σ 的中位数与读数分散（RMS）的较大者；`raw` 顶层的四个字段仍是第一条参与合并的读数。
+
+`resolved` 只在方向灯不是阻断时写入；需要确认的方向（冲突、或只有一组且 σ > 6°）保持 `null`。
 
 `yaw_deg` 即 `Δ`：AR 世界 −Z 轴的真方位角（俯视顺时针），`az_true = (az_ar + Δ) mod 360`，见 `05-north-resolver.md` 第 4 节。示例中 solar 取 359°，刻意跨 0°/360°：实现必须用圆周运算，否则会误判冲突。三组两两一致，全部参与加权圆周均值（磁罗盘 σ 取 `heading_accuracy` 12.0，结果 359.78° / σ 1.77，四舍五入见上）。
 
@@ -104,12 +108,12 @@
 ## 8. quality
 
 ```json
-{ "level": "R1", "gates": { "level": "pass", "coverage": "pass", "north": "pass", "segmentation": "warn" },
+{ "level": "R1", "gates": { "level": "pass", "coverage": "pass", "north": "pass", "segmentation": "warn", "lens": "pass" },
   "flags": ["glass_present", "drift_recentered"], "false_valid_guard": "passed", "blocked_reason": null,
   "assist": { "coach": "fm-ondevice", "copy": "fm-ondevice", "glass_flag": "fm-keyframe", "pcc_used": false, "degraded": [] } }
 ```
 
-`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。`gates` 含五盏灯：`level`、`coverage`、`north`、`segmentation`、`lens`。`assist.degraded` 记录每次降级（如 `fm_unavailable`、`seg_assets_missing`、`pcc_quota`），见 ADR-0010。
+`false_valid_guard` 为 `blocked` 时，`analysis` 不得含小时数。`gates` 含五盏灯：`level`、`coverage`、`north`、`segmentation`、`lens`。其中 `coverage`、`north`、`segmentation` 三盏由校验器按记录里的证据重算（QualityEvaluator，规则见 `04-capture-protocol.md` 第 6 节），写入值必须与重算结果一致，R0 记录也一样；`north.resolved` 若存在，必须是候选融合得到的那个结果（允许一位小数的舍入）。高于 R0 的记录另须物理自洽：目标锚点与视点锁定锚点是同一点，并入可见域的帧追踪正常且在漂移上限内。`assist.degraded` 记录每次降级（如 `fm_unavailable`、`seg_assets_missing`、`pcc_quota`），见 ADR-0010。
 
 ## 9. 文件布局
 
@@ -117,7 +121,7 @@
 <scene_id>/
 ├── scene.json
 ├── hero.heic
-├── masks/<frame_id>.png
+├── masks/<frame_id>.png          （只有关键帧，ADR-0019）
 ├── depth/<frame_id>.bin  (+ .conf)
 ├── visibility/states.png, confidence.png
 └── analysis/<n>-heatmap.png
@@ -126,3 +130,23 @@
 ## 10. 版本迁移
 
 `schema_version` 语义化；破坏性变更写迁移脚本并在 `engine/` 保留旧版校验。
+
+## 11. schema 0.2.0（ADR-0022，2026-10-04）
+
+0.1.0 的记录不变。0.2.0 在其上改这些；两端校验器（`ios/Packages/SceneRecord`、`engine/lightreplay/scenerecord.py`）共用 `engine/tests/fixtures/scene-v2-cases.json` 的 81 个用例（15 接受、66 拒绝）【验】。App 自阶段 B（2026-10-04）起写 0.2.0：保存时是 revision 0，没有网格与分析，五盏灯由 QualityEvaluator 给出；0.1.0 的旧记录照旧可读。
+
+| 位置 | 0.2.0 | 校验 |
+|---|---|---|
+| 根 | 新增 `result`：`revision`（0 = 刚保存）、`capture_digest`、`north_digest`、`inputs_hash`、`computed_at` | revision 0 时没有网格、没有分析、没有 hash；≥ 1 时必须有 hash 与时间 |
+| `capture_session.hero_frame.image` | `null` 或 `{storage: "row.photo", native_size, encoded_size, scale, crop, rotation_deg, byte_count, sha256}`；像素在行的照片列 | 裁剪在原图内；`encoded_size` 必须等于 裁剪 × 缩放（旋转 90 / 270 时宽高对调），容差 1 px |
+| `capture_session.frames[].role` | `visibility` 或 `calibration`（确认方向时的帧） | `calibration` 帧不得 `used_for_visibility` |
+| `capture_session.keyframes[]` | 至多 5 项：`frame_id` + `mask` 载荷（`png+base64`） | 必须是用于可见域的帧。掩膜是一张完整、可在界内解码的 PNG：每个块齐全且 CRC 正确、以 IHDR 开头 IEND 结尾、灰度（1 或 8 位）、不隔行、边长 ≤ 2048【估】，像素数据解压后恰好等于各行之和。先读尺寸并设界，再解压（评审 A03） |
+| `visibility.states` / `confidence` | 取代 `states_ref` / `confidence_ref`：载荷 `{encoding: "deflate+base64", width, height, byte_count, sha256, data}`；一字节一格，行优先，自最低高度角、方位 0 起；状态 0 未知、1 天空、2 遮挡、3 玻璃不确定 | 尺寸等于网格；解压有上限；长度与 SHA-256 是解码后字节的；两者同在或同缺 |
+| `visibility.votes` | `frames_used`、`min_distinct_frames`、`cells: {unknown, sky, blocked, glass}` | `cells` 必须是网格自己的直方图；`frames_used` 必须等于记录里 `used_for_visibility` 的帧数；有已知格的网格至少要 `min_distinct_frames` 帧（评审 A04）。这只数帧，逐格是否有足够的不同帧支持由累积层保证并在那里测 |
+| `north.candidates[]`（`source: sun_disk`） | `evidence`：`rules: "sundisk-0.1"`、`frame_id`、`time`、`altitude_measured_deg`、`altitude_expected_deg`、`azimuth_expected_deg`、`depth_m`、`sky_ring_fraction`、`user_confirmed`、`tracking_continuous` | 声称有效而证据不过规则（`05` §2a）的记录被拒；无效的候选可以带着证据保留 |
+| `analysis[]` | 新增 `revision`、`totals: {direct_min, sensitive_min, blocked_min, unknown_min}`、`query.representative` | revision 与 `versions.inputs_hash` 必须是 `result` 的；四个分钟数必须等于各段之和（未知不能被算成直射）。一天的各段是一条时间线：在查询窗口内、按序、首尾相接、不重叠；日期不重复且在查询范围内；单日查询必须铺满窗口，不知道的部分写成 `unknown` 段而不是留空（评审 A02） |
+| `quality.evidence` | `rules: "quality-0.2"`、`horizon`、`lens`、`reflection`（各有 `status` 与原始数值） | 形状与一致性在校验器；灯的规则在 QualityEvaluator（`04` §6）。跑过的检查（含 `not_found`）必须写明检测器与帧：地平线的帧是本次扫描追踪正常的帧或 Hero，镜头的帧是本次的 Hero（评审 A01）。"稳定"本身的证明随阶段 B 的帧卷元数据补 |
+| R1 的证据要求 | 内联网格与置信度、至少一张属于可用帧的关键帧掩膜（取代 0.1 的 `mask_ref`） | 其余同 0.1 |
+
+载荷上限【估】：网格 ≤ 65 160 字节（360 × 181），掩膜 ≤ 400 000 字节，关键帧 ≤ 5。真实样本的体积与读取内存待阶段 C 量。
+"重算"的范围：从网格重新算日照可以；多数帧在分析后删除，从原帧重新分割不可以（ADR-0019 补记）。

@@ -1,6 +1,7 @@
 name: PropertyReplay
 options:
   bundleIdPrefix: com.pwegroup
+  developmentLanguage: en
   deploymentTarget:
     iOS: "27.0"
   xcodeVersion: "27.0"
@@ -13,6 +14,10 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_STRICT_CONCURRENCY: complete
     ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    # String catalogs: the compiler extracts every Text / Button / String(localized:) literal into
+    # PropertyReplay/Localizable.xcstrings at build time; zh-Hans values are written there (Lee, 2026-10-03).
+    SWIFT_EMIT_LOC_STRINGS: "YES"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: "YES"
     IPHONEOS_DEPLOYMENT_TARGET: "27.0"
 packages:
   SceneRecord:
@@ -21,6 +26,8 @@ packages:
     path: Packages/CaptureCore
   PropertyModel:
     path: Packages/PropertyModel
+  SunEngine:
+    path: Packages/SunEngine
 targets:
   PropertyReplay:
     type: application
@@ -31,24 +38,55 @@ targets:
       - package: SceneRecord
       - package: CaptureCore
       - package: PropertyModel
+      - package: SunEngine
     info:
       path: PropertyReplay/Info.plist
       properties:
         CFBundleDisplayName: Property Replay
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        # From the build settings below, so scripts/testflight.sh can stamp the build number (git commit count).
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # iPhone: portrait and both landscapes (Lee, 2026-10-03: people shoot landscape). No upside-down on a phone.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        # iPad is for reading at home (ADR-0017); it keeps every orientation so it can join Split View.
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        # CloudKit sends silent pushes when another device changes the library.
+        UIBackgroundModes: [remote-notification]
         ITSAppUsesNonExemptEncryption: false
-        NSCameraUsageDescription: "Property Replay uses the camera to measure how much direct sun reaches the spot where you are standing."
-        NSLocationWhenInUseUsageDescription: "Your location sets where the sun is in the sky for this property. It is kept on this device."
+        NSCameraUsageDescription: "Property Replay uses the camera to capture what you see during an inspection and to measure how much direct sun reaches the spot where you are standing."
+        NSLocationWhenInUseUsageDescription: "Your location sets where the sun is in the sky for this property. It stays with your records on this device and in your private iCloud."
         NSMicrophoneUsageDescription: "Hold to dictate a note. Audio is transcribed on this device and not stored."
         NSMotionUsageDescription: "Device motion keeps the sky scan aligned while you turn."
+        NSSpeechRecognitionUsageDescription: "Notes you dictate are transcribed on this device. No audio is stored."
+    entitlements:
+      path: PropertyReplay/PropertyReplay.entitlements
+      properties:
+        # Private Cloud Compute (ADR-0010): account entitlement granted; automatic signing registers the capability.
+        com.apple.developer.private-cloud-compute: true
+        # iCloud private database (ADR-0017). Automatic signing sets aps-environment to production when archiving.
+        com.apple.developer.icloud-container-identifiers: [iCloud.com.pwegroup.propertyreplay]
+        com.apple.developer.icloud-services: [CloudKit]
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay
-        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: "NO"
+  PropertyReplayUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: PropertyReplayUITests
+    dependencies:
+      - target: PropertyReplay
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pwegroup.propertyreplay.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: PropertyReplay
   PropertyReplayTests:
     type: bundle.unit-test
     platform: iOS
@@ -68,11 +106,14 @@ schemes:
       targets:
         PropertyReplay: all
         PropertyReplayTests: [test]
+        PropertyReplayUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - PropertyReplayTests
+        - PropertyReplayUITests
         - package: CaptureCore/CaptureCoreTests
         - package: PropertyModel/PropertyModelTests
+        - package: SunEngine/SunEngineTests
